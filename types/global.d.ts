@@ -97,7 +97,7 @@ declare global {
     Grey?: boolean;
     Weak?: boolean;
     HideTabs?: boolean;
-    HideFooter?: boolean;
+
     Stretch?: boolean | number;
     SidebarStatus?: boolean;
     EpThemeColor?: string;
@@ -128,7 +128,6 @@ declare global {
     grey?: boolean;
     weak?: boolean;
     hideTabs?: boolean;
-    hideFooter?: boolean;
     sidebarStatus?: boolean;
     epThemeColor?: string;
     themeColor?: string;
@@ -159,7 +158,6 @@ declare global {
       grey?: boolean;
       weak?: boolean;
       hideTabs?: boolean;
-      hideFooter?: boolean;
       showLogo?: boolean;
       showModel?: string;
       multiTagsCache?: boolean;

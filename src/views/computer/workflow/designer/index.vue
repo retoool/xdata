@@ -1,5 +1,5 @@
 <template>
-  <div class="workflow-designer-page">
+  <div class="workflow-designer-page" :class="{ 'panel-collapsed': isPanelCollapsed }">
     <!-- 左侧算子面板 -->
     <div class="side-panel" :class="{ 'collapsed': isPanelCollapsed }">
       <div class="panel-header">
@@ -559,7 +559,7 @@ const handleBack = () => {
 }
 
 // 拖拽操作
-const handleDragStart = (event: DragEvent, operator: OperatorCategory['operators'][0]) => {
+const handleDragStart = (event: DragEvent, operator: any) => {
   if (event.dataTransfer) {
     // 传递完整的算子数据
     event.dataTransfer.setData('application/json', JSON.stringify({
@@ -695,7 +695,7 @@ const handleFitView = () => {
 }
 
 // 预览算子详情
-const handleOperatorPreview = (operator: OperatorCategory['operators'][0]) => {
+const handleOperatorPreview = (operator: any) => {
   ElMessage.info(`预览算子: ${operator.name}`);
   // 可以在这里打开一个弹窗或模态框显示更详细的算子信息
 }
@@ -780,8 +780,13 @@ const handleKeydown = (event: KeyboardEvent) => {
 <style lang="scss" scoped>
 .workflow-designer-page {
   display: flex;
-  height: 100%;
+  height: calc(100vh - 80px);
   background-color: var(--el-bg-color-page);
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .side-panel {
@@ -798,6 +803,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   overflow: hidden;
   opacity: 1;
   transition: all 0.3s ease;
+  height: 100%;
 
   &.collapsed {
     width: 0;
@@ -969,6 +975,8 @@ const handleKeydown = (event: KeyboardEvent) => {
   border: 1px solid var(--el-border-color-light);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  height: 100%;
+  overflow: hidden;
 
   &.expanded {
     margin-left: 0;
@@ -982,6 +990,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     border-bottom: 1px solid var(--el-border-color-light);
     background-color: var(--el-bg-color);
     z-index: 1;
+    flex-shrink: 0;
 
     .toolbar-left {
       display: flex;
@@ -1026,12 +1035,14 @@ const handleKeydown = (event: KeyboardEvent) => {
     display: flex;
     overflow: hidden;
     position: relative;
+    min-height: 0;
 
     .designer-canvas {
       flex: 1;
       position: relative;
       overflow: hidden;
       background-color: var(--el-bg-color-page);
+      min-height: 0;
 
       :deep(.vue-flow) {
         width: 100%;
@@ -1121,7 +1132,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 .collapse-button {
   position: absolute;
-  left: 280px;
+  left: 296px;
   top: 40%;
   transform: translateY(-50%);
   width: 28px;
@@ -1152,14 +1163,10 @@ const handleKeydown = (event: KeyboardEvent) => {
       transform: rotate(180deg);
     }
   }
-
-  &.collapsed {
-    left: 0;
-  }
 }
 
 .side-panel.collapsed ~ .collapse-button {
-  left: 0;
+  left: 16px;
 }
 </style>
 

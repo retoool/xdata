@@ -23,7 +23,7 @@ export const injectResponsiveStorage = (app: App, config: PlatformConfigs) => {
         grey: config.Grey ?? false,
         weak: config.Weak ?? false,
         hideTabs: config.HideTabs ?? false,
-        hideFooter: config.HideFooter ?? true,
+
         showLogo: config.ShowLogo ?? true,
         showModel: config.ShowModel ?? "smart",
         multiTagsCache: config.MultiTagsCache ?? false,
@@ -32,9 +32,9 @@ export const injectResponsiveStorage = (app: App, config: PlatformConfigs) => {
     },
     config.MultiTagsCache
       ? {
-          // 默认显示顶级菜单tag
-          tags: Storage.getData("tags", nameSpace) ?? routerArrays
-        }
+        // 默认显示顶级菜单tag
+        tags: Storage.getData("tags", nameSpace) ?? routerArrays
+      }
       : {}
   );
 
