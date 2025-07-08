@@ -93,7 +93,7 @@ const toggleTreeCollapse = () => {
 <style scoped>
 .workflow-page {
   display: flex;
-  height: 100%;
+  height: calc(100% - 24px);
   position: relative;
 }
 

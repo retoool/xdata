@@ -741,6 +741,8 @@ const cancelEditTitle = () => {
   isEditingTitle.value = false;
 };
 
+
+
 // 在组件挂载时加载数据
 onMounted(() => {
   loadWorkflowData()
@@ -778,28 +780,25 @@ const handleKeydown = (event: KeyboardEvent) => {
 </script>
 
 <style lang="scss" scoped>
-.workflow-designer-page {
+.workflow-designer-page {  
+  height: calc(100% - 24px);
   display: flex;
-  height: calc(100vh - 80px);
   background-color: var(--el-bg-color-page);
   overflow: hidden;
   position: relative;
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .side-panel {
   width: 280px;
   min-width: 0;
   max-width: 420px;
-  margin-right: 16px;
+  margin-right: 12px;
   display: flex;
   flex-direction: column;
   background-color: var(--el-bg-color);
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   opacity: 1;
   transition: all 0.3s ease;
@@ -971,9 +970,9 @@ const handleKeydown = (event: KeyboardEvent) => {
   display: flex;
   flex-direction: column;
   background-color: var(--el-bg-color);
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   height: 100%;
   overflow: hidden;
@@ -1132,7 +1131,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 .collapse-button {
   position: absolute;
-  left: 296px;
+  left: 292px;
   top: 40%;
   transform: translateY(-50%);
   width: 28px;
@@ -1166,7 +1165,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 }
 
 .side-panel.collapsed ~ .collapse-button {
-  left: 16px;
+  left: 12px;
 }
 </style>
 

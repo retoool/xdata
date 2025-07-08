@@ -109,7 +109,7 @@ const toggleTreeCollapse = () => {
 <style scoped>
 .operator-page {
   display: flex;
-  height: 100%;
+  height: calc(100% - 24px);
   position: relative;
 }
 
