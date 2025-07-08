@@ -1,21 +1,17 @@
 <template>
-  <div class="operator-page">
+  <div class="workflow-page">
     <div class="category-tree" :class="{ 'collapsed': isTreeCollapsed }">
       <CategoryTree 
         ref="categoryTreeRef"
-        :current-operator-type="currentOperatorType"
-        @type-change="handleTypeChange"
         @node-select="handleNodeSelect"
       />
     </div>
     <div class="content-area" :class="{ 'expanded': isTreeCollapsed }">
-      <OperatorTable 
-        ref="operatorTableRef"
+      <WorkflowTable 
+        ref="workflowTableRef"
         :selected-category-id="selectedCategoryIds"
         :selected-category-path="selectedCategoryPath"
-        :current-operator-type="currentOperatorType"
         @category-click="handleCategoryClick"
-        @type-change="handleTypeChange"
       />
     </div>
     <div class="collapse-button" @click="toggleTreeCollapse">
@@ -30,25 +26,13 @@
 import { ref } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import CategoryTree from "./CategoryTree.vue";
-import OperatorTable from "./OperatorTable.vue";
-import { OperatorType } from '@/api/operator'
+import WorkflowTable from "./WorkflowTable.vue";
 
-const operatorTableRef = ref()
+const workflowTableRef = ref()
 const categoryTreeRef = ref()
 const selectedCategoryIds = ref<number[] | null>(null)
 const selectedCategoryPath = ref<string[] | null>(null)
 const isTreeCollapsed = ref(false)
-const currentOperatorType = ref<OperatorType>(OperatorType.BASIC)
-
-const handleTypeChange = (type: OperatorType) => {
-  // 更新当前算子类型
-  currentOperatorType.value = type;
-  // 无论类型是否变化，都清空分类树高亮和选中
-  categoryTreeRef.value?.clearCurrentKey();
-  selectedCategoryIds.value = null;
-  selectedCategoryPath.value = null;
-  operatorTableRef.value?.setOperatorType(type);
-}
 
 const handleNodeSelect = (payload: { ids: number[], node: any }) => {
   selectedCategoryIds.value = payload.ids
@@ -107,7 +91,7 @@ const toggleTreeCollapse = () => {
 </script>
 
 <style scoped>
-.operator-page {
+.workflow-page {
   display: flex;
   height: 100%;
   position: relative;

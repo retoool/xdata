@@ -4,7 +4,7 @@ import { http } from '@/utils/http';
 export enum OperatorType {
   BASIC = 'basic',      // 基础算子
   SCRIPT = 'script',    // 脚本算子
-  EXTERNAL = 'external' // 外部算子
+  EXTERNAL = 'external', // 外部算子
 }
 
 // 算子接口
@@ -13,18 +13,20 @@ export interface Operator {
   name: string;
   type: OperatorType;
   categoryId: number;
+  categoryPath?: string[];  // 所属分类路径
   description: string;
   version: string;
   author: string;
+  inputSchema?: string;     // 输入参数Schema (JSON Schema)
+  outputSchema?: string;    // 输出参数Schema (JSON Schema)
   createTime: string;
   updateTime: string;
-  status: 'active' | 'inactive';
   tags: string[];
 }
 
 // 获取算子列表
 export function fetchOperators(params: {
-  categoryId?: string | number;
+  categoryId?: string | number | number[];
   type?: OperatorType;
   keyword?: string;
   page?: number;

@@ -7,6 +7,8 @@ export function fetchCategoryTree(type?: OperatorType) {
   return http.get('/api/operatorCategoryTree', { params });
 }
 
+
+
 // 新增节点（只用 label 字段）
 export function addCategoryNode(data: { parentId?: number; label: string; type?: OperatorType }) {
   const params = data.type ? { type: data.type } : {};

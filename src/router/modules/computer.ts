@@ -2,7 +2,7 @@ export default [
   {
     path: "/computer",
     name: "Computer",
-    redirect: "/operator/index",
+    redirect: "/computer/operator",
     meta: {
       title: "计算管理",
       icon: "cpu"
@@ -17,12 +17,21 @@ export default [
         component: () => import("@/views/computer/operator/index.vue")
       },
       {
-        path: "/computer/task",
-        name: "TaskIndex",
+        path: "/computer/workflow/list",
+        name: "ComputerWorkflow",
         meta: {
-          title: "任务管理"
+          title: "工作流管理"
         },
-        component: () => import("@/views/computer/task/index.vue")
+        component: () => import("@/views/computer/workflow/list/index.vue")
+      },
+      {
+        path: "/computer/workflow/designer/:id",
+        name: "ComputerWorkflowDesigner",
+        meta: {
+          title: "工作流设计器",
+          showLink: false
+        },
+        component: () => import("@/views/computer/workflow/designer/index.vue")
       }
     ]
   }

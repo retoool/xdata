@@ -1,26 +1,48 @@
-import { http } from '@/utils/http';
+import { http } from '@/utils/http'
 
-// 获取树
-export function getTaskCategoryTree() {
-  return http.request('get', '/mock/task-category-tree');
+export interface CategoryNode {
+  id: number
+  label: string
+  children?: CategoryNode[]
 }
 
-// 新增节点
-export function addTaskCategoryNode(data: { parentId: string; name: string; id: string }) {
-  return http.request('post', '/mock/task-category-tree', { data });
+export interface CategoryTreeResponse {
+  code: number
+  msg: string
+  data: CategoryNode[]
 }
 
-// 删除节点（用 POST 代替 DELETE）
-export function deleteTaskCategoryNode(data: { id: string }) {
-  return http.request('post', '/mock/task-category-tree/delete', { data });
+export interface CategoryNodeParams {
+  parentId: number
+  label: string
 }
 
-// 重命名节点
-export function renameTaskCategoryNode(data: { id: string; name: string }) {
-  return http.request('post', '/mock/task-category-tree/rename', { data });
+// 获取分类树
+export function fetchCategoryTree() {
+  return http.request<CategoryTreeResponse>('get', '/category/tree')
 }
 
-// 移动节点
-export function moveTaskCategoryNode(data: { id: string; newParentId: string }) {
-  return http.request('post', '/mock/task-category-tree/move', { data });
+// 新增分类节点
+export function addCategoryNode(data: CategoryNodeParams) {
+  return http.request<CategoryTreeResponse>('post', '/category', { data })
+}
+
+// 编辑分类节点
+export function editCategoryNode(id: number, data: CategoryNodeParams) {
+  return http.request<CategoryTreeResponse>('put', `/category/${id}`, { data })
+}
+
+// 删除分类节点
+export function deleteCategoryNode(id: number) {
+  return http.request<CategoryTreeResponse>('delete', `/category/${id}`)
+}
+
+// 批量删除分类节点
+export function batchDeleteCategoryNodes(ids: number[]) {
+  return http.request<CategoryTreeResponse>('delete', '/category/batch', { data: { ids } })
+}
+
+// 移动分类节点
+export function moveCategoryNode(id: number, targetId: number) {
+  return http.request<CategoryTreeResponse>('post', `/category/${id}/move`, { data: { targetId } })
 } 

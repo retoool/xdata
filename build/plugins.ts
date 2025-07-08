@@ -12,6 +12,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import removeConsole from "vite-plugin-remove-console";
 import { codeInspectorPlugin } from "code-inspector-plugin";
 import { vitePluginFakeServer } from "vite-plugin-fake-server";
+import { viteMockServe } from "vite-plugin-mock";
 
 export function getPluginsList(
   VITE_CDN: boolean,
@@ -46,6 +47,12 @@ export function getPluginsList(
       include: "mock",
       infixName: false,
       enableProd: true
+    }),
+    // mock 服务
+    viteMockServe({
+      mockPath: "mock",
+      enable: true,
+      watchFiles: true
     }),
     // svg组件化支持
     svgLoader(),
