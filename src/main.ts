@@ -2,6 +2,7 @@ import App from "./App.vue";
 import router from "./router";
 import { setupStore } from "@/store";
 import { getPlatformConfig } from "./config";
+import { setupHttpConfig } from "@/utils/http/setup";
 import { MotionPlugin } from "@vueuse/motion";
 // import { useEcharts } from "@/plugins/echarts";
 import { createApp, type Directive } from "vue";
@@ -54,6 +55,7 @@ app.use(VueTippy);
 
 getPlatformConfig(app).then(async config => {
   setupStore(app);
+  setupHttpConfig(); // 配置HTTP工具
   app.use(router);
   await router.isReady();
   injectResponsiveStorage(app, config);
