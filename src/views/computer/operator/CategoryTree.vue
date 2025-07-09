@@ -717,21 +717,21 @@ const handleTreeAreaContextMenu = (event: MouseEvent) => {
 
 <style scoped>
 .custom-tree-container {
-  background: var(--el-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   padding: 16px;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-light);
+  border: none;
   box-sizing: border-box;
   overflow: hidden;
 }
 html.dark .custom-tree-container {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-  border-color: var(--pure-border-color);
+  box-shadow: none;
+  border-color: transparent;
 }
 
 .type-switcher {

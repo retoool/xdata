@@ -29,7 +29,8 @@ export default [
         name: "ComputerWorkflowDesigner",
         meta: {
           title: "工作流设计器",
-          showLink: false
+          showLink: false,
+          activePath: "/computer/workflow/list"  // 指定激活的菜单路径
         },
         component: () => import("@/views/computer/workflow/designer/index.vue")
       }

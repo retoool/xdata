@@ -29,7 +29,7 @@
           <el-icon><Box /></el-icon>
           <span>暂无算子数据</span>
         </div>
-        <el-collapse v-else v-model="activeCategories" accordion>
+        <el-collapse v-else v-model="activeCategories" accordion class="operator-categories">
           <el-collapse-item
             v-for="category in filteredCategories"
             :key="category.id"
@@ -73,7 +73,7 @@
           </el-collapse-item>
         </el-collapse>
       </div>
-    </div>
+    </div
 
     <!-- 右侧设计器区域 -->
     <div class="content-area" :class="{ 'expanded': isPanelCollapsed }">
@@ -779,20 +779,23 @@ const handleKeydown = (event: KeyboardEvent) => {
 }
 </script>
 
+
+
 <style lang="scss" scoped>
 .workflow-designer-page {  
   height: calc(100% - 24px);
+  max-height: calc(100% - 24px); /* 严格限制最大高度 */
+  min-height: 600px;
   display: flex;
-  background-color: var(--el-bg-color-page);
   overflow: hidden;
   position: relative;
 }
 
 .side-panel {
-  width: 280px;
+  width: 320px;
   min-width: 0;
   max-width: 420px;
-  margin-right: 12px;
+  margin-right: 16px;
   display: flex;
   flex-direction: column;
   background-color: var(--el-bg-color);
@@ -803,6 +806,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   opacity: 1;
   transition: all 0.3s ease;
   height: 100%;
+  max-height: 100%; /* 严格限制侧边栏高度 */
 
   &.collapsed {
     width: 0;
@@ -818,6 +822,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex-shrink: 0; /* 防止头部被压缩 */
 
     .panel-title {
       display: flex;
@@ -836,16 +841,70 @@ const handleKeydown = (event: KeyboardEvent) => {
 
   .panel-content {
     flex: 1;
-    overflow: auto;
-    padding: 12px;
+    overflow: hidden; /* 防止内容溢出 */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* 重要：允许flex子项收缩 */
+    height: calc(100% - 80px); /* 精确计算高度，减去头部高度 */
+    max-height: calc(100% - 80px); /* 严格限制高度 */
+
+    /* 算子分类折叠面板的滚动样式 */
+    .operator-categories {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      margin: 0;
+      max-height: 100%; /* 确保不超出父容器 */
+
+      /* 强制 el-collapse 遵守高度限制 */
+      :deep(.el-collapse) {
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+      }
+
+      :deep(.el-collapse-item) {
+        max-height: none;
+      }
+
+      :deep(.el-collapse-item__content) {
+        max-height: none;
+        overflow: visible;
+      }
+
+      /* 强制限制整个折叠面板区域 */
+      &.operator-categories {
+        contain: layout size;
+      }
+
+      /* 自定义滚动条样式 */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: var(--el-fill-color-lighter);
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: var(--el-border-color-dark);
+        border-radius: 3px;
+        
+        &:hover {
+          background: var(--el-border-color-darker);
+        }
+      }
+    }
 
     .loading-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px 0;
+      padding: 40px 12px;
       color: var(--el-text-color-secondary);
+      height: 100%;
 
       .is-loading {
         font-size: 24px;
@@ -858,8 +917,9 @@ const handleKeydown = (event: KeyboardEvent) => {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px 0;
+      padding: 40px 12px;
       color: var(--el-text-color-secondary);
+      height: 100%;
 
       svg {
         font-size: 40px;
@@ -975,6 +1035,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   height: 100%;
+  max-height: 100%; /* 确保不超出父容器高度 */
   overflow: hidden;
 
   &.expanded {
@@ -1131,32 +1192,46 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 .collapse-button {
   position: absolute;
-  left: 292px;
+  left: 320px;
   top: 40%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 64px;
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
-  border-radius: 0 12px 12px 0;
+  width: 20px;
+  height: 48px;
+  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 0 8px 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.18);
-  border: none;
-  outline: none;
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
+  
+  border: 1px solid var(--el-border-color-lighter);
+  border-left: none;
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
 
   &:hover {
-    background: linear-gradient(135deg, var(--el-color-primary-dark-2) 0%, var(--el-color-primary) 100%);
-    box-shadow: 0 6px 20px rgba(64, 158, 255, 0.28);
+    background: var(--el-fill-color-light);
+    border-color: var(--el-border-color);
+    box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.08);
+    
+    .el-icon {
+      color: var(--el-text-color-primary);
+      transform: scale(1.1);
+    }
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.95);
   }
 
   .el-icon {
-    color: #fff;
-    font-size: 16px;
-    transition: transform 0.3s ease;
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+    transition: all 0.2s ease;
 
     &.rotated {
       transform: rotate(180deg);
@@ -1165,7 +1240,9 @@ const handleKeydown = (event: KeyboardEvent) => {
 }
 
 .side-panel.collapsed ~ .collapse-button {
-  left: 12px;
+  left: 1px;
+  border-left: 1px solid var(--el-border-color-lighter);
+  border-radius: 0 8px 8px 0;
 }
 </style>
 

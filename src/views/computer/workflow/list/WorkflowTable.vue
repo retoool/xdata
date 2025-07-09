@@ -259,9 +259,11 @@ import {
 import { getCategoryTree } from '@/api/workflowCategory'
 import type { WorkflowData } from '@/views/computer/workflow/designer/types'
 import { useRouter } from 'vue-router'
+import { useWorkflowStoreHook } from "@/store/modules/workflow"
 
 // 响应式数据
 const router = useRouter()
+const workflowStore = useWorkflowStoreHook()
 const loading = ref(false)
 const tableRef = ref()
 const tableData = ref<WorkflowData[]>([])
@@ -369,6 +371,8 @@ const loadData = async () => {
          const { data } = await getWorkflowList(params)
     tableData.value = data.list
     pagination.total = data.total
+    // 保存总数到状态管理
+    workflowStore.setPagination(pagination.page, pagination.pageSize, pagination.total)
   } catch (error) {
     ElMessage.error('获取数据失败')
   } finally {
@@ -379,6 +383,10 @@ const loadData = async () => {
 // 搜索
 const handleSearch = () => {
   pagination.page = 1
+  // 保存搜索关键字到状态管理
+  workflowStore.setSearchKeyword(searchKeyword.value)
+  // 保存分页信息到状态管理
+  workflowStore.setPagination(pagination.page, pagination.pageSize)
   loadData()
 }
 
@@ -386,6 +394,8 @@ const handleSearch = () => {
 const handleSortChange = ({ prop, order }: any) => {
   sortParams.prop = prop
   sortParams.order = order
+  // 保存排序参数到状态管理
+  workflowStore.setSortParams(prop, order)
   loadData()
 }
 
@@ -393,11 +403,15 @@ const handleSortChange = ({ prop, order }: any) => {
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
   pagination.page = 1
+  // 保存分页信息到状态管理
+  workflowStore.setPagination(pagination.page, pagination.pageSize)
   loadData()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.page = page
+  // 保存分页信息到状态管理
+  workflowStore.setPagination(pagination.page, pagination.pageSize)
   loadData()
 }
 
@@ -716,6 +730,23 @@ const setCategoryId = (categoryId: number | number[]) => {
   loadData()
 }
 
+// 恢复状态
+const restoreState = () => {
+  // 恢复搜索关键字
+  searchKeyword.value = workflowStore.getSearchKeyword
+  
+  // 恢复分页信息
+  const storedPagination = workflowStore.getPagination
+  pagination.page = storedPagination.page
+  pagination.pageSize = storedPagination.pageSize
+  pagination.total = storedPagination.total
+  
+  // 恢复排序参数
+  const storedSortParams = workflowStore.getSortParams
+  sortParams.prop = storedSortParams.prop
+  sortParams.order = storedSortParams.order
+}
+
 // 监听props变化
 watch(() => props.selectedCategoryId, (newCategoryId) => {
   if (newCategoryId) {
@@ -729,6 +760,8 @@ watch(() => props.selectedCategoryId, (newCategoryId) => {
 // 初始化
 onMounted(async () => {
   await loadCategoryTree()
+  // 恢复状态
+  restoreState()
   document.addEventListener('click', closeAllMenus);
   document.addEventListener('keydown', handleKeydown);
 })
@@ -748,19 +781,19 @@ defineExpose({
 
 <style scoped>
 .workflow-table-container {
-  background: var(--el-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   padding: 24px 24px 16px 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-light);
+  border: none;
 }
 
 html.dark .workflow-table-container {
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.2);
-  border-color: var(--pure-border-color);
+  box-shadow: none;
+  border-color: transparent;
 }
 
 .table-toolbar {

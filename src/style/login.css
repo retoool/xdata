@@ -1,46 +1,91 @@
 .wave {
   position: fixed;
-  height: 100%;
-  width: 80%;
+  top: 0;
   left: 0;
-  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
   z-index: -1;
+  transition: opacity 0.3s ease;
+  filter: brightness(0.56) contrast(1.1);
 }
 
 .login-container {
   width: 100vw;
   height: 100vh;
   max-width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-gap: 18rem;
-  padding: 0 2rem;
-}
-
-.img {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-}
-
-.img img {
-  width: 500px;
+  padding: 0 2rem;
 }
 
 .login-box {
   display: flex;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  padding: 40px;
+  transition: all 0.3s ease;
+}
+
+/* 深色主题适配 */
+html.dark .login-box {
+  background: rgba(20, 20, 25, 0.2);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .login-form {
   width: 360px;
 }
 
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+  margin-left: -80px;
+}
+
 .avatar {
-  width: 350px;
-  height: 80px;
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.avatar-text {
+  position: absolute;
+  bottom: 16px;
+  right: -80px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-size: 40px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: filter 0.3s ease;
+}
+
+/* 深色主题下的头像文字阴影优化 */
+html.dark .avatar-text {
+  filter: drop-shadow(0 2px 6px rgba(255, 255, 255, 0.2));
 }
 
 .login-form h2 {
@@ -51,11 +96,23 @@
     bold 200% Consolas,
     Monaco,
     monospace;
+  transition: color 0.3s ease;
+}
+
+/* 深色主题下的文字颜色 */
+html.dark .login-form h2 {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 @media screen and (max-width: 1180px) {
-  .login-container {
-    grid-gap: 9rem;
+  .login-box {
+    padding: 30px;
+  }
+
+  html.dark .login-box {
+    background: rgba(15, 15, 20, 0.25);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
   }
 
   .login-form {
@@ -67,30 +124,180 @@
     margin: 8px 0;
   }
 
-  .img img {
-    width: 360px;
+  .avatar-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 8px;
   }
 
   .avatar {
-    width: 280px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    border-radius: 50%;
+  }
+
+  .avatar-text {
+    position: absolute;
+    bottom: 10px;
+    right: -15px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    z-index: 10;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+    transition: filter 0.3s ease;
+  }
+
+  /* 深色主题下小屏幕的头像文字阴影优化 */
+  html.dark .avatar-text {
+    filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.2));
   }
 }
 
 @media screen and (max-width: 968px) {
-  .wave {
-    display: none;
-  }
-
-  .img {
-    display: none;
-  }
-
-  .login-container {
-    grid-template-columns: 1fr;
-  }
-
   .login-box {
-    justify-content: center;
+    padding: 20px;
+    margin: 0 10px;
   }
+
+  html.dark .login-box {
+    background: rgba(10, 10, 15, 0.3);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+
+  .login-form {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* 主题切换按钮样式优化 */
+.flex-c.absolute.right-5.top-3 {
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.flex-c.absolute.right-5.top-3:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+html.dark .flex-c.absolute.right-5.top-3 {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+html.dark .flex-c.absolute.right-5.top-3:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Element Plus 表单元素毛玻璃效果 */
+.login-form .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.login-form .el-input__wrapper:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.login-form .el-input__wrapper.is-focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Element Plus 表单元素深色主题适配 */
+html.dark .login-form .el-input__wrapper {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+html.dark .login-form .el-input__wrapper:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+html.dark .login-form .el-input__wrapper.is-focus {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+html.dark .login-form .el-input__inner {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+html.dark .login-form .el-input__inner::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* 浅色主题登录按钮效果 */
+.login-form .el-button--primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  border: none;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    0 4px 20px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.login-form .el-button--primary:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(139, 92, 246, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+/* 深色主题登录按钮效果 */
+html.dark .login-form .el-button--primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  border: none;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    0 4px 20px rgba(99, 102, 241, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+html.dark .login-form .el-button--primary:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(139, 92, 246, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }

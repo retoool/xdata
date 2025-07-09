@@ -120,9 +120,14 @@ const toggleTreeCollapse = () => {
   margin-right: 16px;
   display: flex;
   flex-direction: column;
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   opacity: 1;
   transition: opacity 0.5s ease;
+  height: 100%;
 }
 
 .category-tree.collapsed {
@@ -138,48 +143,71 @@ const toggleTreeCollapse = () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 .content-area.expanded {
   margin-left: 0;
 }
 
-/* 最简单的展开收起按钮 */
+/* 现代化的展开收起按钮 */
 .collapse-button {
   position: absolute;
   left: 320px;
   top: 40%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 64px;
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
-  border-radius: 0 12px 12px 0;
+  width: 20px;
+  height: 48px;
+  background: var(--el-bg-color);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--el-border-color-lighter);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.18);
-  border: none;
-  outline: none;
+  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
 }
+
 .collapse-button:hover {
-  background: linear-gradient(135deg, var(--el-color-primary-dark-2) 0%, var(--el-color-primary) 100%);
-  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.28);
+  background: var(--el-fill-color-light);
+  border-color: var(--el-border-color);
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.08);
 }
+
+.collapse-button:hover .el-icon {
+  color: var(--el-text-color-primary);
+  transform: scale(1.1);
+}
+
+.collapse-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 .collapse-button .el-icon {
-  color: #fff;
-  font-size: 16px;
-  transition: transform 0.3s ease;
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
+
 .collapse-button .el-icon.rotated {
   transform: rotate(180deg);
 }
+
 .category-tree.collapsed ~ .collapse-button {
-  left: 0;
-  /* 当侧边栏收起时，按钮位置调整 */
-  transform: translateY(-50%);
+  left: 1px;
+  border-left: 1px solid var(--el-border-color-lighter);
+  border-radius: 0 8px 8px 0;
 }
 </style> 

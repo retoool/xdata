@@ -11,7 +11,7 @@ import type { FormInstance } from "element-plus";
 import { useLayout } from "@/layout/hooks/useLayout";
 import { useUserStoreHook } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
-import { bg, avatar, illustration } from "./utils/static";
+import { bg, avatar } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
 
@@ -102,15 +102,15 @@ useEventListener(document, "keydown", ({ code }) => {
       />
     </div>
     <div class="login-container">
-      <div class="img">
-        <component :is="toRaw(illustration)" />
-      </div>
       <div class="login-box">
         <div class="login-form">
-          <avatar class="avatar" />
-          <Motion>
+          <div class="avatar-container">
+            <img :src="avatar" class="avatar" />
+            <span class="avatar-text">{{ title }}</span>
+          </div>
+          <!-- <Motion>
             <h2 class="outline-hidden">{{ title }}</h2>
-          </Motion>
+          </Motion> -->
 
           <el-form
             ref="ruleFormRef"

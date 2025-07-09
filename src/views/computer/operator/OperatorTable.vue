@@ -1046,19 +1046,19 @@ defineExpose({
 
 <style scoped>
 .operator-table-container {
-  background: var(--el-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   padding: 24px 24px 16px 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-light);
+  border: none;
 }
 
 html.dark .operator-table-container {
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.2);
-  border-color: var(--pure-border-color);
+  box-shadow: none;
+  border-color: transparent;
 }
 
 .table-toolbar {
