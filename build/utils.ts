@@ -51,7 +51,7 @@ const __APP_INFO__ = {
 const wrapperEnv = (envConf: Recordable): ViteEnv => {
   // 默认值
   const ret: ViteEnv = {
-    VITE_PORT: 8848,
+    VITE_PORT: 5173,  // 修改为Vite标准端口
     VITE_PUBLIC_PATH: "",
     VITE_ROUTER_HISTORY: "",
     VITE_CDN: false,

@@ -11,8 +11,8 @@ import removeNoMatch from "vite-plugin-router-warn";
 import { visualizer } from "rollup-plugin-visualizer";
 import removeConsole from "vite-plugin-remove-console";
 import { codeInspectorPlugin } from "code-inspector-plugin";
-import { vitePluginFakeServer } from "vite-plugin-fake-server";
-import { viteMockServe } from "vite-plugin-mock";
+// import { vitePluginFakeServer } from "vite-plugin-fake-server";
+// import { viteMockServe } from "vite-plugin-mock";
 
 export function getPluginsList(
   VITE_CDN: boolean,
@@ -41,19 +41,19 @@ export function getPluginsList(
      * vite-plugin-router-warn只在开发环境下启用，只处理vue-router文件并且只在服务启动或重启时运行一次，性能消耗可忽略不计
      */
     removeNoMatch(),
-    // mock支持
-    vitePluginFakeServer({
-      logger: false,
-      include: "mock",
-      infixName: false,
-      enableProd: true
-    }),
-    // mock 服务
-    viteMockServe({
-      mockPath: "mock",
-      enable: true,
-      watchFiles: true
-    }),
+    // mock支持 - 已禁用，使用后端API
+    // vitePluginFakeServer({
+    //   logger: false,
+    //   include: "mock",
+    //   infixName: false,
+    //   enableProd: true
+    // }),
+    // mock 服务 - 已禁用，使用后端API
+    // viteMockServe({
+    //   mockPath: "mock",
+    //   enable: true,
+    //   watchFiles: true
+    // }),
     // svg组件化支持
     svgLoader(),
     // 自动按需加载图标

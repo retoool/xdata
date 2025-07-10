@@ -151,6 +151,12 @@ function addPathMatch() {
 
 /** 处理动态路由（后端返回的路由） */
 function handleAsyncRoutes(routeList) {
+  // 添加参数校验，防止传入 undefined 或 null
+  if (!routeList || !Array.isArray(routeList)) {
+    console.warn('handleAsyncRoutes: routeList 参数无效，使用空数组');
+    routeList = [];
+  }
+  
   if (routeList.length === 0) {
     usePermissionStoreHook().handleWholeMenus(routeList);
   } else {
@@ -370,6 +376,9 @@ function hasAuth(value: string | Array<string>): boolean {
 }
 
 function handleTopMenu(route) {
+  if (!route) {
+    return null;
+  }
   if (route?.children && route.children.length > 1) {
     if (route.redirect) {
       return route.children.filter(cur => cur.path === route.redirect)[0];
@@ -383,9 +392,20 @@ function handleTopMenu(route) {
 
 /** 获取所有菜单中的第一个菜单（顶级菜单）*/
 function getTopMenu(tag = false): menuType {
-  const topMenu = handleTopMenu(
-    usePermissionStoreHook().wholeMenus[0]?.children[0]
-  );
+  const wholeMenus = usePermissionStoreHook().wholeMenus;
+  if (!wholeMenus || wholeMenus.length === 0) {
+    console.warn("getTopMenu: wholeMenus is empty, returning null");
+    return null;
+  }
+  
+  const firstMenu = wholeMenus[0];
+  if (!firstMenu?.children || firstMenu.children.length === 0) {
+    console.warn("getTopMenu: first menu has no children, returning the menu itself");
+    tag && useMultiTagsStoreHook().handleTags("push", firstMenu);
+    return firstMenu;
+  }
+  
+  const topMenu = handleTopMenu(firstMenu.children[0]);
   tag && useMultiTagsStoreHook().handleTags("push", topMenu);
   return topMenu;
 }

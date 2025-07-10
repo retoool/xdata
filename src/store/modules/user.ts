@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Role, Menu } from '@/types/system'
+import { getLogin, refreshTokenApi } from '@/api/user'
+import { setToken as setAuthToken, removeToken, userKey } from '@/utils/auth'
+import { storageLocal } from "@pureadmin/utils"
+import Cookies from 'js-cookie'
 
 export interface UserState {
   token: string | null
@@ -58,64 +62,38 @@ export const useUserStore = defineStore('user', () => {
 
   const login = async (loginData: { username: string; password: string }) => {
     try {
-      // 这里应该调用登录API
-      // const response = await loginApi(loginData)
+      // 调用真正的后端登录API
+      const response = await getLogin(loginData)
+      
+      if (response.success && response.data) {
+        // 直接设置token和必要的cookie
+        setToken(response.data.accessToken)
+        
+        // 设置multipleTabsKey cookie，这是路由守卫需要的
+        Cookies.set('multiple-tabs', 'true')
 
-      // 模拟登录响应
-      const mockResponse = {
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-          id: 1,
-          username: loginData.username,
-          realName: '测试用户',
-          email: 'test@example.com',
-          avatar: '',
-          departmentId: 1,
-          departmentName: '技术部',
-          status: 1,
-          createTime: new Date().toISOString(),
-          updateTime: new Date().toISOString()
-        } as User,
-        roles: [
-          {
-            id: 1,
-            name: '管理员',
-            code: 'admin',
-            description: '系统管理员',
-            permissions: [
-              'system:user:view',
-              'system:user:create',
-              'system:user:update',
-              'system:user:delete',
-              'system:role:view',
-              'system:role:create',
-              'system:role:update',
-              'system:role:delete',
-              'system:menu:view',
-              'system:menu:create',
-              'system:menu:update',
-              'system:menu:delete',
-              'system:dept:view',
-              'system:dept:create',
-              'system:dept:update',
-              'system:dept:delete'
-            ],
-            status: 1,
-            createTime: new Date().toISOString(),
-            updateTime: new Date().toISOString()
-          }
-        ] as Role[]
+        // 设置用户信息到localStorage，供路由守卫使用
+        const userData = {
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+          expires: new Date(response.data.expires).getTime(),
+          avatar: response.data.avatar || '',
+          username: response.data.username,
+          nickname: response.data.nickname || response.data.username,
+          roles: response.data.roles || [],
+          permissions: response.data.permissions || []
+        }
+        
+        // 存储到localStorage，供路由守卫检查 - 使用userKey保证一致性
+        storageLocal().setItem(userKey, userData)
+
+        // 持久化状态
+        persistState()
+
+        return response
+      } else {
+        throw new Error('登录失败：响应数据格式错误')
       }
-
-      setToken(mockResponse.token)
-      setUserInfo(mockResponse.user)
-      setRoles(mockResponse.roles)
-
-      // 提取所有权限
-      const allPermissions = mockResponse.roles.flatMap(role => role.permissions || [])
-      setPermissions(allPermissions)
-
-      return mockResponse
     } catch (error) {
       console.error('登录失败:', error)
       throw error
@@ -123,6 +101,9 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const logout = () => {
+    // 使用auth工具的removeToken函数，这会清除所有相关数据
+    removeToken()
+    
     setToken(null)
     setUserInfo(null)
     setRoles([])
@@ -224,20 +205,15 @@ export const useUserStore = defineStore('user', () => {
 
   const handRefreshToken = async (data: { refreshToken: string }) => {
     try {
-      // 这里应该调用刷新token的API
-      // const response = await refreshTokenApi(data)
-
-      // 模拟刷新token响应
-      const mockResponse = {
-        data: {
-          accessToken: 'new-access-token-' + Date.now(),
-          refreshToken: 'new-refresh-token-' + Date.now(),
-          expires: (Date.now() + 7200000).toString() // 2小时后过期
-        }
+      // 调用真正的刷新token API
+      const response = await refreshTokenApi(data)
+      
+      if (response.success && response.data) {
+        setToken(response.data.accessToken)
+        return response
+      } else {
+        throw new Error('刷新token失败：响应数据格式错误')
       }
-
-      setToken(mockResponse.data.accessToken)
-      return mockResponse
     } catch (error) {
       console.error('刷新token失败:', error)
       throw error

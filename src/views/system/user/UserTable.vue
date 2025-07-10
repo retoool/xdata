@@ -183,6 +183,16 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Search, Filter } from '@element-plus/icons-vue'
 import type { User, Role } from '@/types/system'
+import { 
+  getUserList, 
+  createUser, 
+  updateUser, 
+  deleteUser, 
+  batchDeleteUsers, 
+  updateUserStatus, 
+  resetUserPassword 
+} from '@/api/system/user'
+import { getAllRoles } from '@/api/system/role'
 import UserForm from './components/UserForm.vue'
 
 // Props
@@ -288,11 +298,14 @@ const handleDelete = async (row: User) => {
     await ElMessageBox.confirm(`确认删除用户 "${row.realName}" 吗？`, '警告', {
       type: 'warning'
     })
-    // TODO: 调用删除接口
+    await deleteUser(row.id)
     ElMessage.success('删除成功')
     loadTableData()
-  } catch {
-    // 用户取消
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除用户失败:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }
 }
 
@@ -308,22 +321,27 @@ const handleBatchDelete = async () => {
       '警告',
       { type: 'warning' }
     )
-    // TODO: 调用批量删除接口
+    const ids = selectedUsers.value.map(user => user.id)
+    await batchDeleteUsers(ids)
     ElMessage.success('批量删除成功')
     loadTableData()
-  } catch {
-    // 用户取消
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error(error.message || '批量删除失败')
+    }
   }
 }
 
 const handleStatusChange = async (row: User) => {
   try {
-    // TODO: 调用状态更新接口
+    await updateUserStatus(row.id, row.status)
     ElMessage.success(row.status ? '用户已启用' : '用户已禁用')
-  } catch (error) {
+  } catch (error: any) {
     // 恢复原状态
     row.status = row.status ? 0 : 1
-    ElMessage.error('状态更新失败')
+    console.error('状态更新失败:', error)
+    ElMessage.error(error.message || '状态更新失败')
   }
 }
 
@@ -332,18 +350,31 @@ const handleResetPassword = async (row: User) => {
     await ElMessageBox.confirm(`确认重置用户 "${row.realName}" 的密码吗？`, '确认', {
       type: 'warning'
     })
-    // TODO: 调用重置密码接口
-    ElMessage.success('密码重置成功，新密码已发送至用户邮箱')
-  } catch {
-    // 用户取消
+    const newPassword = await resetUserPassword(row.id)
+    ElMessage.success(`密码重置成功，新密码为：${newPassword}`)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('重置密码失败:', error)
+      ElMessage.error(error.message || '重置密码失败')
+    }
   }
 }
 
-const handleFormSubmit = (data: User) => {
-  // TODO: 根据formMode调用对应的接口
-  showForm.value = false
-  ElMessage.success(formMode.value === 'create' ? '新增成功' : '编辑成功')
-  loadTableData()
+const handleFormSubmit = async (data: User) => {
+  try {
+    if (formMode.value === 'create') {
+      await createUser(data)
+      ElMessage.success('新增成功')
+    } else {
+      await updateUser(data.id, data)
+      ElMessage.success('编辑成功')
+    }
+    showForm.value = false
+    loadTableData()
+  } catch (error: any) {
+    console.error('提交失败:', error)
+    ElMessage.error(error.message || '操作失败')
+  }
 }
 
 const handleSizeChange = (size: number) => {
@@ -364,7 +395,12 @@ const handleBreadcrumbClick = (index: number) => {
 const loadTableData = async () => {
   loading.value = true
   try {
-    // TODO: 调用用户列表接口
+    const response = await getUserList(searchParams.value)
+    tableData.value = response.records || []
+    pagination.total = response.total || 0
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
+    ElMessage.error('获取用户列表失败')
     tableData.value = []
     pagination.total = 0
   } finally {
@@ -373,8 +409,13 @@ const loadTableData = async () => {
 }
 
 const loadRoleOptions = async () => {
-  // TODO: 加载角色选项
-  roleOptions.value = []
+  try {
+    const response = await getAllRoles()
+    roleOptions.value = response || []
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
+    roleOptions.value = []
+  }
 }
 
 // 监听部门变化

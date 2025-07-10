@@ -13,12 +13,14 @@ import { useUserStore } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
+  import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
 
-import dayIcon from "@/assets/svg/day.svg?component";
+  import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
 import Lock from "~icons/ri/lock-fill";
 import User from "~icons/ri/user-3-fill";
+import { onMounted } from "vue";
+import Cookies from "js-cookie";
 
 defineOptions({
   name: "Login"
@@ -55,13 +57,33 @@ const onLogin = async (formEl: FormInstance | undefined) => {
           // 获取后端路由
           return initRouter().then(() => {
             disabled.value = true;
+            // 获取首页路径，如果获取失败则使用默认路径
+            const topMenu = getTopMenu(true);
+            const targetPath = topMenu?.path || '/welcome';
+            
+            console.log('登录成功，准备跳转到:', targetPath);
+            
             router
-              .push(getTopMenu(true).path)
+              .push(targetPath)
               .then(() => {
                 message("登录成功", { type: "success" });
               })
+              .catch(error => {
+                console.error('路由跳转失败:', error);
+                // 如果跳转失败，尝试跳转到根路径
+                router.push('/').then(() => {
+                  message("登录成功", { type: "success" });
+                }).catch(err => {
+                  console.error('备用路由跳转也失败:', err);
+                  message("登录成功，但页面跳转失败", { type: "warning" });
+                });
+              })
               .finally(() => (disabled.value = false));
           });
+        })
+        .catch(error => {
+          console.error('登录失败:', error);
+          message("登录失败: " + (error.message || '未知错误'), { type: "error" });
         })
         .finally(() => (loading.value = false));
     }
@@ -82,6 +104,23 @@ useEventListener(document, "keydown", ({ code }) => {
   )
     immediateDebounce(ruleFormRef.value);
 });
+
+onMounted(() => {
+  // 清理所有登录状态，确保显示登录页面
+  Cookies.remove('multiple-tabs')
+  localStorage.removeItem('user-info')
+  localStorage.removeItem('userInfo')
+  localStorage.removeItem('roles')
+  localStorage.removeItem('permissions')
+  localStorage.removeItem('menuList')
+  localStorage.removeItem('authorized-token')
+  
+  // 清理用户store状态
+  const userStore = useUserStore()
+  userStore.logout()
+  
+  console.log("登录页面：清理登录状态完成")
+})
 </script>
 
 <template>
