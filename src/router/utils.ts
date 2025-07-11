@@ -120,6 +120,11 @@ function getParentPaths(value: string, routes: RouteRecordRaw[], key = "path") {
 
 /** 查找对应 `path` 的路由信息 */
 function findRouteByPath(path: string, routes: RouteRecordRaw[]) {
+  // 添加参数校验，防止传入 undefined 或 null
+  if (!routes || !Array.isArray(routes) || routes.length === 0) {
+    return null;
+  }
+  
   let res = routes.find((item: { path: string }) => item.path == path);
   if (res) {
     return isProxy(res) ? toRaw(res) : res;
@@ -160,14 +165,30 @@ function handleAsyncRoutes(routeList) {
   if (routeList.length === 0) {
     usePermissionStoreHook().handleWholeMenus(routeList);
   } else {
-    formatFlatteningRoutes(addAsyncRoutes(routeList)).map(
-      (v: RouteRecordRaw) => {
+    const asyncRoutes = formatFlatteningRoutes(addAsyncRoutes(routeList));
+    
+    // 检查路由结构是否存在
+    if (
+      !router.options.routes ||
+      !router.options.routes[0] ||
+      !router.options.routes[0].children
+    ) {
+      // 路由结构不完整时，直接使用 addRoute 添加路由
+      console.info('路由结构初始化中，使用 addRoute 方式添加路由');
+      asyncRoutes.forEach((v: RouteRecordRaw) => {
+        if (!router.hasRoute(v?.name)) {
+          router.addRoute(v);
+        }
+      });
+    } else {
+      // 路由结构存在，继续处理
+      asyncRoutes.forEach((v: RouteRecordRaw) => {
         // 防止重复添加路由
-        if (
-          router.options.routes[0].children.findIndex(
+        const existingRouteIndex = router.options.routes[0].children.findIndex(
             value => value.path === v.path
-          ) !== -1
-        ) {
+        );
+        
+        if (existingRouteIndex !== -1) {
           return;
         } else {
           // 切记将路由push到routes后还需要使用addRoute，这样路由才能正常跳转
@@ -175,17 +196,20 @@ function handleAsyncRoutes(routeList) {
           // 最终路由进行升序
           ascending(router.options.routes[0].children);
           if (!router.hasRoute(v?.name)) router.addRoute(v);
-          const flattenRouters: any = router
-            .getRoutes()
-            .find(n => n.path === "/");
-          // 保持router.options.routes[0].children与path为"/"的children一致，防止数据不一致导致异常
+        }
+      });
+      
+      // 同步路由结构
+      const flattenRouters: any = router.getRoutes().find(n => n.path === "/");
+      if (flattenRouters) {
           flattenRouters.children = router.options.routes[0].children;
           router.addRoute(flattenRouters);
         }
       }
-    );
+    
     usePermissionStoreHook().handleWholeMenus(routeList);
   }
+  
   if (!useMultiTagsStoreHook().getMultiTagsCache) {
     useMultiTagsStoreHook().handleTags("equal", [
       ...routerArrays,
@@ -210,7 +234,7 @@ function initRouter() {
       });
     } else {
       return new Promise(resolve => {
-        getAsyncRoutes().then(({ data }) => {
+        getAsyncRoutes().then((data) => {
           handleAsyncRoutes(cloneDeep(data));
           storageLocal().setItem(key, data);
           resolve(router);
@@ -219,7 +243,7 @@ function initRouter() {
     }
   } else {
     return new Promise(resolve => {
-      getAsyncRoutes().then(({ data }) => {
+      getAsyncRoutes().then((data) => {
         handleAsyncRoutes(cloneDeep(data));
         resolve(router);
       });
@@ -400,7 +424,6 @@ function getTopMenu(tag = false): menuType {
   
   const firstMenu = wholeMenus[0];
   if (!firstMenu?.children || firstMenu.children.length === 0) {
-    console.warn("getTopMenu: first menu has no children, returning the menu itself");
     tag && useMultiTagsStoreHook().handleTags("push", firstMenu);
     return firstMenu;
   }

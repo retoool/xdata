@@ -214,16 +214,16 @@ const selectFirstLeafAndEmit = () => {
 };
 
 const loadTree = async () => {
-  const res = await fetchCategoryTree(selectedOperatorType.value) as any;
-  if (res.code !== 0) {
-    ElMessage.error(res.msg || '获取分类树失败');
-    return;
+  try {
+    const data = await fetchCategoryTree(selectedOperatorType.value) as Tree[];
+    dataSource.value = data;
+    currentKey.value = undefined;
+    treeRef.value?.setCurrentKey(null);
+    checkedKeys.value = [];
+    treeRef.value?.setCheckedKeys([]);
+  } catch (error) {
+    ElMessage.error('获取分类树失败');
   }
-  dataSource.value = res.data;
-  currentKey.value = undefined;
-  treeRef.value?.setCurrentKey(null);
-  checkedKeys.value = [];
-  treeRef.value?.setCheckedKeys([]);
 };
 
 const append = async (data: Data) => {
@@ -235,16 +235,16 @@ const append = async (data: Data) => {
     cancelButtonText: '取消',
   });
   if (value && value.trim()) {
-    const res = await addCategoryNode({ 
-      parentId: id, 
-      label: value.trim(),
-      type: selectedOperatorType.value
-    }) as any;
-    if (res.code !== 0) {
-      ElMessage.error(res.msg || '新增失败');
-      return;
+    try {
+      await addCategoryNode({ 
+        parentId: id, 
+        label: value.trim(),
+        type: selectedOperatorType.value
+      });
+      loadTree();
+    } catch (error) {
+      ElMessage.error('新增失败');
     }
-    loadTree();
   } else if (value !== undefined) {
     ElMessage.error('节点名称不能为空');
   }
@@ -256,16 +256,18 @@ const addRootNode = async () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
   });
-  if (value) {
-    const res = await addCategoryNode({ 
-      label: value,
-      type: selectedOperatorType.value
-    }) as any;
-    if (res.code !== 0) {
-      ElMessage.error(res.msg || '新增失败');
-      return;
+  if (value && value.trim()) {
+    try {
+      await addCategoryNode({ 
+        label: value.trim(),
+        type: selectedOperatorType.value
+      });
+      loadTree();
+    } catch (error) {
+      ElMessage.error('新增失败');
     }
-    loadTree();
+  } else if (value !== undefined) {
+    ElMessage.error('节点名称不能为空');
   }
 };
 
@@ -305,18 +307,18 @@ const batchDelete = async () => {
           pageSize: 1
         }) as any;
         
-        if (operatorsRes.code === 0 && operatorsRes.data.total > 0) {
-          totalOperators += operatorsRes.data.total;
+        if (operatorsRes.total > 0) {
+          totalOperators += operatorsRes.total;
           // 获取子分类名称
           const childCategoryNode = treeRef.value.getNode(childCategoryId);
           if (childCategoryNode) {
             const existingCategory = categoriesWithOperators.find(cat => cat.name === childCategoryNode.data.label);
             if (existingCategory) {
-              existingCategory.count += operatorsRes.data.total;
+              existingCategory.count += operatorsRes.total;
             } else {
               categoriesWithOperators.push({
                 name: childCategoryNode.data.label,
-                count: operatorsRes.data.total
+                count: operatorsRes.total
               });
             }
           }
@@ -354,12 +356,7 @@ const batchDelete = async () => {
     }
     
     // 执行批量删除操作
-    const res = await batchDeleteCategoryNodes(keys, selectedOperatorType.value) as any;
-    if (res.code !== 0) {
-      ElMessage.error(res.msg || '批量删除失败');
-      return;
-    }
-    
+    await batchDeleteCategoryNodes(keys, selectedOperatorType.value);
     ElMessage.success('批量删除成功');
     checkedKeys.value = [];
     treeRef.value.setCheckedKeys([]);
@@ -446,15 +443,15 @@ const handleContextDelete = async () => {
           pageSize: 1
         }) as any;
         
-        if (operatorsRes.code === 0 && operatorsRes.data.total > 0) {
-          totalOperators += operatorsRes.data.total;
+        if (operatorsRes.total > 0) {
+          totalOperators += operatorsRes.total;
           // 获取分类名称
           const categoryNode = treeRef.value?.getNode(categoryId);
           if (categoryNode) {
             categoriesWithOperators.push({
               id: categoryId,
               name: categoryNode.data.label,
-              count: operatorsRes.data.total
+              count: operatorsRes.total
             });
           }
         }
@@ -490,12 +487,7 @@ const handleContextDelete = async () => {
       }
       
       // 执行删除操作
-      const res = await deleteCategoryNode(id, selectedOperatorType.value) as any;
-      if (res.code !== 0) {
-        ElMessage.error(res.msg || '删除失败');
-        return;
-      }
-      
+      await deleteCategoryNode(id, selectedOperatorType.value);
       ElMessage.success('删除成功');
       loadTree();
     } catch (error) {
@@ -515,13 +507,13 @@ const handleContextRename = async () => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
     });
-    if (value) {
-      const res = await editCategoryNode(id, { label: value }, selectedOperatorType.value) as any;
-      if (res.code !== 0) {
-        ElMessage.error(res.msg || '重命名失败');
-        return;
+    if (value && value.trim()) {
+      try {
+        await editCategoryNode(id, { label: value.trim() }, selectedOperatorType.value);
+        loadTree();
+      } catch (error) {
+        ElMessage.error('重命名失败');
       }
-      loadTree();
     }
   }
 };
@@ -594,10 +586,7 @@ const handleDrop = async (draggingNode: any, dropNode: any, dropType: string, ev
     targetId: dropNode.data.id,
     type: dropType
   }, selectedOperatorType.value) as any;
-  if (res.code !== 0) {
-    ElMessage.error(res.msg || '移动失败');
-    return;
-  }
+  // 移动成功，重新加载树
   loadTree();
 }
 

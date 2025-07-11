@@ -1,4 +1,5 @@
 import { http } from '@/utils/http';
+import type { PageResult } from '@/types/system';
 
 // 算子类型枚举
 export enum OperatorType {
@@ -31,43 +32,99 @@ export function fetchOperators(params: {
   keyword?: string;
   page?: number;
   pageSize?: number;
-}) {
-  return http.get('/api/operators', { params });
+  status?: string;
+  author?: string;
+  prop?: string;
+  order?: string;
+}): Promise<PageResult<Operator>> {
+  return http.request<PageResult<Operator>>('get', '/operator/list', { params });
 }
 
 // 获取算子详情
-export function fetchOperatorDetail(id: number) {
-  return http.get(`/api/operators/${id}`);
+export function fetchOperatorDetail(id: number): Promise<Operator> {
+  return http.request<Operator>('get', `/operator/${id}`);
 }
 
 // 新增算子
-export function addOperator(data: Partial<Operator>) {
-  return http.post('/api/operators', { data });
+export function addOperator(data: Partial<Operator>): Promise<Operator> {
+  return http.request<Operator>('post', '/operator', { data });
 }
 
 // 更新算子
-export function updateOperator(id: number, data: Partial<Operator>) {
-  return http.request('put', `/api/operators/${id}`, { data });
+export function updateOperator(id: number, data: Partial<Operator>): Promise<Operator> {
+  return http.request<Operator>('post', `/operator/${id}`, { data });
 }
 
 // 删除算子
-export function deleteOperator(id: number) {
-  return http.request('delete', `/api/operators/${id}`);
+export function deleteOperator(id: number): Promise<void> {
+  return http.request<void>('post', `/operator/${id}/delete`);
 }
 
 // 批量删除算子
-export function batchDeleteOperators(ids: number[]) {
-  return http.post('/api/operators/batch-delete', { data: { ids } });
+export function batchDeleteOperators(ids: number[]): Promise<void> {
+  return http.request<void>('post', '/operator/batch-delete', { data: { ids } });
 }
 
-// 导出算子
+// 执行算子
+export function executeOperator(id: number, input?: any): Promise<any> {
+  return http.request<any>('post', `/operator/${id}/execute`, { data: { input } });
+}
+
+// 激活算子
+export function activateOperator(id: number): Promise<void> {
+  return http.request<void>('post', `/operator/${id}/activate`);
+}
+
+// 停用算子
+export function deactivateOperator(id: number): Promise<void> {
+  return http.request<void>('post', `/operator/${id}/deactivate`);
+}
+
+// 获取算子执行记录
+export function getOperatorExecutions(id: number): Promise<any[]> {
+  return http.request<any[]>('get', `/operator/${id}/executions`);
+}
+
+// 搜索算子
+export function searchOperators(keyword: string): Promise<Operator[]> {
+  return http.request<Operator[]>('get', '/operator/search', { params: { keyword } });
+}
+
+// 根据类型获取算子
+export function getOperatorsByType(type: OperatorType): Promise<Operator[]> {
+  return http.request<Operator[]>('get', '/operator/by-type', { params: { type } });
+}
+
+// 根据状态获取算子
+export function getOperatorsByStatus(status: string): Promise<Operator[]> {
+  return http.request<Operator[]>('get', '/operator/by-status', { params: { status } });
+}
+
+// 根据分类获取算子
+export function getOperatorsByCategory(categoryId: number): Promise<Operator[]> {
+  return http.request<Operator[]>('get', '/operator/by-category', { params: { categoryId } });
+}
+
+// 获取算子统计信息
+export function getOperatorStats(): Promise<any> {
+  return http.request<any>('get', '/operator/stats');
+}
+
+// 获取算子仪表板数据
+export function getOperatorDashboard(): Promise<any> {
+  return http.request<any>('get', '/operator/dashboard');
+}
+
+// 导出算子数据
 export function exportOperators(params: {
-  categoryId?: string | number;
-  type?: OperatorType;
   keyword?: string;
-}) {
-  return http.get('/api/operators/export', {
+  type?: OperatorType;
+  categoryId?: string | number | number[];
+  status?: string;
+  author?: string;
+}): Promise<Blob> {
+  return http.request<Blob>('get', '/operator/export', { 
     params,
-    responseType: 'blob'
+    responseType: 'blob'  // 指定响应类型为blob，用于文件下载
   });
 } 

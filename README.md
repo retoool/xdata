@@ -55,7 +55,3 @@ src/
 ├── store/                 # 状态管理
 └── utils/                 # 工具函数
 ```
-
-## 许可证
-
-[MIT © 2020-present, pure-admin](./LICENSE)

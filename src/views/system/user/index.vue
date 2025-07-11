@@ -1,6 +1,5 @@
 <template>
   <div class="user-management-page">
-    <!-- 左侧部门树 -->
     <div class="department-tree" :class="{ 'collapsed': isTreeCollapsed }">
       <DepartmentTree 
         ref="departmentTreeRef"
@@ -11,8 +10,6 @@
         @batch-delete="handleDepartmentBatchDelete"
       />
     </div>
-    
-    <!-- 右侧用户列表 -->
     <div class="content-area" :class="{ 'expanded': isTreeCollapsed }">
       <UserTable 
         ref="userTableRef"
@@ -21,8 +18,6 @@
         @department-breadcrumb-click="handleDepartmentBreadcrumbClick"
       />
     </div>
-    
-    <!-- 展开/收起按钮 -->
     <div class="collapse-button" @click="toggleTreeCollapse">
       <el-icon :class="{ 'rotated': isTreeCollapsed }">
         <ArrowLeft />
@@ -48,28 +43,41 @@ const selectedDepartmentId = computed(() => systemStore.selectedDepartmentId)
 const selectedDepartmentPath = computed(() => systemStore.selectedDepartmentPath)
 
 // 部门相关操作
-const handleDepartmentSelect = (departmentId: number | null, path: string[]) => {
-  systemStore.setSelectedDepartment(departmentId, path)
+const handleDepartmentSelect = ({ ids, node }: { ids: number[]; node: any }) => {
+  systemStore.setSelectedDepartment(ids[0] ?? null, node ? [node.label] : [])
 }
 
-const handleDepartmentCreate = () => {
-  // TODO: 实现部门创建逻辑
+const handleDepartmentCreate = (department: any) => {
+  // 部门创建成功后刷新部门树
+  departmentTreeRef.value?.loadTree()
 }
 
-const handleDepartmentUpdate = () => {
-  // TODO: 实现部门更新逻辑
+const handleDepartmentUpdate = (department: any) => {
+  // 部门更新成功后刷新部门树
+  departmentTreeRef.value?.loadTree()
 }
 
-const handleDepartmentDelete = () => {
-  // TODO: 实现部门删除逻辑
+const handleDepartmentDelete = (departmentId: number) => {
+  // 部门删除成功后刷新部门树
+  departmentTreeRef.value?.loadTree()
+  // 如果删除的是当前选中的部门，清空选择
+  if (selectedDepartmentId.value === departmentId) {
+    systemStore.clearSelectedDepartment()
+  }
 }
 
-const handleDepartmentBatchDelete = () => {
-  // TODO: 实现部门批量删除逻辑
+const handleDepartmentBatchDelete = (departmentIds: number[]) => {
+  // 部门批量删除成功后刷新部门树
+  departmentTreeRef.value?.loadTree()
+  // 如果删除的部门中包含当前选中的部门，清空选择
+  if (selectedDepartmentId.value && departmentIds.includes(selectedDepartmentId.value)) {
+    systemStore.clearSelectedDepartment()
+  }
 }
 
 const handleDepartmentBreadcrumbClick = (departmentId: number) => {
-  // TODO: 实现面包屑点击逻辑
+  // 面包屑点击时选中对应部门
+  departmentTreeRef.value?.setCurrentKey(departmentId)
 }
 
 // 树形控制
@@ -78,62 +86,108 @@ const toggleTreeCollapse = () => {
 }
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .user-management-page {
   display: flex;
-  height: 100%;
+  height: calc(100% - 24px);
   position: relative;
-  
-  .department-tree {
-    width: 280px;
-    border-right: 1px solid var(--el-border-color);
-    transition: all 0.3s ease;
-    background: var(--el-bg-color);
-    
-    &.collapsed {
-      width: 0;
-      overflow: hidden;
-    }
-  }
-  
-  .content-area {
-    flex: 1;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    
-    &.expanded {
-      margin-left: 0;
-    }
-  }
-  
-  .collapse-button {
-    position: absolute;
-    left: 280px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    width: 20px;
-    height: 40px;
-    background: var(--el-color-primary);
-    border-radius: 0 8px 8px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: var(--el-color-primary-light-3);
-    }
-    
-    .el-icon {
-      transition: transform 0.3s ease;
-      
-      &.rotated {
-        transform: rotate(180deg);
-      }
-    }
-  }
+}
+
+.department-tree {
+  width: 320px;
+  min-width: 0;
+  max-width: 420px;
+  margin-right: 16px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  height: 100%;
+}
+
+.department-tree.collapsed {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  margin-right: 0;
+  opacity: 0;
+}
+
+.content-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.content-area.expanded {
+  margin-left: 0;
+}
+
+/* 现代化的展开收起按钮 */
+.collapse-button {
+  position: absolute;
+  left: 320px;
+  top: 40%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 48px;
+  background: var(--el-bg-color);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--el-border-color-lighter);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
+}
+
+.collapse-button:hover {
+  background: var(--el-fill-color-light);
+  border-color: var(--el-border-color);
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+.collapse-button:hover .el-icon {
+  color: var(--el-text-color-primary);
+  transform: scale(1.1);
+}
+
+.collapse-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.collapse-button .el-icon {
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.collapse-button .el-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.department-tree.collapsed ~ .collapse-button {
+  left: 1px;
+  border-left: 1px solid var(--el-border-color-lighter);
+  border-radius: 0 8px 8px 0;
 }
 </style> 

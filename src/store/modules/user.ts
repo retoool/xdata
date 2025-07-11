@@ -65,35 +65,65 @@ export const useUserStore = defineStore('user', () => {
       // 调用真正的后端登录API
       const response = await getLogin(loginData)
       
-      if (response.success && response.data) {
-        // 直接设置token和必要的cookie
-        setToken(response.data.accessToken)
-        
-        // 设置multipleTabsKey cookie，这是路由守卫需要的
-        Cookies.set('multiple-tabs', 'true')
+      // 直接设置token和必要的cookie
+      setToken(response.accessToken)
+      
+      // 设置multipleTabsKey cookie，这是路由守卫需要的
+      Cookies.set('multiple-tabs', 'true')
 
-        // 设置用户信息到localStorage，供路由守卫使用
-        const userData = {
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken,
-          expires: new Date(response.data.expires).getTime(),
-          avatar: response.data.avatar || '',
-          username: response.data.username,
-          nickname: response.data.nickname || response.data.username,
-          roles: response.data.roles || [],
-          permissions: response.data.permissions || []
-        }
-        
-        // 存储到localStorage，供路由守卫检查 - 使用userKey保证一致性
-        storageLocal().setItem(userKey, userData)
-
-        // 持久化状态
-        persistState()
-
-        return response
-      } else {
-        throw new Error('登录失败：响应数据格式错误')
+      // 设置用户信息到store
+      const userData = {
+        id: 1, // 临时ID，应该从后端获取
+        username: response.username,
+        realName: response.nickname || response.username,
+        avatar: response.avatar || '/src/assets/user.svg', // 确保有默认头像
+        email: '',
+        phone: '',
+        departmentId: 0,
+        departmentName: '',
+        roleIds: [],
+        status: 1,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString()
       }
+      
+      // 设置用户信息到store
+      setUserInfo(userData)
+      
+      // 将字符串角色转换为Role对象（临时处理，应该从后端获取完整的Role对象）
+      const roleObjects: Role[] = (response.roles || []).map((roleCode: string, index: number) => ({
+        id: index + 1,
+        name: roleCode,
+        code: roleCode,
+        description: '',
+        permissions: [],
+        status: 1,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString()
+      }))
+      
+      setRoles(roleObjects)
+      setPermissions(response.permissions || [])
+      
+      // 设置用户信息到localStorage，供路由守卫使用
+      const storageData = {
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        expires: new Date(response.expires).getTime(),
+        avatar: response.avatar || '/src/assets/user.svg', // 确保有默认头像
+        username: response.username,
+        nickname: response.nickname || response.username,
+        roles: response.roles || [],
+        permissions: response.permissions || []
+      }
+      
+      // 存储到localStorage，供路由守卫检查 - 使用userKey保证一致性
+      storageLocal().setItem(userKey, storageData)
+
+      // 持久化状态
+      persistState()
+
+      return response
     } catch (error) {
       console.error('登录失败:', error)
       throw error
@@ -115,6 +145,17 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('roles')
     localStorage.removeItem('permissions')
     localStorage.removeItem('menuList')
+    
+    // 导入router并跳转到登录页
+    import('@/router').then(({ router }) => {
+      router.push('/login').then(() => {
+        console.log('已退出登录，跳转到登录页')
+      }).catch(error => {
+        console.error('跳转到登录页失败:', error)
+        // 强制刷新页面作为备用方案
+        window.location.href = '/login'
+      })
+    })
   }
 
   const updateUserInfo = (info: Partial<User>) => {
@@ -208,17 +249,16 @@ export const useUserStore = defineStore('user', () => {
       // 调用真正的刷新token API
       const response = await refreshTokenApi(data)
       
-      if (response.success && response.data) {
-        setToken(response.data.accessToken)
-        return response
-      } else {
-        throw new Error('刷新token失败：响应数据格式错误')
-      }
+      setToken(response.accessToken)
+      return response
     } catch (error) {
       console.error('刷新token失败:', error)
       throw error
     }
   }
+
+  // 初始化时恢复状态
+  restoreState()
 
   return {
     // State

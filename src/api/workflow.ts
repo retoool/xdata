@@ -1,12 +1,6 @@
 import { http } from "@/utils/http";
 import type { WorkflowData, NodeData, EdgeData } from "@/views/computer/workflow/designer/types";
-
-// API 响应类型
-export interface ApiResponse<T = any> {
-  code: number;
-  msg?: string;
-  data: T;
-}
+import type { ApiResponse, PageResult } from "@/types/system";
 
 // 工作流查询参数
 export interface WorkflowQueryParams {
@@ -21,10 +15,7 @@ export interface WorkflowQueryParams {
 }
 
 // 工作流列表响应
-export interface WorkflowListResponse {
-  list: WorkflowData[];
-  total: number;
-}
+export type WorkflowListResponse = PageResult<WorkflowData>;
 
 // 工作流更新参数
 export interface WorkflowUpdateParams {
@@ -37,56 +28,74 @@ export interface WorkflowUpdateParams {
 }
 
 // 获取工作流列表
-export const getWorkflowList = (params: WorkflowQueryParams) => {
-  return http.request<ApiResponse<WorkflowListResponse>>("get", "/workflow/list", { params });
+export const getWorkflowList = (params: WorkflowQueryParams): Promise<WorkflowListResponse> => {
+  return http.request<WorkflowListResponse>("get", "/workflow/list", { params });
 };
 
 // 获取工作流详情
-export const getWorkflow = (id: string | number) => {
-  return http.request<ApiResponse<WorkflowData>>("get", `/workflow/${id}`);
+export const getWorkflow = (id: string | number): Promise<WorkflowData> => {
+  return http.request<WorkflowData>("get", `/workflow/${id}`);
 };
 
 // 创建工作流
-export const createWorkflow = (data: Omit<WorkflowUpdateParams, "id">) => {
-  return http.request<ApiResponse<WorkflowData>>("post", "/workflow", { data });
+export const createWorkflow = (data: Omit<WorkflowUpdateParams, "id">): Promise<WorkflowData> => {
+  return http.request<WorkflowData>("post", "/workflow", { data });
 };
 
 // 更新工作流
-export const updateWorkflow = (data: WorkflowUpdateParams) => {
-  return http.request<ApiResponse<WorkflowData>>("put", `/workflow/${data.id}`, { data });
+export const updateWorkflow = (data: WorkflowUpdateParams): Promise<WorkflowData> => {
+  return http.request<WorkflowData>("post", `/workflow/${data.id}`, { data });
 };
 
 // 删除工作流
-export const deleteWorkflow = (id: number) => {
-  return http.request<ApiResponse<void>>("delete", `/workflow/${id}`);
+export const deleteWorkflow = (id: number): Promise<void> => {
+  return http.request<void>("post", `/workflow/${id}/delete`);
 };
 
 // 批量删除工作流
-export const batchDeleteWorkflow = (ids: number[]) => {
-  return http.request<ApiResponse<void>>("delete", "/workflow/batch", { data: { ids } });
+export const batchDeleteWorkflow = (ids: number[]): Promise<void> => {
+  return http.request<void>("post", "/workflow/batch-delete", { data: { ids } });
 };
 
 // 发布工作流
-export const publishWorkflow = (id: number) => {
-  return http.request<ApiResponse<void>>("post", `/workflow/${id}/publish`);
+export const publishWorkflow = (id: number): Promise<void> => {
+  return http.request<void>("post", `/workflow/${id}/publish`);
 };
 
-// 归档工作流
-export const archiveWorkflow = (id: number) => {
-  return http.request<ApiResponse<void>>("post", `/workflow/${id}/archive`);
+// 取消发布工作流
+export const unpublishWorkflow = (id: number): Promise<void> => {
+  return http.request<void>("post", `/workflow/${id}/unpublish`);
 };
 
-// 导出工作流
-export const exportWorkflow = (id: string | number) => {
-  return http.request<Blob>("get", `/workflow/${id}/export`, {
-    responseType: "blob"
-  });
+// 执行工作流
+export const executeWorkflow = (id: number): Promise<void> => {
+  return http.request<void>("post", `/workflow/${id}/execute`);
+};
+
+// 停止工作流
+export const stopWorkflow = (id: number): Promise<void> => {
+  return http.request<void>("post", `/workflow/${id}/stop`);
+};
+
+// 获取工作流执行记录
+export const getWorkflowExecutions = (id: number): Promise<any[]> => {
+  return http.request<any[]>("get", `/workflow/${id}/executions`);
+};
+
+// 获取工作流统计信息
+export const getWorkflowStats = (): Promise<any> => {
+  return http.request<any>("get", "/workflow/stats");
+};
+
+// 获取工作流仪表板数据
+export const getWorkflowDashboard = (): Promise<any> => {
+  return http.request<any>("get", "/workflow/dashboard");
 };
 
 // 批量导出工作流
-export const batchExportWorkflow = (ids: Array<string | number>) => {
-  return http.request<Blob>("post", "/workflow/export", {
-    data: { ids },
-    responseType: "blob"
+export const batchExportWorkflow = (ids: number[]) => {
+  return http.request<Blob>("get", "/workflow/export", { 
+    params: { ids },
+    responseType: 'blob'  // 指定响应类型为blob，用于文件下载
   });
 }; 

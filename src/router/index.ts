@@ -134,6 +134,15 @@ router.beforeEach((to: ToRouteType, _from, next) => {
     whiteList.includes(to.fullPath) ? next(_from.fullPath) : next();
   }
   if (Cookies.get(multipleTabsKey) && userInfo) {
+    // 根路径智能重定向
+    if (to.path === "/") {
+      // 优先跳转到动态路由的首页，如果没有则跳转到welcome
+      const topMenu = getTopMenu();
+      const targetPath = topMenu?.path || '/welcome';
+      next({ path: targetPath });
+      return;
+    }
+    
     // 无权限跳转403页面
     if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
       next({ path: "/error/403" });
@@ -161,7 +170,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
             const { path } = to;
             const route = findRouteByPath(
               path,
-              router.options.routes[0].children
+              router.options.routes?.[0]?.children || []
             );
             getTopMenu(true);
             // query、params模式路由传参数的标签页不在此处处理
@@ -191,6 +200,12 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       toCorrectRoute();
     }
   } else {
+    // 未登录用户访问根路径，跳转到登录页
+    if (to.path === "/") {
+      next({ path: "/login" });
+      return;
+    }
+    
     if (to.path !== "/login") {
       if (whiteList.indexOf(to.path) !== -1) {
         next();

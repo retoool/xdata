@@ -390,36 +390,32 @@ const loadWorkflowData = async () => {
   }
 
   try {
-    const res = await getWorkflow(Number(workflowId))
-    if (res.code === 0) {
-      Object.assign(workflowData, res.data)
-      // 转换节点数据为 Vue Flow 格式
-      if (res.data.nodes) {
-        nodes.value = res.data.nodes.map((nodeData: NodeData) => ({
-          id: nodeData.id,
-          type: 'custom',
-          position: nodeData.position,
-          data: {
-            ...nodeData,
-            onSelect: handleNodeSelect,
-            onUpdate: handleNodeUpdate,
-            onDelete: handleNodeDelete
-          }
-        }))
-      }
-      if (res.data.edges) {
-        edges.value = res.data.edges
-      }
-      // 加载完数据后自动适应视图
-      nextTick(() => {
-        fitView({ padding: 0.2 })
-      })
-    } else {
-      ElMessage.error(res.msg || '加载工作流数据失败')
+    const data = await getWorkflow(Number(workflowId)) as any;
+    Object.assign(workflowData, data);
+    // 转换节点数据为 Vue Flow 格式
+    if (data.nodes) {
+      nodes.value = data.nodes.map((nodeData: NodeData) => ({
+        id: nodeData.id,
+        type: 'custom',
+        position: nodeData.position,
+        data: {
+          ...nodeData,
+          onSelect: handleNodeSelect,
+          onUpdate: handleNodeUpdate,
+          onDelete: handleNodeDelete
+        }
+      }));
     }
+    if (data.edges) {
+      edges.value = data.edges;
+    }
+    // 加载完数据后自动适应视图
+    nextTick(() => {
+      fitView({ padding: 0.2 });
+    });
   } catch (error) {
-    console.error('加载工作流数据失败:', error)
-    ElMessage.error('加载工作流数据失败')
+    console.error('加载工作流数据失败:', error);
+    ElMessage.error('加载工作流数据失败');
   }
 }
 
@@ -651,25 +647,21 @@ const loadOperatorData = async () => {
   try {
     loading.value = true;
     // 加载分类树
-    const treeRes = await fetchCategoryTree() as { code: number; msg: string; data: { id: number; label: string }[] }
-    if (treeRes.code === 0) {
-      // 转换数据结构
-      operatorCategories.value = treeRes.data.map(category => ({
-        id: category.id,
-        name: category.label,
-        operators: []
+    const treeRes = await fetchCategoryTree() as { id: number; label: string }[]
+    // 转换数据结构
+    operatorCategories.value = treeRes.map(category => ({
+      id: category.id,
+      name: category.label,
+      operators: []
+    }))
+    
+    // 加载每个分类下的算子
+    for (const category of operatorCategories.value) {
+      const operatorsRes = await fetchOperatorList({ categoryId: category.id })
+      category.operators = operatorsRes.records.map(op => ({
+        ...op,
+        params: []  // 暂时使用空数组，后续可以根据inputSchema生成参数
       }))
-      
-      // 加载每个分类下的算子
-      for (const category of operatorCategories.value) {
-        const operatorsRes = await fetchOperatorList({ categoryId: category.id }) as { code: number; msg: string; data: { list: ApiOperator[]; total: number } }
-        if (operatorsRes.code === 0) {
-          category.operators = operatorsRes.data.list.map(op => ({
-            ...op,
-            params: []  // 暂时使用空数组，后续可以根据inputSchema生成参数
-          }))
-        }
-      }
     }
   } catch (error) {
     console.error('加载算子数据失败:', error)
@@ -721,12 +713,8 @@ const finishEditTitle = () => {
     // 对于新建工作流，只是更新本地数据，保存时会一起提交
     if (!isNewWorkflow.value && workflowData.id) {
       // 对于已存在的工作流，立即调用更新接口
-      updateWorkflow({ id: workflowData.id, name: workflowData.name }).then(res => {
-        if (res.code === 0) {
-          ElMessage.success('工作流名称更新成功');
-        } else {
-          ElMessage.error(res.msg || '工作流名称更新失败');
-        }
+      updateWorkflow({ id: workflowData.id, name: workflowData.name }).then(() => {
+        ElMessage.success('工作流名称更新成功');
       }).catch(() => {
         ElMessage.error('工作流名称更新失败');
       });

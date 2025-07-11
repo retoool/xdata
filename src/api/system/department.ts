@@ -1,6 +1,7 @@
 import { http } from '@/utils/http'
 import type {
   Department,
+  DepartmentFormData,
   DepartmentSearchParams,
   PageResult
 } from '@/types/system'
@@ -10,17 +11,17 @@ import type {
  */
 export class DepartmentApi {
   /**
-   * 获取部门树
+   * 获取部门列表（分页）
    */
-  static async getDepartmentTree(): Promise<Department[]> {
-    return http.request<Department[]>('GET', '/system/department/tree')
+  static async getDepartmentList(params: DepartmentSearchParams): Promise<PageResult<Department>> {
+    return http.request<PageResult<Department>>('GET', '/system/department/list', { params })
   }
 
   /**
-   * 获取部门列表（分页）
+   * 获取部门树形结构
    */
-  static async getDepartmentList(params?: DepartmentSearchParams): Promise<PageResult<Department>> {
-    return http.request<PageResult<Department>>('GET', '/system/department/list', { params })
+  static async getDepartmentTree(): Promise<Department[]> {
+    return http.request<Department[]>('GET', '/system/department/tree')
   }
 
   /**
@@ -33,14 +34,14 @@ export class DepartmentApi {
   /**
    * 创建部门
    */
-  static async createDepartment(data: Partial<Department>): Promise<Department> {
+  static async createDepartment(data: DepartmentFormData): Promise<Department> {
     return http.request<Department>('POST', '/system/department', { data })
   }
 
   /**
    * 更新部门
    */
-  static async updateDepartment(id: number, data: Partial<Department>): Promise<Department> {
+  static async updateDepartment(id: number, data: Partial<DepartmentFormData>): Promise<Department> {
     return http.request<Department>('POST', `/system/department/${id}`, { data })
   }
 
@@ -59,55 +60,39 @@ export class DepartmentApi {
   }
 
   /**
-   * 移动部门（更改父级部门）
+   * 更新部门状态
    */
-  static async moveDepartment(id: number, parentId: number | null): Promise<void> {
-    return http.request<void>('POST', `/system/department/${id}/move`, { data: { parentId } })
-  }
-
-  /**
-   * 获取部门路径
-   */
-  static async getDepartmentPath(id: number): Promise<string[]> {
-    return http.request<string[]>('GET', `/system/department/${id}/path`)
+  static async updateDepartmentStatus(id: number, status: number): Promise<void> {
+    return http.request<void>('POST', `/system/department/${id}/status`, { data: { status } })
   }
 
   /**
    * 检查部门名称是否可用
    */
-  static async checkDepartmentName(name: string, parentId?: number | null, excludeId?: number): Promise<boolean> {
+  static async checkDepartmentName(name: string, parentId?: number, excludeId?: number): Promise<boolean> {
     return http.request<boolean>('POST', '/system/department/check-name', {
       data: { name, parentId, excludeId }
     })
   }
 
   /**
-   * 获取部门下的用户数量
+   * 获取部门统计信息
    */
-  static async getDepartmentUserCount(id: number): Promise<number> {
-    return http.request<number>('GET', `/system/department/${id}/user-count`)
-  }
-
-  /**
-   * 更新部门排序
-   */
-  static async updateDepartmentSort(items: { id: number; sort: number }[]): Promise<void> {
-    return http.request<void>('POST', '/system/department/sort', { data: { items } })
+  static async getDepartmentStats(): Promise<any> {
+    return http.request<any>('GET', '/system/department/stats')
   }
 }
 
 // 导出常用方法
 export const {
-  getDepartmentTree,
   getDepartmentList,
+  getDepartmentTree,
   getDepartmentById,
   createDepartment,
   updateDepartment,
   deleteDepartment,
   batchDeleteDepartments,
-  moveDepartment,
-  getDepartmentPath,
+  updateDepartmentStatus,
   checkDepartmentName,
-  getDepartmentUserCount,
-  updateDepartmentSort
+  getDepartmentStats
 } = DepartmentApi 

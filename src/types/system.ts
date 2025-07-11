@@ -27,14 +27,10 @@ export interface Department {
   id: number
   name: string
   parentId: number | null
-  level: number
   sort: number
-  description?: string
-  status: number // 1:启用 0:禁用
-  userCount?: number // 用户数量
-  createTime: string
-  updateTime: string
+  status: number
   children?: Department[]
+  userCount?: number
 }
 
 // 用户模型
@@ -183,6 +179,14 @@ export interface DepartmentFormData {
   sort: number
   description?: string
   status: number
+}
+
+// 部门统计信息
+export interface DepartmentStats {
+  totalDepartments: number
+  activeDepartments: number
+  inactiveDepartments: number
+  totalUsers: number
 }
 
 // 权限标识枚举

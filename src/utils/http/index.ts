@@ -12,6 +12,7 @@ import type {
 import { stringify } from "qs";
 import NProgress from "../progress";
 import { getToken, formatToken } from "@/utils/auth";
+import { ElMessage } from "element-plus";
 
 // Token处理配置接口
 interface TokenHandlers {
@@ -160,7 +161,20 @@ class PureHttp {
           PureHttp.initConfig.beforeResponseCallback(response);
           return response.data;
         }
-        return response.data;
+
+        // 处理后端标准响应格式
+        const responseData = response.data;
+        if (responseData && typeof responseData === 'object' && 'code' in responseData) {
+          // 检查业务状态码
+          if (responseData.code === 200) {
+            return responseData.data; // 只返回data字段
+          } else {
+            ElMessage.error(responseData.message || '请求失败');
+            return Promise.reject(responseData);
+          }
+        }
+
+        return responseData;
       },
       (error: PureHttpError) => {
         const $error = error;

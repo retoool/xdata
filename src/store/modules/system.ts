@@ -95,6 +95,13 @@ export const useSystemStore = defineStore('system', {
     },
 
     /**
+     * 更新选中的部门路径
+     */
+    updateSelectedDepartmentPath(path: string[]) {
+      this.selectedDepartmentPath = [...path]
+    },
+
+    /**
      * 切换部门树折叠状态
      */
     toggleDepartmentTree() {

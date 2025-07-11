@@ -353,16 +353,12 @@ const categoryOptions = ref<any[]>([])
 // 加载分类树数据
 const loadCategoryTree = async () => {
   try {
-    const res = await fetchCategoryTree(currentType.value) as any
-    if (res.code === 0) {
-      categoryOptions.value = res.data || []
-    } else {
-      throw new Error(res.msg || '加载分类树失败')
-    }
+    const data = await fetchCategoryTree(currentType.value) as any[];
+    categoryOptions.value = data || [];
   } catch (error) {
-    console.error('加载分类树失败:', error)
-    ElMessage.error('加载分类树失败')
-    categoryOptions.value = []
+    console.error('加载分类树失败:', error);
+    ElMessage.error('加载分类树失败');
+    categoryOptions.value = [];
   }
 }
 
@@ -420,15 +416,11 @@ const loadData = async () => {
       params.categoryId = queryCategoryId.value;
     }
     
-    const res = await fetchOperators(params) as any
-    if (res.code === 0) {
-      tableData.value = res.data.list
-      pagination.total = res.data.total
-    } else {
-      ElMessage.error(res.msg || '获取数据失败')
-    }
+    const data = await fetchOperators(params) as any;
+    tableData.value = data.list;
+    pagination.total = data.total;
   } catch (error) {
-    ElMessage.error('获取数据失败')
+    ElMessage.error('获取数据失败');
   } finally {
     loading.value = false
   }
@@ -485,15 +477,11 @@ const handleDelete = async (row: Operator) => {
       type: 'warning'
     })
     
-    const res = await deleteOperator(row.id) as any
-    if (res.code === 0) {
-      ElMessage.success('删除成功')
-      loadData()
-    } else {
-      ElMessage.error(res.msg || '删除失败')
-    }
+    await deleteOperator(row.id);
+    ElMessage.success('删除成功');
+    loadData();
   } catch (error) {
-    // 用户取消删除
+    // 用户取消删除或删除失败
   }
 }
 
@@ -510,15 +498,11 @@ const handleBatchDelete = async () => {
     })
     
     const ids = selectedRows.value.map(row => row.id)
-    const res = await batchDeleteOperators(ids) as any
-    if (res.code === 0) {
-      ElMessage.success('批量删除成功')
-      loadData()
-    } else {
-      ElMessage.error(res.msg || '批量删除失败')
-    }
+    await batchDeleteOperators(ids);
+    ElMessage.success('批量删除成功');
+    loadData();
   } catch (error) {
-    // 用户取消删除
+    // 用户取消删除或删除失败
   }
 }
 
@@ -554,21 +538,15 @@ const handleSubmit = async () => {
     // 构建提交数据，移除categoryPath字段，只保留categoryId
     const { categoryPath, ...submitData } = formData;
     
-    let res: any
-    
     if (formData.id) {
-      res = await updateOperator(formData.id, submitData)
+      await updateOperator(formData.id, submitData);
     } else {
-      res = await addOperator(submitData)
+      await addOperator(submitData);
     }
     
-    if (res.code === 0) {
-      ElMessage.success(formData.id ? '更新成功' : '新增成功')
-      dialogVisible.value = false
-      loadData()
-    } else {
-      ElMessage.error(res.msg || '操作失败')
-    }
+    ElMessage.success(formData.id ? '更新成功' : '新增成功');
+    dialogVisible.value = false;
+    loadData();
   } catch (error) {
     // 表单验证失败
   }

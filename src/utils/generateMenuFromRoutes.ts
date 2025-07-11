@@ -128,43 +128,7 @@ export class MenuDataGenerator {
     }
   }
 
-  /**
-   * 合并生成的菜单与现有mock数据
-   */
-  static mergeWithMockData(generatedMenus: Menu[], mockMenus: Menu[]): Menu[] {
-    const merged: Menu[] = [...mockMenus]
 
-    // 获取已有的路径集合
-    const existingPaths = new Set<string>()
-    const collectPaths = (menus: Menu[]) => {
-      menus.forEach(menu => {
-        existingPaths.add(menu.path)
-        if (menu.children) {
-          collectPaths(menu.children)
-        }
-      })
-    }
-    collectPaths(mockMenus)
-
-    // 只添加不存在的菜单
-    const addUniqueMenus = (menus: Menu[]) => {
-      menus.forEach(menu => {
-        if (!existingPaths.has(menu.path)) {
-          merged.push(menu)
-          existingPaths.add(menu.path)
-          console.log(`➕ 添加新菜单: ${menu.title} (${menu.path})`)
-        }
-
-        if (menu.children) {
-          addUniqueMenus(menu.children)
-        }
-      })
-    }
-
-    addUniqueMenus(generatedMenus)
-
-    return merged
-  }
 
   /**
    * 获取当前系统中所有路由的统计信息

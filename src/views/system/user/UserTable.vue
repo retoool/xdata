@@ -388,7 +388,7 @@ const handleCurrentChange = (current: number) => {
 }
 
 const handleBreadcrumbClick = (index: number) => {
-  // TODO: 实现面包屑点击逻辑
+  // 面包屑点击时选中对应部门
   emit('departmentBreadcrumbClick', index)
 }
 
