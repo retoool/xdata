@@ -421,13 +421,39 @@ function getTopMenu(tag = false): menuType {
     console.warn("getTopMenu: wholeMenus is empty, returning null");
     return null;
   }
-  
+
+  // 递归查找第一个后端菜单的第一个页面
+  function findFirstBackendPage(menus) {
+    for (const menu of menus) {
+      if (menu.meta?.backstage) {
+        if (menu.children && menu.children.length > 0) {
+          const found = findFirstBackendPage(menu.children);
+          if (found) return found;
+        } else if (menu.path && menu.meta?.showLink !== false) {
+          return menu;
+        }
+      } else if (menu.children && menu.children.length > 0) {
+        // 兼容后端菜单包裹在静态 layout 下的情况
+        const found = findFirstBackendPage(menu.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  const backendPage = findFirstBackendPage(wholeMenus);
+  console.debug('[getTopMenu] backendPage:', backendPage);
+  if (backendPage) {
+    tag && useMultiTagsStoreHook().handleTags("push", backendPage);
+    return backendPage;
+  }
+
+  // 兜底：原有逻辑
   const firstMenu = wholeMenus[0];
   if (!firstMenu?.children || firstMenu.children.length === 0) {
     tag && useMultiTagsStoreHook().handleTags("push", firstMenu);
     return firstMenu;
   }
-  
   const topMenu = handleTopMenu(firstMenu.children[0]);
   tag && useMultiTagsStoreHook().handleTags("push", topMenu);
   return topMenu;

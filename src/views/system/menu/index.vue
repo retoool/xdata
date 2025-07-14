@@ -1,18 +1,6 @@
 <template>
   <div class="menu-management">
     <el-container>
-      <el-header height="auto" class="page-header">
-        <div class="header-content">
-          <div class="page-title">
-            <el-icon><MenuIcon /></el-icon>
-            <span>菜单管理</span>
-          </div>
-          <div class="page-description">
-            管理系统菜单结构，配置页面路由和权限标识
-          </div>
-        </div>
-      </el-header>
-      
       <el-main class="page-content">
         <MenuTable ref="menuTableRef" @menu-select="handleMenuSelect" />
       </el-main>
@@ -280,35 +268,6 @@ provide('menuManagement', menuManagementMethods)
   
   .el-container {
     height: 100%;
-  }
-  
-  .page-header {
-    background: var(--el-bg-color);
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    padding: 16px 24px;
-    
-    .header-content {
-      .page-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--el-text-color-primary);
-        margin-bottom: 4px;
-        
-        .el-icon {
-          color: var(--el-color-primary);
-          font-size: 24px;
-        }
-      }
-      
-      .page-description {
-        font-size: 14px;
-        color: var(--el-text-color-secondary);
-        line-height: 1.5;
-      }
-    }
   }
   
   .page-content {

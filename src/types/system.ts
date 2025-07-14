@@ -78,7 +78,6 @@ export interface Menu {
   sort: number
   level: number
   type?: number
-  status: number // 1:启用 0:禁用
   isHidden: boolean
   isKeepAlive: boolean
   isAffix: boolean
@@ -91,6 +90,7 @@ export interface Menu {
   createTime: string
   updateTime: string
   children?: Menu[]
+  permission?: string // 新增，修复linter
 }
 
 // 用户搜索参数
@@ -108,7 +108,6 @@ export interface RoleSearchParams extends SearchParams {
 
 // 菜单搜索参数
 export interface MenuSearchParams extends SearchParams {
-  status?: number
   parentId?: number | null
 }
 
@@ -160,7 +159,6 @@ export interface MenuFormData {
   parentId?: number | null
   sort: number
   type?: number
-  status: number
   isHidden: boolean
   isKeepAlive: boolean
   isAffix: boolean
@@ -169,6 +167,7 @@ export interface MenuFormData {
   affix?: boolean
   redirect?: string
   alwaysShow?: boolean
+  permission?: string
 }
 
 // 部门表单数据
@@ -332,7 +331,7 @@ export const DEFAULT_USER: UserFormData = {
   email: '',
   phone: '',
   employeeNo: '',
-  departmentId: undefined,
+  departmentId: 1, // 系统部门
   roleIds: [],
   status: Status.ENABLED
 }
@@ -352,8 +351,8 @@ export const DEFAULT_MENU: MenuFormData = {
   component: '',
   parentId: null,
   sort: 0,
-  status: Status.ENABLED,
   isHidden: false,
   isKeepAlive: false,
-  isAffix: false
+  isAffix: false,
+  permission: ''
 } 

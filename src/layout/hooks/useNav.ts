@@ -1,7 +1,6 @@
 import { storeToRefs } from "pinia";
 import { getConfig } from "@/config";
 import { emitter } from "@/utils/mitt";
-import Avatar from "@/assets/user.svg";
 import { getTopMenu } from "@/router/utils";
 import { useFullscreen } from "@vueuse/core";
 import type { routeMetaType } from "../types";
@@ -37,14 +36,12 @@ export function useNav() {
     };
   });
 
-  /** 头像（如果头像为空则使用 src/assets/user.svg ） */
   const userAvatar = computed(() => {
     return isAllEmpty(useUserStore().userAvatar)
-      ? Avatar
+      ? "/src/assets/user.svg"
       : useUserStore().userAvatar;
   });
 
-  /** 昵称（如果昵称为空则显示用户名） */
   const username = computed(() => {
     return useUserStore().userName;
   });
@@ -77,9 +74,12 @@ export function useNav() {
     else document.title = meta.title;
   }
 
-  /** 退出登录 */
   function logout() {
     useUserStore().logout();
+  }
+
+  function goToProfile() {
+    router.push("/profile");
   }
 
   function backTopMenu() {
@@ -130,6 +130,7 @@ export function useNav() {
     device,
     layout,
     logout,
+    goToProfile,
     routers,
     $storage,
     isFullscreen,

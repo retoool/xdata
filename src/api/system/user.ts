@@ -70,27 +70,33 @@ export class UserApi {
    * 检查用户名是否可用
    */
   static async checkUsername(username: string, excludeId?: number): Promise<boolean> {
-    return http.request<boolean>('POST', '/system/user/check-username', {
-      data: { username, excludeId }
-    })
+    const data: any = { username }
+    if (excludeId !== undefined) {
+      data.excludeId = excludeId
+    }
+    return http.request<boolean>('POST', '/system/user/check-username', { data })
   }
 
   /**
    * 检查邮箱是否可用
    */
   static async checkEmail(email: string, excludeId?: number): Promise<boolean> {
-    return http.request<boolean>('POST', '/system/user/check-email', {
-      data: { email, excludeId }
-    })
+    const data: any = { email }
+    if (excludeId !== undefined) {
+      data.excludeId = excludeId
+    }
+    return http.request<boolean>('POST', '/system/user/check-email', { data })
   }
 
   /**
    * 检查工号是否可用
    */
   static async checkEmployeeNo(employeeNo: string, excludeId?: number): Promise<boolean> {
-    return http.request<boolean>('POST', '/system/user/check-employee-no', {
-      data: { employeeNo, excludeId }
-    })
+    const data: any = { employeeNo }
+    if (excludeId !== undefined) {
+      data.excludeId = excludeId
+    }
+    return http.request<boolean>('POST', '/system/user/check-employee-no', { data })
   }
 
   /**
@@ -186,3 +192,49 @@ export const {
   updateCurrentUser,
   changePassword
 } = UserApi 
+
+
+export type LoginData = {
+  avatar: string;
+  username: string;
+  nickname: string;
+  roles: Array<string>;
+  permissions: Array<string>;
+  accessToken: string;
+  refreshToken: string;
+  expires: Date;
+};
+
+export type RefreshTokenData = {
+  accessToken: string;
+  refreshToken: string;
+  expires: Date;
+};
+
+export type UpdateUserInfoData = {
+  realName?: string;
+  employeeNo?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+};
+
+/** 登录 */
+export const getLogin = (data?: object): Promise<LoginData> => {
+  return http.request<LoginData>("post", "/login", { data });
+};
+
+/** 刷新`token` */
+export const refreshTokenApi = (data?: object): Promise<RefreshTokenData> => {
+  return http.request<RefreshTokenData>("post", "/refresh-token", { data });
+};
+
+/** 更新用户信息（当前用户） */
+export const updateUserInfo = (data: UpdateUserInfoData): Promise<void> => {
+  return http.request<void>("put", "/system/user/profile", { data });
+};
+
+/** 注销用户 */
+export const logoutUser = (): Promise<void> => {
+  return http.request<void>("post", "/system/user/logout", {});
+}; 

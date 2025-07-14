@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useSystemStore } from '@/store/modules/system'
 import DepartmentTree from './DepartmentTree.vue'
@@ -44,7 +44,7 @@ const selectedDepartmentPath = computed(() => systemStore.selectedDepartmentPath
 
 // 部门相关操作
 const handleDepartmentSelect = ({ ids, node }: { ids: number[]; node: any }) => {
-  systemStore.setSelectedDepartment(ids[0] ?? null, node ? [node.label] : [])
+  systemStore.setSelectedDepartment(ids[0] ?? null, node ? [node.name] : [])
 }
 
 const handleDepartmentCreate = (department: any) => {
@@ -84,6 +84,14 @@ const handleDepartmentBreadcrumbClick = (departmentId: number) => {
 const toggleTreeCollapse = () => {
   systemStore.toggleDepartmentTree()
 }
+
+// 生命周期
+onMounted(() => {
+  // 部门树加载完成后自动选择系统部门
+  setTimeout(() => {
+    departmentTreeRef.value?.selectSystemDepartmentAndEmit()
+  }, 100)
+})
 </script>
 
 <style scoped>

@@ -18,7 +18,7 @@ import { ElMessage } from "element-plus";
 interface TokenHandlers {
   getToken: () => any;
   refreshToken: (refreshToken: string) => Promise<any>;
-  onTokenExpired?: () => void;
+  onTokenExpired?: (error?: any) => void;
 }
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
@@ -184,7 +184,24 @@ class PureHttp {
 
         // 处理401未授权错误
         if ($error.response?.status === 401) {
-          PureHttp.tokenHandlers?.onTokenExpired?.();
+          // 触发token过期处理，传递错误信息
+          PureHttp.tokenHandlers?.onTokenExpired?.($error);
+        }
+
+        // 处理403禁止访问错误（用户被禁用）
+        if ($error.response?.status === 403) {
+          const responseData = $error.response?.data as any;
+          const message = responseData?.message || '用户已被禁用，无法访问系统';
+          ElMessage.error(message);
+          // 触发登出处理
+          PureHttp.tokenHandlers?.onTokenExpired?.($error);
+          return Promise.reject(new Error(message));
+        }
+
+        // 处理其他HTTP错误，提取后端返回的错误信息
+        const responseData = $error.response?.data as any;
+        if (responseData && responseData.message) {
+          return Promise.reject(new Error(responseData.message));
         }
 
         // 所有的响应异常 区分来源为取消请求/非取消请求
@@ -206,7 +223,6 @@ class PureHttp {
       ...param,
       ...axiosConfig
     } as PureHttpRequestConfig;
-
     // 单独处理自定义请求/响应回调
     return new Promise((resolve, reject) => {
       PureHttp.axiosInstance

@@ -21,7 +21,7 @@
       <div class="right-search">
         <el-input
           v-model="searchForm.keyword"
-          placeholder="搜索角色名称、编码、描述"
+          placeholder="搜索角色名、编码、描述"
           clearable
           style="width: 300px"
           @input="handleSearch"
@@ -32,14 +32,16 @@
         </el-input>
         <el-select 
           v-model="searchForm.status" 
-          placeholder="状态" 
+          placeholder="全部状态" 
           clearable
-          style="width: 120px"
+          style="width: 150px"
           @change="handleSearch"
         >
+          <el-option label="全部" :value="undefined" />
           <el-option label="启用" :value="1" />
           <el-option label="禁用" :value="0" />
         </el-select>
+        <el-button :loading="loading" @click="handleRefresh" icon="Refresh" circle title="刷新" />
       </div>
     </div>
     
@@ -53,7 +55,7 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column label="角色名称" width="150" show-overflow-tooltip>
+        <el-table-column prop="name" label="角色名" width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <div class="role-name">
               <el-icon class="role-icon">
@@ -63,8 +65,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="角色编码" width="150" show-overflow-tooltip />
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip>
+        <el-table-column prop="code" label="编码" width="120" show-overflow-tooltip />
+        <el-table-column prop="description" label="描述" width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="description">{{ row.description || '暂无描述' }}</span>
           </template>
@@ -155,9 +157,10 @@
       v-model="showUserDialog"
       :title="`角色【${currentRole?.name}】下的用户`"
       width="800px"
+      @close="resetUserDialog"
     >
       <div v-loading="loadingUsers">
-        <el-table :data="roleUsers" max-height="400">
+        <el-table :data="roleUsers" max-height="400" v-if="roleUsers.length > 0">
           <el-table-column prop="realName" label="姓名" width="120" />
           <el-table-column prop="username" label="用户名" width="120" />
           <el-table-column prop="email" label="邮箱" width="180" />
@@ -171,6 +174,20 @@
           </el-table-column>
           <el-table-column prop="createTime" label="创建时间" width="160" />
         </el-table>
+        <el-empty v-else description="暂无用户" />
+        <el-pagination
+          v-if="userPagination.total > userPagination.size"
+          v-model:current-page="userPagination.current"
+          v-model:page-size="userPagination.size"
+          :total="userPagination.total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          background
+          :disabled="loadingUsers"
+          @current-change="handleUserPageChange"
+          @size-change="handleUserSizeChange"
+          style="margin-top: 12px; text-align: right;"
+        />
       </div>
     </el-dialog>
   </div>
@@ -240,6 +257,8 @@ const searchParams = computed(() => ({
   page: pagination.current,
   size: pagination.size
 }))
+
+const canBatchDelete = computed(() => selectedRoles.value.length > 0 && selectedRoles.value.every(role => role.code !== 'admin' && role.userCount === 0))
 
 // 方法
 const handleSearch = () => {
@@ -359,15 +378,42 @@ const handlePermission = (row: Role) => {
 const handleViewUsers = async (row: Role) => {
   currentRole.value = row
   showUserDialog.value = true
+  userPagination.current = 1
+  loadRoleUsers()
+}
+
+const loadRoleUsers = async () => {
+  if (!currentRole.value) return
   loadingUsers.value = true
-  
   try {
-    roleUsers.value = await getRoleUsers(row.id)
+    const result = await getRoleUsers(currentRole.value.id, {
+      page: userPagination.current,
+      size: userPagination.size
+    })
+    roleUsers.value = result.records
+    userPagination.total = result.total
   } catch (error) {
     ElMessage.error('加载用户列表失败')
   } finally {
     loadingUsers.value = false
   }
+}
+
+const handleUserPageChange = (page: number) => {
+  userPagination.current = page
+  loadRoleUsers()
+}
+
+const handleUserSizeChange = (size: number) => {
+  userPagination.size = size
+  userPagination.current = 1
+  loadRoleUsers()
+}
+
+const resetUserDialog = () => {
+  roleUsers.value = []
+  userPagination.current = 1
+  userPagination.total = 0
 }
 
 const handleFormSubmit = async (data: Role) => {

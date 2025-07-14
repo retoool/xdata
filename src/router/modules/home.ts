@@ -12,15 +12,6 @@ export default {
     showLink: false
   },
   children: [
-    {
-      path: "/welcome",
-      name: "Welcome", 
-      component: () => import("@/views/welcome/index.vue"),
-      meta: {
-        title: "首页",
-        icon: "ep:home-filled",
-        showLink: false
-      }
-    }
+
   ]
 } satisfies RouteConfigsTable;

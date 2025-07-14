@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Role, Menu } from '@/types/system'
-import { getLogin, refreshTokenApi } from '@/api/user'
+import { getLogin, refreshTokenApi } from '@/api/system/user'
 import { setToken as setAuthToken, removeToken, userKey } from '@/utils/auth'
 import { storageLocal } from "@pureadmin/utils"
 import Cookies from 'js-cookie'
@@ -257,8 +257,40 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 处理token过期和用户被禁用
+  const handleTokenExpired = (error?: any) => {
+    // 检查是否是登录接口的错误
+    if (error?.config?.url?.includes('/login')) {
+      // 登录接口的错误，不执行登出操作，让错误继续传播
+      return;
+    }
+    
+    // 检查是否是403错误（用户被禁用）
+    if (error?.response?.status === 403) {
+      console.log('用户已被禁用，执行登出操作');
+      logout();
+      return;
+    }
+    
+    // 其他接口的401错误，执行登出操作
+    console.log('Token已过期，执行登出操作');
+    logout();
+  }
+
   // 初始化时恢复状态
   restoreState()
+
+  // 配置HTTP拦截器的token处理器
+  import('@/utils/http').then(({ PureHttp }) => {
+    PureHttp.setTokenHandlers({
+      getToken: () => {
+        const token = localStorage.getItem('authorized-token');
+        return token ? JSON.parse(token) : null;
+      },
+      refreshToken: (refreshToken: string) => handRefreshToken({ refreshToken }),
+      onTokenExpired: handleTokenExpired
+    });
+  });
 
   return {
     // State

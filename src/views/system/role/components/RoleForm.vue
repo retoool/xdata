@@ -50,12 +50,12 @@
       </el-form-item>
       
       <el-form-item label="角色状态" prop="status">
-        <el-radio-group v-model="formData.status">
-          <el-radio :label="1">
+        <el-radio-group v-model="formData.status" @change="handleStatusChange">
+          <el-radio :value="1">
             <el-tag type="success" size="small">启用</el-tag>
             <span style="margin-left: 8px;">角色可正常使用</span>
           </el-radio>
-          <el-radio :label="0">
+          <el-radio :value="0">
             <el-tag type="danger" size="small">禁用</el-tag>
             <span style="margin-left: 8px;">角色将被禁用，用户无法使用此角色权限</span>
           </el-radio>
@@ -124,7 +124,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Role, RoleFormData, FormMode } from '@/types/system'
 import { UserFilled, Key } from '@element-plus/icons-vue'
@@ -299,8 +299,8 @@ const handleSubmit = async () => {
     }
     
     emit('submit', result)
-  } catch (error) {
-    ElMessage.error('请检查表单数据')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '请检查表单数据')
   } finally {
     submitting.value = false
   }
@@ -320,6 +320,16 @@ const handleTemplateChange = (template: string) => {
   if (selectedTemplateData) {
     formData.permissions = [...selectedTemplateData.permissions]
     ElMessage.success(`已应用"${selectedTemplateData.label}"权限模板`)
+  }
+}
+
+const handleStatusChange = async (val: number) => {
+  if (val === 0) {
+    try {
+      await ElMessageBox.confirm('禁用角色后，用户将无法使用此角色权限，确定要禁用吗？', '提示', { type: 'warning' })
+    } catch {
+      formData.status = 1
+    }
   }
 }
 
@@ -343,7 +353,7 @@ watch(() => props.formData, (newData) => {
     Object.assign(formData, {
       id: newData.id,
       name: newData.name || '',
-      code: newData.code || '',
+      code: props.formMode === 'copy' ? `${newData.code || ''}_copy_${Math.floor(Math.random()*10000)}` : (newData.code || ''),
       description: newData.description || '',
       permissions: newData.permissions || [],
       status: newData.status ?? 1,

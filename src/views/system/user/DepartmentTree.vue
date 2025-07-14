@@ -78,11 +78,11 @@
         <el-icon><Plus /></el-icon>
         {{ contextMenu.data ? '新增子部门' : '新增根部门' }}
       </div>
-      <div v-if="contextMenu.data" class="context-menu-item" @click="handleContextRename">
+      <div v-if="contextMenu.data && contextMenu.data.id !== 1" class="context-menu-item" @click="handleContextRename">
         <el-icon><Edit /></el-icon>
         重命名
       </div>
-      <div v-if="contextMenu.data" class="context-menu-item danger" @click="handleContextDelete">
+      <div v-if="contextMenu.data && contextMenu.data.id !== 1" class="context-menu-item danger" @click="handleContextDelete">
         <el-icon><Delete /></el-icon>
         删除
       </div>
@@ -172,13 +172,14 @@ function getAllChildNodeIds(node: TreeNode): number[] {
   return ids;
 }
 
-const selectFirstLeafAndEmit = () => {
+const selectSystemDepartmentAndEmit = () => {
   nextTick(() => {
-    const firstLeaf = findFirstLeafNode(dataSource.value as TreeNode[]);
-    if (firstLeaf) {
-      treeRef.value?.setCurrentKey(firstLeaf.id);
-      const ids = [firstLeaf.id];
-      emit('node-select', { ids, node: firstLeaf });
+    // 选择系统部门作为默认部门
+    const systemDept = dataSource.value.find(dept => dept.id === 1);
+    if (systemDept) {
+      treeRef.value?.setCurrentKey(systemDept.id);
+      const ids = [systemDept.id];
+      emit('node-select', { ids, node: systemDept });
     }
   });
 };
@@ -425,6 +426,7 @@ const filterNode = (value: string, data: Data) => {
 
 // 修正 renderContent 参数类型
 const renderContent = (h: any, { data, node }: { data: any; node: any }) => {
+  const isSystemDepartment = data.id === 1;
   return h('div', { 
     class: 'custom-tree-node',
     onContextmenu: (event: MouseEvent) => {
@@ -468,7 +470,7 @@ watch(() => props.currentDepartmentId, (newVal) => {
 // 暴露方法
 defineExpose({
   loadTree,
-  selectFirstLeafAndEmit,
+  selectSystemDepartmentAndEmit,
   refreshTree: loadTree,
   setCurrentKey: (key: number | string | null) => {
     currentKey.value = key;
@@ -555,6 +557,16 @@ onBeforeUnmount(() => {
           color: var(--el-text-color-secondary);
           font-size: 12px;
           margin-left: 4px;
+        }
+
+        .system-badge {
+          background-color: var(--el-color-info-light-9);
+          color: var(--el-color-info);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-left: 8px;
+          font-weight: bold;
         }
       }
     }

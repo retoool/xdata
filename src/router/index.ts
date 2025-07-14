@@ -108,8 +108,6 @@ export function resetRouter() {
 /** 路由白名单 */
 const whiteList = ["/login"];
 
-const { VITE_HIDE_HOME } = import.meta.env;
-
 router.beforeEach((to: ToRouteType, _from, next) => {
   if (to.meta?.keepAlive) {
     handleAliveRoute(to, "add");
@@ -136,20 +134,33 @@ router.beforeEach((to: ToRouteType, _from, next) => {
   if (Cookies.get(multipleTabsKey) && userInfo) {
     // 根路径智能重定向
     if (to.path === "/") {
-      // 优先跳转到动态路由的首页，如果没有则跳转到welcome
+      // 如果菜单还没加载，先加载菜单
+      if (usePermissionStoreHook().wholeMenus.length === 0) {
+        initRouter().then(() => {
+          const topMenu = getTopMenu();
+          const targetPath = topMenu?.path;
+          if (targetPath) {
+            next({ path: targetPath });
+          } else {
+            next({ path: "/error/404" });
+          }
+        });
+        return; // 阻止后续执行
+      }
+      // 菜单已加载，正常跳转
       const topMenu = getTopMenu();
-      const targetPath = topMenu?.path || '/welcome';
-      next({ path: targetPath });
+      const targetPath = topMenu?.path;
+      if (targetPath) {
+        next({ path: targetPath });
+      } else {
+        next({ path: "/error/404" });
+      }
       return;
     }
     
     // 无权限跳转403页面
     if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
       next({ path: "/error/403" });
-    }
-    // 开启隐藏首页后在浏览器地址栏手动输入首页welcome路由则跳转到404页面
-    if (VITE_HIDE_HOME === "true" && to.fullPath === "/welcome") {
-      next({ path: "/error/404" });
     }
     if (_from?.name) {
       // name为超链接

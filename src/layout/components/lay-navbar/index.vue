@@ -9,11 +9,13 @@ import LaySidebarTopCollapse from "../lay-sidebar/components/SidebarTopCollapse.
 
 import LogoutCircleRLine from "~icons/ri/logout-circle-r-line";
 import Setting from "~icons/ri/settings-3-line";
+import User from "~icons/ri/user-line";
 
 const {
   layout,
   device,
   logout,
+  goToProfile,
   onPanel,
   pureApp,
   username,
@@ -54,7 +56,14 @@ const {
         </span>
         <template #dropdown>
           <el-dropdown-menu class="logout">
-            <el-dropdown-item @click="logout">
+            <el-dropdown-item @click="goToProfile">
+              <IconifyIconOffline
+                :icon="User"
+                style="margin: 5px"
+              />
+              个人详情
+            </el-dropdown-item>
+            <el-dropdown-item divided @click="logout">
               <IconifyIconOffline
                 :icon="LogoutCircleRLine"
                 style="margin: 5px"

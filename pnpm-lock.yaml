@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@multiavatar/multiavatar':
+        specifier: ^1.0.7
+        version: 1.0.7
       '@pureadmin/descriptions':
         specifier: ^1.2.1
         version: 1.2.1(echarts@5.6.0)(element-plus@2.10.3(vue@3.5.13(typescript@5.8.3)))(typescript@5.8.3)
@@ -56,6 +59,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      jsencrypt:
+        specifier: ^3.3.2
+        version: 3.3.2
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
@@ -95,6 +101,9 @@ importers:
       vue-types:
         specifier: ^6.0.0
         version: 6.0.0(vue@3.5.13(typescript@5.8.3))
+      vuedraggable:
+        specifier: ^4.1.0
+        version: 4.1.0(vue@3.5.13(typescript@5.8.3))
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.8.0
@@ -906,6 +915,9 @@ packages:
 
   '@keyv/serialize@1.0.3':
     resolution: {integrity: sha512-qnEovoOp5Np2JDGonIDL6Ayihw0RhnRh6vxPuHo4RDn1UOzwEo4AeIfpL6UGIrsceWrCMiVPgwRjbHu4vYFc3g==}
+
+  '@multiavatar/multiavatar@1.0.7':
+    resolution: {integrity: sha512-Yg9Uw57bmlErsWL0CSv4d6D4ZqVBE00OZmYr9MRgygoXZdboNtsEI6FbBRw1AY8l88Sm1ARcyojtlm2uwUn0Zg==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2523,6 +2535,9 @@ packages:
     resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
 
+  jsencrypt@3.3.2:
+    resolution: {integrity: sha512-arQR1R1ESGdAxY7ZheWr12wCaF2yF47v5qpB76TtV64H1pyGudk9Hvw8Y9tb/FiTIaaTRUyaSnm5T/Y53Ghm/A==}
+
   jsesc@3.1.0:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
     engines: {node: '>=6'}
@@ -3433,6 +3448,9 @@ packages:
     resolution: {integrity: sha512-bSiSngZ/jWeX93BqeIAbImyTbEihizcwNjFoRUIY/T1wWQsfsm2Vw1agPKylXvQTU7iASGdHhyqRlqQzfz+Htg==}
     engines: {node: '>=18'}
 
+  sortablejs@1.14.0:
+    resolution: {integrity: sha512-pBXvQCs5/33fdN1/39pPL0NZF20LeRbLQ5jtnheIPN9JQAaufGjKdWduZn4U7wCtVuzKhmRkI0DFYHYRbB2H1w==}
+
   sortablejs@1.15.6:
     resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
 
@@ -3895,6 +3913,11 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  vuedraggable@4.1.0:
+    resolution: {integrity: sha512-FU5HCWBmsf20GpP3eudURW3WdWTKIbEIQxh9/8GE806hydR9qZqRRxRE3RjqX7PkuLuMQG/A7n3cfj9rCEchww==}
+    peerDependencies:
+      vue: ^3.0.1
 
   webpack-code-inspector-plugin@0.20.10:
     resolution: {integrity: sha512-I8mSEVbwMtQ1SSdb9pLK7VHqykobdrLvAgbZSKzrGQUGsmTbLmpVTJVs6EJgV1rsl5aoi1BKgmdr77CqaDSnfA==}
@@ -4556,6 +4579,8 @@ snapshots:
   '@keyv/serialize@1.0.3':
     dependencies:
       buffer: 6.0.3
+
+  '@multiavatar/multiavatar@1.0.7': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -6309,6 +6334,8 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  jsencrypt@3.3.2: {}
+
   jsesc@3.1.0: {}
 
   json-buffer@3.0.1: {}
@@ -7140,6 +7167,8 @@ snapshots:
       ansi-styles: 6.2.1
       is-fullwidth-code-point: 5.0.0
 
+  sortablejs@1.14.0: {}
+
   sortablejs@1.15.6: {}
 
   source-map-js@1.2.1: {}
@@ -7630,6 +7659,11 @@ snapshots:
       '@vue/shared': 3.5.13
     optionalDependencies:
       typescript: 5.8.3
+
+  vuedraggable@4.1.0(vue@3.5.13(typescript@5.8.3)):
+    dependencies:
+      sortablejs: 1.14.0
+      vue: 3.5.13(typescript@5.8.3)
 
   webpack-code-inspector-plugin@0.20.10:
     dependencies:

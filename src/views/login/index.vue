@@ -14,6 +14,7 @@ import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
   import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
+import { PasswordCrypto } from "@/utils/crypto";
 
   import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
@@ -40,7 +41,7 @@ const { title } = useNav();
 
 const ruleForm = reactive({
   username: "admin",
-  password: "admin123"
+  password: "admin@123"
 });
 
 const onLogin = async (formEl: FormInstance | undefined) => {
@@ -48,10 +49,28 @@ const onLogin = async (formEl: FormInstance | undefined) => {
   await formEl.validate(valid => {
     if (valid) {
       loading.value = true;
+      
+      // 检查公钥是否已设置
+      if (!PasswordCrypto.isPublicKeySet()) {
+        message("系统错误：公钥未设置", { type: "error" });
+        loading.value = false;
+        return;
+      }
+      
+      // 加密密码
+      let encryptedPassword;
+      try {
+        encryptedPassword = PasswordCrypto.encryptPassword(ruleForm.password);
+      } catch (error) {
+        message("密码加密失败", { type: "error" });
+        loading.value = false;
+        return;
+      }
+      
       useUserStore()
         .login({
           username: ruleForm.username,
-          password: ruleForm.password
+          password: encryptedPassword
         })
         .then(res => {
           // 获取后端路由
@@ -105,7 +124,7 @@ useEventListener(document, "keydown", ({ code }) => {
     immediateDebounce(ruleFormRef.value);
 });
 
-onMounted(() => {
+onMounted(async () => {
   // 清理所有登录状态，确保显示登录页面
   Cookies.remove('multiple-tabs')
   localStorage.removeItem('user-info')
@@ -118,6 +137,27 @@ onMounted(() => {
   // 清理用户store状态
   const userStore = useUserStore()
   userStore.logout()
+  
+  // 获取RSA公钥
+  try {
+    const response = await fetch('/api/v1/public-key')
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.data.publicKey) {
+        PasswordCrypto.setPublicKey(data.data.publicKey)
+        console.log("RSA公钥设置成功")
+      } else {
+        console.error("获取公钥失败：", data.message)
+        message("获取公钥失败，请刷新页面重试", { type: "error" })
+      }
+    } else {
+      console.error("获取公钥请求失败：", response.status)
+      message("获取公钥失败，请刷新页面重试", { type: "error" })
+    }
+  } catch (error) {
+    console.error("获取公钥异常：", error)
+    message("获取公钥失败，请刷新页面重试", { type: "error" })
+  }
   
   console.log("登录页面：清理登录状态完成")
 })

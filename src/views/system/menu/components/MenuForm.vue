@@ -308,11 +308,11 @@
           <el-col :span="12">
             <el-form-item label="菜单状态" prop="status">
               <el-radio-group v-model="formData.status">
-                <el-radio :label="1">
+                <el-radio :value="1">
                   <el-tag type="success" size="small">启用</el-tag>
                   <span style="margin-left: 8px;">正常使用</span>
                 </el-radio>
-                <el-radio :label="0">
+                <el-radio :value="0">
                   <el-tag type="danger" size="small">禁用</el-tag>
                   <span style="margin-left: 8px;">停用菜单</span>
                 </el-radio>
@@ -322,11 +322,11 @@
           <el-col v-if="formData.type !== 3" :span="12">
             <el-form-item label="显示状态" prop="visible">
               <el-radio-group v-model="formData.visible">
-                <el-radio :label="true">
+                <el-radio :value="true">
                   <el-tag type="success" size="small">显示</el-tag>
                   <span style="margin-left: 8px;">在菜单中显示</span>
                 </el-radio>
-                <el-radio :label="false">
+                <el-radio :value="false">
                   <el-tag type="warning" size="small">隐藏</el-tag>
                   <span style="margin-left: 8px;">在菜单中隐藏</span>
                 </el-radio>
@@ -339,11 +339,11 @@
           <el-col :span="12">
             <el-form-item label="是否缓存" prop="cache">
               <el-radio-group v-model="formData.cache">
-                <el-radio :label="true">
+                <el-radio :value="true">
                   <el-tag type="success" size="small">缓存</el-tag>
                   <span style="margin-left: 8px;">缓存该页面</span>
                 </el-radio>
-                <el-radio :label="false">
+                <el-radio :value="false">
                   <el-tag type="info" size="small">不缓存</el-tag>
                   <span style="margin-left: 8px;">不缓存该页面</span>
                 </el-radio>
@@ -353,11 +353,11 @@
           <el-col :span="12">
             <el-form-item label="固定标签" prop="affix">
               <el-radio-group v-model="formData.affix">
-                <el-radio :label="true">
+                <el-radio :value="true">
                   <el-tag type="warning" size="small">固定</el-tag>
                   <span style="margin-left: 8px;">固定在标签栏</span>
                 </el-radio>
-                <el-radio :label="false">
+                <el-radio :value="false">
                   <el-tag type="info" size="small">不固定</el-tag>
                   <span style="margin-left: 8px;">可关闭标签</span>
                 </el-radio>
@@ -368,11 +368,11 @@
         
         <el-form-item v-if="formData.type === 1" label="总是显示" prop="alwaysShow">
           <el-radio-group v-model="formData.alwaysShow">
-            <el-radio :label="true">
+            <el-radio :value="true">
               <el-tag type="warning" size="small">是</el-tag>
               <span style="margin-left: 8px;">总是显示根菜单</span>
             </el-radio>
-            <el-radio :label="false">
+            <el-radio :value="false">
               <el-tag type="info" size="small">否</el-tag>
               <span style="margin-left: 8px;">当只有一个子菜单时隐藏父菜单</span>
             </el-radio>

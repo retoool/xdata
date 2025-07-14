@@ -32,9 +32,18 @@ const {
 const subMenuData = ref([]);
 
 const menuData = computed(() => {
-  return pureApp.layout === "mix" && device.value !== "mobile"
+  function filterVisible(menus) {
+    return menus
+      .filter(menu => menu.visible !== false)
+      .map(menu => ({
+        ...menu,
+        children: menu.children ? filterVisible(menu.children) : []
+      }));
+  }
+  const rawMenus = pureApp.layout === "mix" && device.value !== "mobile"
     ? subMenuData.value
     : usePermissionStoreHook().wholeMenus;
+  return filterVisible(rawMenus);
 });
 
 const loading = computed(() =>

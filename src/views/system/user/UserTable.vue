@@ -99,8 +99,12 @@
         <el-table-column type="selection" width="50" />
         <el-table-column label="头像" width="80">
           <template #default="{ row }">
-            <el-avatar :size="40" :src="row.avatar">
-              {{ row.realName?.charAt(0) }}
+            <el-avatar 
+              :size="40" 
+              :src="row.avatar || defaultAvatar"
+              :icon="!row.avatar ? UserIcon : undefined"
+            >
+              {{ !row.avatar ? row.realName?.charAt(0) : '' }}
             </el-avatar>
           </template>
         </el-table-column>
@@ -127,21 +131,45 @@
               v-model="row.status"
               :active-value="1"
               :inactive-value="0"
+              :disabled="row.id === 1"
               @change="handleStatusChange(row)"
             />
           </template>
         </el-table-column>
-        <el-table-column prop="lastLoginTime" label="最后登录" width="160" />
-        <el-table-column prop="createTime" label="创建时间" width="160" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="最后登录" width="160">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">
+            {{ formatDateTime(row.lastLoginTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" width="160">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="250" fixed="right">
+          <template #default="{ row }">
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="handleEdit(row)"
+              :disabled="row.id === 1"
+            >
               编辑
             </el-button>
-            <el-button type="warning" size="small" @click="handleResetPassword(row)">
+            <el-button 
+              type="warning" 
+              size="small" 
+              @click="handleResetPassword(row)"
+              :disabled="row.id === 1"
+            >
               重置密码
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
+            <el-button 
+              type="danger" 
+              size="small" 
+              @click="handleDelete(row)"
+              :disabled="row.id === 1"
+            >
               删除
             </el-button>
           </template>
@@ -173,6 +201,7 @@
         :form-mode="formMode"
         :department-id="selectedDepartmentId"
         @submit="handleFormSubmit"
+        @cancel="handleFormCancel"
       />
     </el-dialog>
   </div>
@@ -181,7 +210,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Search, Filter } from '@element-plus/icons-vue'
+import { Plus, Delete, Search, Filter, User as UserIcon } from '@element-plus/icons-vue'
 import type { User, Role } from '@/types/system'
 import { 
   getUserList, 
@@ -217,6 +246,9 @@ const tableData = ref<User[]>([])
 const selectedUsers = ref<User[]>([])
 const roleOptions = ref<Role[]>([])
 
+// 默认头像
+const defaultAvatar = ref('')
+
 const searchForm = reactive({
   keyword: '',
   status: undefined as number | undefined,
@@ -249,6 +281,20 @@ const searchParams = computed(() => ({
   size: pagination.size
 }))
 
+// 时间格式化方法
+const formatDateTime = (dateTime: string | undefined) => {
+  if (!dateTime) return '-'
+  const date = new Date(dateTime)
+  if (isNaN(date.getTime())) return '-'
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 // 方法
 const handleSearch = () => {
   pagination.current = 1
@@ -277,7 +323,7 @@ const handleAdd = () => {
     email: '',
     phone: '',
     employeeNo: '',
-    departmentId: props.selectedDepartmentId || undefined,
+    departmentId: props.selectedDepartmentId || 1, // 使用选中的部门或系统部门作为默认值
     roleIds: [],
     status: 1
   }
@@ -295,15 +341,17 @@ const handleEdit = (row: User) => {
 
 const handleDelete = async (row: User) => {
   try {
-    await ElMessageBox.confirm(`确认删除用户 "${row.realName}" 吗？`, '警告', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      '确认删除该用户吗？删除后将无法恢复。',
+      '确认删除',
+      { type: 'warning' }
+    )
     await deleteUser(row.id)
     ElMessage.success('删除成功')
     loadTableData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error('删除用户失败:', error)
+      console.error('删除失败:', error)
       ElMessage.error(error.message || '删除失败')
     }
   }
@@ -334,13 +382,22 @@ const handleBatchDelete = async () => {
 }
 
 const handleStatusChange = async (row: User) => {
+  // 保护系统管理员，不允许禁用
+  if (row.id === 1 && row.status === 0) {
+    ElMessage.error('系统管理员不允许禁用')
+    row.status = 1 // 恢复为启用状态
+    return
+  }
+
   try {
+    console.log('更新用户状态:', { id: row.id, status: row.status })
     await updateUserStatus(row.id, row.status)
     ElMessage.success(row.status ? '用户已启用' : '用户已禁用')
   } catch (error: any) {
     // 恢复原状态
     row.status = row.status ? 0 : 1
     console.error('状态更新失败:', error)
+    console.error('错误详情:', error.response?.data || error)
     ElMessage.error(error.message || '状态更新失败')
   }
 }
@@ -375,6 +432,10 @@ const handleFormSubmit = async (data: User) => {
     console.error('提交失败:', error)
     ElMessage.error(error.message || '操作失败')
   }
+}
+
+const handleFormCancel = () => {
+  showForm.value = false
 }
 
 const handleSizeChange = (size: number) => {
@@ -427,6 +488,8 @@ watch(() => props.selectedDepartmentId, () => {
 // 生命周期
 onMounted(() => {
   loadRoleOptions()
+  // 设置默认头像 - 直接引用SVG文件
+  defaultAvatar.value = '/src/assets/user.svg'
 })
 </script>
 

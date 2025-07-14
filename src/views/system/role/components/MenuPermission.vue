@@ -3,16 +3,16 @@
     <!-- 操作工具栏 -->
     <div class="permission-toolbar">
       <div class="toolbar-left">
-        <el-button size="small" @click="expandAll">
+        <el-button size="small" @click="expandAll" :disabled="loading">
           <el-icon><ArrowDown /></el-icon>展开全部
         </el-button>
-        <el-button size="small" @click="collapseAll">
+        <el-button size="small" @click="collapseAll" :disabled="loading">
           <el-icon><ArrowRight /></el-icon>折叠全部
         </el-button>
-        <el-button type="primary" size="small" @click="checkAll">
+        <el-button type="primary" size="small" @click="checkAll" :disabled="loading">
           <el-icon><Check /></el-icon>全选
         </el-button>
-        <el-button size="small" @click="uncheckAll">
+        <el-button size="small" @click="uncheckAll" :disabled="loading">
           <el-icon><Close /></el-icon>取消全选
         </el-button>
       </div>
@@ -104,6 +104,9 @@
             <el-button type="text" size="small" @click="showPermissionList = !showPermissionList">
               {{ showPermissionList ? '隐藏' : '显示' }}详情
             </el-button>
+            <el-button type="danger" size="small" @click="uncheckAll" :disabled="loading || checkedPermissions.length === 0">
+              一键清空
+            </el-button>
           </div>
         </template>
         
@@ -139,7 +142,7 @@
           <el-collapse-transition>
             <div v-show="showPermissionList" class="permission-list">
               <el-divider>已选择的权限</el-divider>
-              <div class="permission-tags">
+              <div class="permission-tags" style="max-height: 120px; overflow-y: auto;">
                 <el-tag
                   v-for="permission in checkedPermissions"
                   :key="permission"

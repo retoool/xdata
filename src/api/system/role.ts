@@ -3,7 +3,9 @@ import type {
   Role,
   RoleFormData,
   RoleSearchParams,
-  PageResult
+  PageResult,
+  PageParams,
+  User
 } from '@/types/system'
 
 /**
@@ -101,8 +103,8 @@ export class RoleApi {
   /**
    * 获取角色关联的用户
    */
-  static async getRoleUsers(id: number): Promise<any[]> {
-    return http.request<any[]>('GET', `/system/role/${id}/users`)
+  static async getRoleUsers(id: number, params?: PageParams): Promise<PageResult<User>> {
+    return http.request<PageResult<User>>('GET', `/system/role/${id}/users`, { params })
   }
 
   /**
