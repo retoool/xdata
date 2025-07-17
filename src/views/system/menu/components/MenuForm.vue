@@ -46,13 +46,17 @@
                 check-strictly
                 :render-after-expand="false"
                 style="width: 100%"
+                node-key="id"
               >
                 <template #default="{ data }">
-                  <div class="tree-node">
-                    <el-icon v-if="data.icon">
-                      <component :is="data.icon" />
+                  <div class="tree-node" style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <el-icon v-if="data.icon" class="tree-node-icon" style="color: var(--el-text-color-primary); font-size: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px;">
+                      <component :is="useRenderIcon(data.icon)" />
                     </el-icon>
-                    <span>{{ data.title }}</span>
+                    <el-icon v-else class="tree-node-icon" style="color: var(--el-text-color-primary); font-size: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px;">
+                      <MenuIcon />
+                    </el-icon>
+                    <span class="tree-node-title" style="color: var(--el-text-color-primary); font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; opacity: 1; visibility: visible; line-height: 1.4; display: flex; align-items: center;">{{ data.title || '无标题' }}</span>
                     <el-tag 
                       v-if="data.type"
                       :type="getMenuTypeTagType(data.type)" 
@@ -92,37 +96,19 @@
               prop="icon"
             >
               <div class="icon-selector">
-                <el-input
-                  v-model="formData.icon"
-                  placeholder="选择或输入图标"
-                  readonly
-                  style="flex: 1"
-                >
-                  <template #prefix>
-                    <el-icon v-if="formData.icon">
-                      <component :is="formData.icon" />
-                    </el-icon>
-                    <el-icon v-else>
+                <div class="icon-preview">
+                  <div class="icon-wrapper" :title="formData.icon || '未选择图标'">
+                    <component v-if="formData.icon" :is="useRenderIcon(formData.icon)" class="preview-icon" />
+                    <el-icon v-else class="preview-icon placeholder">
                       <Picture />
                     </el-icon>
-                  </template>
-                </el-input>
+                  </div>
+                </div>
                 <el-button @click="showIconSelector">选择图标</el-button>
               </div>
             </el-form-item>
           </el-col>
         </el-row>
-        
-        <el-form-item label="排序号" prop="sort">
-          <el-input-number
-            v-model="formData.sort"
-            :min="0"
-            :max="9999"
-            placeholder="排序号"
-            style="width: 200px"
-          />
-          <div class="form-tip">数字越小越靠前</div>
-        </el-form-item>
       </el-card>
       
       <!-- 路由信息 -->
@@ -132,14 +118,14 @@
             <el-icon><Link /></el-icon>
             <span>路由信息</span>
             <el-button 
-              v-if="canPreviewRoute"
-              type="primary" 
+              v-if="formData.path"
+              type="primary"
+              @click="testRoute(formData.path)"
               size="small" 
               style="margin-left: auto;"
-              @click="previewRoute"
             >
-              <el-icon><View /></el-icon>
-              预览路由
+              <el-icon><VideoPlay /></el-icon>
+              测试路由
             </el-button>
           </div>
         </template>
@@ -159,13 +145,13 @@
                 </template>
               </el-input>
               <div class="form-tip">
-                访问的路由地址，如：/user，外链时以http(s)://开头
+                访问的路由地址，如：/user或user，外链时以http(s)://开头
               </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item 
-              v-if="formData.type === 2" 
+              v-if="formData.type === 2 && !/^https?:\/\//.test(formData.path)" 
               label="路由名称" 
               prop="name"
             >
@@ -198,7 +184,7 @@
         </el-row>
         
         <el-form-item 
-          v-if="formData.type === 2" 
+          v-if="formData.type === 2 && !/^https?:\/\//.test(formData.path)" 
           label="组件路径" 
           prop="component"
         >
@@ -253,7 +239,7 @@
             </template>
           </el-autocomplete>
           <div class="form-tip">
-            组件路径，如：@/views/user/index
+            组件路径请填写如 <b>user/index</b>、<b>welcome/index</b> 这种格式，不要加 <b>@/views/</b> 前缀。
           </div>
         </el-form-item>
         
@@ -275,6 +261,12 @@
           <div class="form-tip">
             设置该路由在侧边栏和面包屑中点击的跳转地址
           </div>
+        </el-form-item>
+        
+        <!-- 外链内嵌配置，仅菜单类型为2且为外链时显示 -->
+        <el-form-item v-if="formData.type === 2 && /^https?:\/\//.test(formData.path)" label="内嵌显示(iframe)" prop="isFrame">
+          <el-switch v-model="formData.isFrame" active-text="在主内容区内嵌" inactive-text="新窗口打开" />
+          <div class="form-tip">勾选后，外链菜单将在主内容区以 iframe 方式内嵌显示，否则在新窗口打开</div>
         </el-form-item>
         
         <!-- 路由验证结果 -->
@@ -389,18 +381,6 @@
       </el-button>
     </div>
     
-    <!-- 路由预览对话框 -->
-    <el-dialog
-      v-model="showRoutePreview"
-      title="路由配置预览"
-      width="800px"
-    >
-      <RoutePreview
-        v-if="showRoutePreview"
-        :menu="formData"
-        @test-route="testRoute"
-      />
-    </el-dialog>
   </div>
 </template>
 
@@ -423,7 +403,14 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { getMenuTree, checkMenuName, checkMenuPath } from '@/api/system/menu'
-import { RouteManager } from '@/utils/routeManager'
+import { 
+  validateComponentPath, 
+  suggestComponentPath, 
+  validateMenuRoute, 
+  getAvailableComponents 
+} from '@/router/utils'
+import { useRenderIcon } from '@/components/ReIcon/src/hooks'
+import { loadCustomIcons, registerCustomIcon } from '@/utils/customIconManager'
 import RoutePreview from './RoutePreview.vue'
 
 // Props
@@ -447,7 +434,6 @@ const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const parentMenuOptions = ref<Menu[]>([])
 const availableComponents = ref<string[]>([])
-const showRoutePreview = ref(false)
 const routeValidation = ref<{ valid: boolean; errors: string[] } | null>(null)
 
 const formData = reactive<MenuFormData>({
@@ -458,7 +444,7 @@ const formData = reactive<MenuFormData>({
   component: '',
   icon: '',
   type: 2,
-  parentId: null,
+  parentId: 0, // 默认为0（根目录）
   sort: 0,
   status: 1,
   isHidden: false,
@@ -468,13 +454,16 @@ const formData = reactive<MenuFormData>({
   cache: false,
   affix: false,
   redirect: '',
-  alwaysShow: false
+  alwaysShow: false,
+  isFrame: false // 新增：外链内嵌配置
 })
 
 const treeSelectProps = {
   value: 'id',
   label: 'title',
-  children: 'children'
+  children: 'children',
+  emitPath: false,
+  checkStrictly: true
 }
 
 // 计算属性
@@ -491,12 +480,40 @@ const canPreviewRoute = computed(() => {
 
 const isComponentValid = computed(() => {
   if (!formData.component || formData.type !== 2) return true
-  return RouteManager.validateComponentPath(formData.component)
+  return validateComponentPath(formData.component)
 })
 
 const componentValidationMessage = computed(() => {
   if (!formData.component) return ''
   return isComponentValid.value ? '组件路径有效' : '组件路径不存在'
+})
+
+// 获取当前选中的菜单数据
+const selectedMenuData = computed(() => {
+  if (formData.parentId === 0) {
+    return {
+      id: 0,
+      title: '根目录',
+      icon: '',
+      type: 1
+    }
+  }
+  
+  // 递归查找选中的菜单
+  const findMenu = (menus: Menu[], targetId: number): Menu | null => {
+    for (const menu of menus) {
+      if (menu.id === targetId) {
+        return menu
+      }
+      if (menu.children && menu.children.length > 0) {
+        const found = findMenu(menu.children, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  return findMenu(parentMenuOptions.value, formData.parentId) || null
 })
 
 // 表单验证规则
@@ -566,6 +583,10 @@ const formRules: FormRules<MenuFormData> = {
   name: [
     {
       validator: (rule, value, callback) => {
+        // 外链不需要路由名称
+        if (/^https?:\/\//.test(formData.path)) {
+          callback()
+        } else
         if (formData.type === 2 && !value) {
           callback(new Error('请输入路由名称'))
         } else {
@@ -583,9 +604,13 @@ const formRules: FormRules<MenuFormData> = {
   component: [
     {
       validator: (rule, value, callback) => {
+        // 外链不需要组件路径
+        if (/^https?:\/\//.test(formData.path)) {
+          callback()
+        } else
         if (formData.type === 2 && !value) {
           callback(new Error('请输入组件路径'))
-        } else if (value && !RouteManager.validateComponentPath(value)) {
+        } else if (value && !validateComponentPath(value)) {
           callback(new Error('组件路径不存在'))
         } else {
           callback()
@@ -599,6 +624,9 @@ const formRules: FormRules<MenuFormData> = {
   ],
   status: [
     { required: true, message: '请选择菜单状态', trigger: 'change' }
+  ],
+  isFrame: [
+    { required: true, message: '请选择内嵌显示方式', trigger: 'change' }
   ]
 }
 
@@ -609,12 +637,15 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     
-    // 路由验证
-    const validation = RouteManager.validateMenuRoute(formData)
-    if (!validation.valid) {
-      routeValidation.value = validation
-      ElMessage.error('路由配置验证失败，请检查并修正')
-      return
+    // 外链菜单直接通过校验
+    if (/^https?:\/\//.test(formData.path)) {
+      routeValidation.value = { valid: true, errors: [] }
+    } else {
+      routeValidation.value = validateMenuRoute(formData)
+      if (!routeValidation.value.valid) {
+        ElMessage.error('路由配置验证失败，请检查并修正')
+        return
+      }
     }
     
     submitting.value = true
@@ -646,6 +677,7 @@ const handleTypeChange = (type: number) => {
     formData.cache = false
     formData.affix = false
     formData.alwaysShow = false
+    formData.isFrame = false // 按钮类型不支持内嵌
   }
   
   // 清除路由验证结果
@@ -683,42 +715,46 @@ const generateRouteName = () => {
 
 
 const searchComponents = (queryString: string, cb: Function) => {
-  const suggestions = availableComponents.value
+  let suggestions = availableComponents.value
     .filter(component => component.toLowerCase().includes(queryString.toLowerCase()))
     .map(component => ({
-      value: component,
+      value: component.replace(/^@\/views\//, ''), // 只保留相对路径
       exists: true
-    }))
-  
+    }));
+
   // 添加智能建议
   if (formData.path || formData.name) {
-    const smartSuggestions = RouteManager.suggestComponentPath(formData.path, formData.name)
-      .filter(suggestion => !suggestions.some(s => s.value === suggestion))
+    const smartSuggestions = suggestComponentPath(formData.path, formData.name)
       .map(suggestion => ({
-        value: suggestion,
+        value: suggestion.replace(/^@\/views\//, ''), // 只保留相对路径
         exists: false
-      }))
-    
-    suggestions.push(...smartSuggestions)
+      }));
+
+    suggestions = suggestions.concat(smartSuggestions);
   }
-  
-  cb(suggestions.slice(0, 10)) // 限制显示数量
-}
+
+  // 去重（只保留第一个出现的 value）
+  const seen = new Set();
+  const uniqueSuggestions = suggestions.filter(item => {
+    if (seen.has(item.value)) return false;
+    seen.add(item.value);
+    return true;
+  });
+
+  cb(uniqueSuggestions.slice(0, 10)); // 限制显示数量
+};
 
 const handleComponentSelect = (item: { value: string }) => {
   formData.component = item.value
 }
 
 const suggestComponent = () => {
-  const suggestions = RouteManager.suggestComponentPath(formData.path, formData.name)
-  if (suggestions.length > 0) {
-    formData.component = suggestions[0]
-  }
-}
-
-const previewRoute = () => {
-  showRoutePreview.value = true
-}
+  if (!formData.path) return;
+  // 去掉开头的 /，并补全 index
+  let path = formData.path.replace(/^\//, '');
+  if (!path) return;
+  formData.component = `${path}/index`;
+};
 
 const testRoute = (path: string) => {
   // 在新窗口中测试路由
@@ -732,8 +768,21 @@ const showIconSelector = () => {
   }
 }
 
-const setIcon = (icon: string) => {
+const setIcon = async (icon: string) => {
   formData.icon = icon
+  
+  // 如果是自定义图标，确保它已经被注册
+  if (icon && icon.startsWith('custom/')) {
+    try {
+      const customIconData = await loadCustomIcons()
+      const customIcon = customIconData.find(ci => ci.iconName === icon)
+      if (customIcon) {
+        registerCustomIcon(customIcon.iconName, customIcon.svgContent)
+      }
+    } catch (error) {
+      console.warn('Failed to register custom icon:', error)
+    }
+  }
 }
 
 const getMenuTypeText = (type: number): string => {
@@ -757,38 +806,70 @@ const getMenuTypeTagType = (type: number) => {
 const loadParentMenuOptions = async () => {
   try {
     const menuTree = await getMenuTree()
-    
-    // 构建父菜单选项，排除按钮类型和当前编辑的菜单及其子菜单
+
+    // 构建父菜单选项，规则与菜单移动一致
     const buildOptions = (menus: Menu[], level = 0): Menu[] => {
-      const options: Menu[] = []
+      if (!menus || menus.length === 0) return []
       
-      menus.forEach(menu => {
-        // 排除按钮类型菜单
-        if (menu.type === 3) return
-        
-        // 排除当前编辑的菜单及其子菜单
-        if (props.formMode === 'edit' && formData.id) {
-          if (menu.id === formData.id || isDescendant(menu, formData.id)) {
-            return
+      menus = [...menus].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+      return menus
+        .filter(menu => {
+          // 规则限制
+          if (formData.type === 1) {
+            // 目录只能选根目录或目录（根目录在外层加，不在这里）
+            return menu.type === 1
+          } else if (formData.type === 2) {
+            // 菜单只能选目录
+            return menu.type === 1
+          } else if (formData.type === 3) {
+            // 按钮只能选菜单
+            return menu.type === 2
           }
-        }
-        
-        options.push({
-          ...menu,
-          disabled: level >= 2 // 最多支持3级菜单
+          return true
         })
-        
-        if (menu.children && menu.children.length > 0) {
-          const childOptions = buildOptions(menu.children, level + 1)
-          options.push(...childOptions)
-        }
-      })
-      
-      return options
+        .map(menu => {
+          const children = menu.children && menu.children.length > 0
+            ? buildOptions(menu.children, level + 1)
+            : []
+          return {
+            ...menu,
+            children,
+            disabled: false // 具体禁用逻辑已在filter中处理
+          }
+        })
     }
-    
-    parentMenuOptions.value = buildOptions(menuTree)
+
+    // 添加根目录选项
+    parentMenuOptions.value = [
+      {
+        id: 0,
+        title: '根目录',
+        name: 'root',
+        icon: '',
+        path: '',
+        component: '',
+        parentId: null,
+        sort: 0,
+        level: 1,
+        type: 1,
+        status: 1,
+        isHidden: false,
+        isKeepAlive: false,
+        isAffix: false,
+        visible: true,
+        cache: false,
+        affix: false,
+        redirect: '',
+        alwaysShow: false,
+        permission: '',
+        disabled: false, // 根目录本身可选
+        children: buildOptions(menuTree),
+        createTime: '',
+        updateTime: ''
+      }
+    ]
   } catch (error) {
+    console.error('加载父菜单选项失败:', error)
     ElMessage.error('加载父菜单选项失败')
   }
 }
@@ -819,14 +900,15 @@ watch(() => props.formData, (newData) => {
       component: newData.component || '',
       icon: newData.icon || '',
       type: newData.type ?? 2,
-      parentId: newData.parentId || props.parentMenu?.id || null,
+      parentId: newData.parentId || props.parentMenu?.id || 0, // 默认为0（根目录）
       sort: newData.sort ?? 0,
       status: newData.status ?? 1,
       visible: newData.visible ?? true,
       cache: newData.cache ?? false,
       affix: newData.affix ?? false,
       redirect: newData.redirect || '',
-      alwaysShow: newData.alwaysShow ?? false
+      alwaysShow: newData.alwaysShow ?? false,
+      isFrame: newData.isFrame ?? false // 监听新增字段
     })
   }
 }, { immediate: true, deep: true })
@@ -841,14 +923,21 @@ watch(() => props.parentMenu, (newParentMenu) => {
 // 监听表单数据变化，实时验证路由
 watch(() => [formData.path, formData.name, formData.component, formData.type], () => {
   if (formData.type !== 3 && (formData.path || formData.name)) {
-    routeValidation.value = RouteManager.validateMenuRoute(formData)
+    if (/^https?:\/\//.test(formData.path)) {
+      routeValidation.value = { valid: true, errors: [] }
+    } else {
+      routeValidation.value = validateMenuRoute(formData)
+    }
   }
 }, { deep: true })
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   loadParentMenuOptions()
-  availableComponents.value = RouteManager.getAvailableComponents()
+  availableComponents.value = getAvailableComponents()
+  
+  // 加载自定义图标
+  await loadCustomIcons()
 })
 
 // 暴露方法
@@ -882,12 +971,40 @@ defineExpose({
   .icon-selector {
     display: flex;
     gap: 8px;
-  }
-  
-  .tree-node {
-    display: flex;
     align-items: center;
-    gap: 8px;
+    
+    .icon-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background-color: var(--el-fill-color-light);
+        border: 1px solid var(--el-border-color-light);
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        
+        &:hover {
+          border-color: var(--el-color-primary-light-6);
+          background-color: var(--el-color-primary-light-9);
+        }
+        
+        .preview-icon {
+          color: var(--el-text-color-primary);
+          font-size: 18px;
+          
+          &.placeholder {
+            color: var(--el-text-color-placeholder);
+          }
+        }
+      }
+    }
   }
   
   .form-footer {

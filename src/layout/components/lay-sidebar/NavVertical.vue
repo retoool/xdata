@@ -46,6 +46,10 @@ const menuData = computed(() => {
   return filterVisible(rawMenus);
 });
 
+watch(menuData, (val) => {
+  console.log('【调试】菜单栏 menuData:', val);
+}, { immediate: true });
+
 const loading = computed(() =>
   pureApp.layout === "mix" ? false : menuData.value.length === 0 ? true : false
 );

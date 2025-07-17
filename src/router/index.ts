@@ -118,7 +118,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
   }
   const userInfo = storageLocal().getItem<DataInfo<number>>(userKey);
   NProgress.start();
-  const externalLink = isUrl(to?.name as string);
+  const externalLink = isUrl(to?.name as string) || isUrl(to?.path as string);
   if (!externalLink) {
     to.matched.some(item => {
       if (!item.meta.title) return "";
@@ -163,9 +163,8 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       next({ path: "/error/403" });
     }
     if (_from?.name) {
-      // name为超链接
       if (externalLink) {
-        openLink(to?.name as string);
+        openLink(to?.name as string || to?.path as string);
         NProgress.done();
       } else {
         toCorrectRoute();

@@ -78,6 +78,7 @@ export interface Menu {
   sort: number
   level: number
   type?: number
+  status?: number // 0:禁用 1:启用
   isHidden: boolean
   isKeepAlive: boolean
   isAffix: boolean
@@ -91,6 +92,7 @@ export interface Menu {
   updateTime: string
   children?: Menu[]
   permission?: string // 新增，修复linter
+  isFrame?: boolean // 新增，是否内嵌外链
 }
 
 // 用户搜索参数
@@ -159,6 +161,7 @@ export interface MenuFormData {
   parentId?: number | null
   sort: number
   type?: number
+  status?: number // 0:禁用 1:启用
   isHidden: boolean
   isKeepAlive: boolean
   isAffix: boolean
@@ -168,6 +171,7 @@ export interface MenuFormData {
   redirect?: string
   alwaysShow?: boolean
   permission?: string
+  isFrame?: boolean // 新增，是否内嵌外链
 }
 
 // 部门表单数据

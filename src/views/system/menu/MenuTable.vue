@@ -57,15 +57,17 @@
         <el-table-column type="selection" width="50" />
         
         <!-- 菜单名称 -->
-        <el-table-column label="菜单名称" min-width="180" show-overflow-tooltip>
+        <el-table-column label="菜单名称" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <div class="menu-title" @click="handleMenuTitleClick(row)" style="cursor: pointer;">
-              <el-icon v-if="row.icon" class="menu-icon">
-                <component :is="row.icon" />
-              </el-icon>
-              <el-icon v-else class="menu-icon default-icon">
-                <Menu />
-              </el-icon>
+              <div class="menu-icon-wrapper">
+                <el-icon v-if="row.icon" class="menu-icon">
+                  <component :is="useRenderIcon(row.icon)" />
+                </el-icon>
+                <el-icon v-else class="menu-icon default-icon">
+                  <Menu />
+                </el-icon>
+              </div>
               <span class="title-text">{{ row.title }}</span>
               <el-tag 
                 :type="getMenuTypeTagType(row.type)" 
@@ -165,20 +167,18 @@
     </div>
     
     <!-- 菜单详情面板 -->
-    <el-drawer
+    <el-dialog
       v-model="showMenuDetail"
       title="菜单详情"
-      direction="rtl"
-      size="400px"
+      width="600px"
+      :close-on-click-modal="false"
+      center
     >
       <MenuDetail 
         v-if="currentMenu"
         :menu="currentMenu"
-        @edit="handleEdit"
-        @delete="handleDelete"
-        @add-child="handleAddChild"
       />
-    </el-drawer>
+    </el-dialog>
     
     <!-- 移动菜单弹窗 -->
     <el-dialog
@@ -219,12 +219,14 @@
                   :style="{ color: isMenuDisabled(data) ? '#ccc' : '' }"
                   :title="getMenuDisabledReason(data)"
                 >
-                  <el-icon v-if="data.icon" class="menu-icon">
-                    <component :is="data.icon" />
-                  </el-icon>
-                  <el-icon v-else class="menu-icon default-icon">
-                    <Menu />
-                  </el-icon>
+                  <div class="tree-menu-icon-wrapper">
+                    <el-icon v-if="data.icon" class="tree-menu-icon">
+                      <component :is="useRenderIcon(data.icon)" />
+                    </el-icon>
+                    <el-icon v-else class="tree-menu-icon default-icon">
+                      <Menu />
+                    </el-icon>
+                  </div>
                   {{ data.title }}
                   <el-tag size="small" :type="getMenuTypeTagType(data.type)" style="margin-left: 8px;">
                     {{ getMenuTypeText(data.type) }}
@@ -270,12 +272,14 @@
                         <el-icon><Rank /></el-icon>
                       </div>
                       <div class="item-content">
-                        <el-icon v-if="element.icon" class="menu-icon">
-                          <component :is="element.icon" />
-                        </el-icon>
-                        <el-icon v-else class="menu-icon default-icon">
-                          <Menu />
-                        </el-icon>
+                        <div class="item-icon-wrapper">
+                          <el-icon v-if="element.icon" class="item-icon">
+                            <component :is="useRenderIcon(element.icon)" />
+                          </el-icon>
+                          <el-icon v-else class="item-icon default-icon">
+                            <Menu />
+                          </el-icon>
+                        </div>
                         <span class="item-title">{{ element.title }}</span>
                         <el-tag size="small" :type="getMenuTypeTagType(element.type)" style="margin-left: 8px;">
                           {{ getMenuTypeText(element.type) }}
@@ -329,6 +333,8 @@ import {
   InfoFilled,
   Rank
 } from '@element-plus/icons-vue'
+import { useRenderIcon } from '@/components/ReIcon/src/hooks'
+import { loadCustomIcons } from '@/utils/customIconManager'
 // @ts-ignore
 import draggable from 'vuedraggable'
 // Define basic Menu interface locally to avoid import issues
@@ -756,6 +762,9 @@ const loadTableData = async () => {
   loading.value = true
   
   try {
+    // 重新加载自定义图标
+    await loadCustomIcons()
+    
     const result = await getMenuTree()
     
     // 如果result是包装对象，需要取出data字段
@@ -894,7 +903,10 @@ const initCurrentParentMenu = () => {
 
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
+  // 加载自定义图标
+  await loadCustomIcons()
+  
   loadTableData()
 })
 
@@ -947,20 +959,42 @@ defineExpose({
       border-radius: 4px;
       transition: all 0.2s ease;
       
-      &:hover {
-        background-color: var(--el-color-primary-light-8);
-        .title-text {
-          color: var(--el-color-primary-dark-2);
-        }
+      .menu-icon-wrapper {
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background-color: var(--el-fill-color-light);
+        border: 1px solid var(--el-border-color-light);
+        border-radius: 4px;
+        transition: all 0.2s ease;
       }
       
       .menu-icon {
-        margin-right: 8px;
-        color: var(--el-color-primary);
-        font-size: 16px;
+        color: var(--el-text-color-primary);
+        font-size: 14px;
         
         &.default-icon {
           color: var(--el-text-color-secondary);
+        }
+      }
+      
+      &:hover {
+        background-color: var(--el-color-primary-light-8);
+        
+        .menu-icon-wrapper {
+          background-color: var(--el-color-primary-light-8);
+          border-color: var(--el-color-primary-light-6);
+        }
+        
+        .menu-icon {
+          color: var(--el-color-primary);
+        }
+        
+        .title-text {
+          color: var(--el-color-primary-dark-2);
         }
       }
       
@@ -1253,13 +1287,25 @@ defineExpose({
                 display: flex;
                 align-items: center;
                 
-                .menu-icon {
+                .item-icon-wrapper {
                   margin-right: 8px;
-                  color: var(--el-color-primary);
-                  font-size: 14px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 24px;
+                  height: 24px;
+                  background-color: var(--el-fill-color-light);
+                  border: 1px solid var(--el-border-color-light);
+                  border-radius: 4px;
+                  transition: all 0.2s ease;
                   
-                  &.default-icon {
-                    color: var(--el-text-color-secondary);
+                  .item-icon {
+                    color: var(--el-text-color-primary);
+                    font-size: 14px;
+                    
+                    &.default-icon {
+                      color: var(--el-text-color-secondary);
+                    }
                   }
                 }
                 
@@ -1314,5 +1360,27 @@ defineExpose({
   border-radius: 4px;
   border: 1px solid var(--el-border-color-lighter);
   padding: 8px 0;
+
+  .tree-menu-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 3px;
+    margin-right: 6px;
+    transition: all 0.2s ease;
+  }
+  
+  .tree-menu-icon {
+    color: var(--el-text-color-primary);
+    font-size: 12px;
+    
+    &.default-icon {
+      color: var(--el-text-color-secondary);
+    }
+  }
 }
 </style> 

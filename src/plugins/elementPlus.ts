@@ -120,6 +120,9 @@ import {
   ElNotification // $notify 全局属性对象globalProperties
 } from "element-plus";
 
+// 导入常用图标
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+
 const components = [
   ElAffix,
   ElAlert,
@@ -241,6 +244,12 @@ export function useElementPlus(app: App) {
   components.forEach((component: Component) => {
     app.component(component.name, component);
   });
+  
+  // 全局注册Element Plus图标
+  for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component);
+  }
+  
   // 全局注册插件
   plugins.forEach(plugin => {
     app.use(plugin);

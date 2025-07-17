@@ -1,3 +1,8 @@
+import { loadCustomIcons } from '@/utils/customIconManager'
+
+// 应用启动时全局注册自定义图标
+loadCustomIcons()
+
 import App from "./App.vue";
 import router from "./router";
 import { setupStore } from "@/store";

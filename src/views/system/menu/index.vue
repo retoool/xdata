@@ -81,7 +81,8 @@ const menuFormData = ref<Partial<MenuFormData>>({
   cache: false,
   affix: false,
   redirect: '',
-  alwaysShow: false
+  alwaysShow: false,
+  isFrame: false
 })
 
 // 计算属性和方法
@@ -123,7 +124,8 @@ const handleAddMenu = (parentMenu?: Menu) => {
     cache: false,
     affix: false,
     redirect: '',
-    alwaysShow: false
+    alwaysShow: false,
+    isFrame: false
   }
   
   showMenuForm.value = true
@@ -132,7 +134,11 @@ const handleAddMenu = (parentMenu?: Menu) => {
 const handleEditMenu = (menu: Menu) => {
   menuFormMode.value = 'edit'
   currentParentMenu.value = null
-  menuFormData.value = { ...menu }
+  menuFormData.value = { 
+    ...menu,
+    parentId: menu.parentId || 0, // 确保第一级菜单的parentId为0
+    isFrame: menu.isFrame ?? false
+  }
   showMenuForm.value = true
 }
 
@@ -145,7 +151,8 @@ const handleCopyMenu = (menu: Menu) => {
     title: `${menu.title}_副本`,
     name: menu.name ? `${menu.name}_copy` : '',
     path: menu.path ? `${menu.path}_copy` : '',
-    permission: menu.permission ? `${menu.permission}:copy` : ''
+    permission: menu.permission ? `${menu.permission}:copy` : '',
+    isFrame: menu.isFrame ?? false
   }
   showMenuForm.value = true
 }
@@ -216,9 +223,9 @@ const handleFormClose = () => {
   }
 }
 
-const handleIconSelect = (icon: string) => {
+const handleIconSelect = async (icon: string) => {
   if (menuFormRef.value) {
-    menuFormRef.value.setIcon(icon)
+    await menuFormRef.value.setIcon(icon)
   }
   showIconPicker.value = false
 }

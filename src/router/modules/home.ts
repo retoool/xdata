@@ -12,6 +12,5 @@ export default {
     showLink: false
   },
   children: [
-
   ]
 } satisfies RouteConfigsTable;

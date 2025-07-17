@@ -26,7 +26,7 @@
           <label>菜单图标：</label>
           <div class="icon-display">
             <el-icon>
-              <component :is="menu.icon" />
+              <component :is="useRenderIcon(menu.icon)" />
             </el-icon>
             <span>{{ menu.icon }}</span>
           </div>
@@ -117,23 +117,6 @@
           <span>{{ menu.updateTime }}</span>
         </div>
       </el-card>
-      
-      <!-- 操作按钮 -->
-      <div class="detail-actions">
-        <el-button type="primary" @click="handleEdit">
-          <el-icon><Edit /></el-icon>编辑
-        </el-button>
-        <el-button type="success" @click="handleAddChild">
-          <el-icon><Plus /></el-icon>新增子菜单
-        </el-button>
-        <el-button 
-          type="danger" 
-          :disabled="menu.children && menu.children.length > 0"
-          @click="handleDelete"
-        >
-          <el-icon><Delete /></el-icon>删除
-        </el-button>
-      </div>
     </div>
     
     <div v-else class="empty-state">
@@ -146,23 +129,14 @@
 import { 
   InfoFilled,
   Setting,
-  Clock,
-  Edit,
-  Plus,
-  Delete
+  Clock
 } from '@element-plus/icons-vue'
+import { useRenderIcon } from '@/components/ReIcon/src/hooks'
 import type { Menu } from '@/types/system'
 
 // Props
 const props = defineProps<{
   menu: Menu | null
-}>()
-
-// Emits
-const emit = defineEmits<{
-  edit: [menu: Menu]
-  delete: [menu: Menu]
-  addChild: [menu: Menu]
 }>()
 
 // 方法
@@ -181,24 +155,6 @@ const getMenuTypeTag = (type: number) => {
     case 2: return 'success' as const
     case 3: return 'info' as const
     default: return 'info' as const
-  }
-}
-
-const handleEdit = () => {
-  if (props.menu) {
-    emit('edit', props.menu)
-  }
-}
-
-const handleDelete = () => {
-  if (props.menu) {
-    emit('delete', props.menu)
-  }
-}
-
-const handleAddChild = () => {
-  if (props.menu) {
-    emit('addChild', props.menu)
   }
 }
 </script>
@@ -259,20 +215,6 @@ const handleAddChild = () => {
         
         .text-muted {
           color: var(--el-text-color-placeholder);
-        }
-      }
-    }
-    
-    .detail-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      
-      .el-button {
-        justify-content: flex-start;
-        
-        .el-icon {
-          margin-right: 6px;
         }
       }
     }

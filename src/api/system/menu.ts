@@ -117,6 +117,29 @@ export class MenuApi {
   }
 
   /**
+   * 上传SVG图标
+   */
+  static async uploadSvgIcon(svgContent: string, iconName?: string): Promise<{ iconName: string; svgContent: string }> {
+    return http.request<{ iconName: string; svgContent: string }>('POST', '/system/menu/upload-icon', {
+      data: { svgContent, iconName }
+    })
+  }
+
+  /**
+   * 获取自定义图标列表
+   */
+  static async getCustomIcons(): Promise<{ iconName: string; svgContent: string }[]> {
+    return http.request<{ iconName: string; svgContent: string }[]>('GET', '/system/menu/custom-icons')
+  }
+
+  /**
+   * 删除自定义图标
+   */
+  static async deleteCustomIcon(iconName: string): Promise<void> {
+    return http.request<void>('DELETE', `/system/menu/custom-icons/${encodeURIComponent(iconName)}`)
+  }
+
+  /**
    * 复制菜单
    */
   static async copyMenu(id: number, name: string, parentId?: number): Promise<Menu> {
@@ -156,6 +179,9 @@ export const {
   checkMenuName,
   updateMenuVisibility,
   getMenuIcons,
+  uploadSvgIcon,
+  getCustomIcons,
+  deleteCustomIcon,
   copyMenu,
   exportMenus,
   importMenus
