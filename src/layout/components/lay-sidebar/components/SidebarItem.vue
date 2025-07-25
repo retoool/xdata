@@ -26,7 +26,8 @@ const { layout, isCollapse, tooltipEffect, getDivStyle } = useNav();
 
 const props = defineProps({
   item: {
-    type: Object as PropType<menuType>
+    type: Object as PropType<menuType>,
+    default: () => ({})
   },
   isNest: {
     type: Boolean,
@@ -54,7 +55,7 @@ const getSubMenuIconStyle = computed((): CSSProperties => {
     margin:
       layout.value === "horizontal"
         ? "0 5px 0 0"
-        : isCollapse.value
+        : isCollapse?.value
           ? "0 auto"
           : "0 5px 0 0"
   };
@@ -66,9 +67,9 @@ const textClass = computed(() => {
   if (
     layout.value !== "horizontal" &&
     isCollapse.value &&
-    !toRaw(item.meta.icon) &&
-    ((layout.value === "vertical" && item.parentId === null) ||
-      (layout.value === "mix" && item.pathList.length === 2))
+    !toRaw(item?.meta?.icon) &&
+    ((layout.value === "vertical" && item?.parentId === null) ||
+      (layout.value === "mix" && item?.pathList?.length === 2))
   ) {
     return `${baseClass} min-w-[54px]! text-center! px-3!`;
   }
@@ -76,7 +77,7 @@ const textClass = computed(() => {
 });
 
 const expandCloseIcon = computed(() => {
-  if (!getConfig()?.MenuArrowIconNoTransition) return "";
+  if (!getConfig()?.MenuArrowIconNoTransition) return {};
   return {
     "expand-close-icon": useRenderIcon(EpArrowDown),
     "expand-open-icon": useRenderIcon(ArrowUp),
@@ -85,12 +86,20 @@ const expandCloseIcon = computed(() => {
   };
 });
 
-const onlyOneChild: menuType = ref(null);
+const onlyOneChild: menuType = ref({} as menuType);
 
 function hasOneShowingChild(children: menuType[] = [], parent: menuType) {
-  const showingChildren = children.filter((item: any) => {
-    onlyOneChild.value = item;
+  if (!children || !Array.isArray(children)) {
+    onlyOneChild.value = { ...parent, path: "", noShowingChildren: true };
     return true;
+  }
+
+  const showingChildren = children.filter((item: any) => {
+    if (item) {
+      onlyOneChild.value = item;
+      return true;
+    }
+    return false;
   });
 
   if (showingChildren[0]?.meta?.showParent) {
@@ -109,11 +118,13 @@ function hasOneShowingChild(children: menuType[] = [], parent: menuType) {
 }
 
 function resolvePath(routePath) {
+  if (!routePath) return props.basePath || "";
+
   const httpReg = /^http(s?):\/\//;
   if (httpReg.test(routePath) || httpReg.test(props.basePath)) {
-    return routePath || props.basePath;
+    return routePath || props.basePath || "";
   } else {
-    return posix.resolve(props.basePath, routePath);
+    return posix.resolve(props.basePath || "", routePath);
   }
 }
 </script>
@@ -121,38 +132,39 @@ function resolvePath(routePath) {
 <template>
   <SidebarLinkItem
     v-if="
+      item &&
       hasOneShowingChild(item.children, item) &&
-      (!onlyOneChild.children || onlyOneChild.noShowingChildren)
+      (!onlyOneChild?.children || onlyOneChild?.noShowingChildren)
     "
     :to="item"
   >
     <el-menu-item
-      :index="resolvePath(onlyOneChild.path)"
+      :index="resolvePath(onlyOneChild?.path)"
       :class="{ 'submenu-title-noDropdown': !isNest }"
       :style="getNoDropdownStyle"
       v-bind="attrs"
     >
       <div
-        v-if="toRaw(item.meta.icon)"
+        v-if="toRaw(item?.meta?.icon)"
         class="sub-menu-icon"
         :style="getSubMenuIconStyle"
       >
         <component
           :is="
             useRenderIcon(
-              toRaw(onlyOneChild.meta.icon) ||
-                (item.meta && toRaw(item.meta.icon))
+              toRaw(onlyOneChild?.meta?.icon) ||
+                (item?.meta && toRaw(item?.meta?.icon))
             )
           "
         />
       </div>
       <el-text
         v-if="
-          (!item?.meta.icon &&
+          (!item?.meta?.icon &&
             isCollapse &&
             layout === 'vertical' &&
             item?.pathList?.length === 1) ||
-          (!onlyOneChild.meta.icon &&
+          (!onlyOneChild?.meta?.icon &&
             isCollapse &&
             layout === 'mix' &&
             item?.pathList?.length === 2)
@@ -160,7 +172,7 @@ function resolvePath(routePath) {
         truncated
         class="w-full! px-3! min-w-[54px]! text-center! text-inherit!"
       >
-        {{ onlyOneChild.meta.title }}
+        {{ onlyOneChild?.meta?.title }}
       </el-text>
 
       <template #title>
@@ -172,9 +184,9 @@ function resolvePath(routePath) {
             }"
             class="w-full! text-inherit!"
           >
-            {{ onlyOneChild.meta.title }}
+            {{ onlyOneChild?.meta?.title }}
           </ReText>
-          <SidebarExtraIcon :extraIcon="onlyOneChild.meta.extraIcon" />
+          <SidebarExtraIcon :extraIcon="onlyOneChild?.meta?.extraIcon" />
         </div>
       </template>
     </el-menu-item>
@@ -183,16 +195,16 @@ function resolvePath(routePath) {
     v-else
     ref="subMenu"
     teleported
-    :index="resolvePath(item.path)"
+    :index="resolvePath(item?.path)"
     v-bind="expandCloseIcon"
   >
     <template #title>
       <div
-        v-if="toRaw(item.meta.icon)"
+        v-if="toRaw(item?.meta?.icon)"
         :style="getSubMenuIconStyle"
         class="sub-menu-icon"
       >
-        <component :is="useRenderIcon(item.meta && toRaw(item.meta.icon))" />
+        <component :is="useRenderIcon(item?.meta && toRaw(item?.meta?.icon))" />
       </div>
       <ReText
         v-if="
@@ -211,17 +223,17 @@ function resolvePath(routePath) {
         }"
         :class="textClass"
       >
-        {{ item.meta.title }}
+        {{ item?.meta?.title }}
       </ReText>
-      <SidebarExtraIcon v-if="!isCollapse" :extraIcon="item.meta.extraIcon" />
+      <SidebarExtraIcon v-if="!isCollapse" :extraIcon="item?.meta?.extraIcon" />
     </template>
 
     <sidebar-item
-      v-for="child in item.children"
-      :key="child.path"
+      v-for="child in item?.children"
+      :key="child?.path"
       :is-nest="true"
       :item="child"
-      :base-path="resolvePath(child.path)"
+      :base-path="resolvePath(child?.path)"
       class="nest-menu"
     />
   </el-sub-menu>

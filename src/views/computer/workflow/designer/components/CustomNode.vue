@@ -1,9 +1,9 @@
 <template>
-  <div 
+  <div
     class="custom-node"
-    :class="{ 
+    :class="{
       'is-selected': selected,
-      'has-errors': data.hasErrors 
+      'has-errors': data.hasErrors
     }"
     @click="handleSelect"
   >
@@ -11,11 +11,7 @@
       <el-icon><Component /></el-icon>
       <span class="node-title">{{ data.name }}</span>
       <div class="node-actions">
-        <el-button 
-          type="text" 
-          size="small"
-          @click.stop="handleDelete"
-        >
+        <el-button type="text" size="small" @click.stop="handleDelete">
           <el-icon><Delete /></el-icon>
         </el-button>
       </div>
@@ -24,19 +20,19 @@
       <div class="node-type">
         {{ data.type }}
       </div>
-      <div class="node-description" v-if="data.description">
+      <div v-if="data.description" class="node-description">
         {{ data.description }}
       </div>
-      <div class="node-params" v-if="data.params && data.params.length > 0">
-        <div 
-          class="param-item" 
-          v-for="(param, index) in data.params" 
+      <div v-if="data.params && data.params.length > 0" class="node-params">
+        <div
+          v-for="(param, index) in data.params"
           :key="index"
+          class="param-item"
           :class="{ 'has-error': param.error }"
         >
           <span class="param-label">{{ param.label }}:</span>
           <span class="param-value">{{ param.value }}</span>
-          <el-tooltip 
+          <el-tooltip
             v-if="param.error"
             :content="param.error"
             placement="top"
@@ -48,10 +44,10 @@
       </div>
     </div>
     <div class="node-ports">
-      <div class="port port-in" v-if="data.type !== 'start'">
+      <div v-if="data.type !== 'start'" class="port port-in">
         <div class="port-point" />
       </div>
-      <div class="port port-out" v-if="data.type !== 'end'">
+      <div v-if="data.type !== 'end'" class="port port-out">
         <div class="port-point" />
       </div>
     </div>
@@ -59,44 +55,48 @@
 </template>
 
 <script setup lang="ts">
-import { Connection as Component, Delete, Warning } from '@element-plus/icons-vue'
-import type { NodeProps } from '@vue-flow/core'
-import type { NodeData, NodeParam } from '../types'
+import {
+  Connection as Component,
+  Delete,
+  Warning
+} from "@element-plus/icons-vue";
+import type { NodeProps } from "@vue-flow/core";
+import type { NodeData, NodeParam } from "../types";
 
 const props = defineProps<{
-  id: string
-  type: string
-  data: NodeData
-  selected: boolean
-  connectable?: boolean
-  draggable?: boolean
-  selectable?: boolean
+  id: string;
+  type: string;
+  data: NodeData;
+  selected: boolean;
+  connectable?: boolean;
+  draggable?: boolean;
+  selectable?: boolean;
   position: {
-    x: number
-    y: number
-  }
-}>()
+    x: number;
+    y: number;
+  };
+}>();
 
 const handleSelect = () => {
   if (props.data.onSelect) {
-    props.data.onSelect(props.data)
+    props.data.onSelect(props.data);
   }
-}
+};
 
 const handleDelete = () => {
   if (props.data.onDelete) {
-    props.data.onDelete(props.data.id)
+    props.data.onDelete(props.data.id);
   }
-}
+};
 
 const handleUpdate = (newData: Partial<NodeData>) => {
   if (props.data.onUpdate) {
     props.data.onUpdate({
       ...props.data,
       ...newData
-    })
+    });
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
@@ -246,4 +246,4 @@ const handleUpdate = (newData: Partial<NodeData>) => {
     }
   }
 }
-</style> 
+</style>

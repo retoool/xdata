@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :model="searchForm" inline>
@@ -40,18 +40,16 @@
             <el-button type="primary" :icon="Search" @click="handleSearch">
               搜索
             </el-button>
-            <el-button :icon="Refresh" @click="handleReset">
-              重置
-            </el-button>
+            <el-button :icon="Refresh" @click="handleReset"> 重置 </el-button>
           </el-form-item>
         </el-form>
       </div>
 
       <!-- 数据表格 -->
-      <el-table 
-        :data="tableData" 
-        style="width: 100%" 
+      <el-table
         v-loading="loading"
+        :data="tableData"
+        style="width: 100%"
         empty-text="暂无数据"
       >
         <el-table-column prop="name" label="数据源名称" width="200" />
@@ -66,7 +64,7 @@
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 'connected' ? 'success' : 'danger'">
-              {{ row.status === 'connected' ? '已连接' : '未连接' }}
+              {{ row.status === "connected" ? "已连接" : "未连接" }}
             </el-tag>
           </template>
         </el-table-column>
@@ -118,156 +116,159 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete, Connection } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Plus,
+  Search,
+  Refresh,
+  Edit,
+  Delete,
+  Connection
+} from "@element-plus/icons-vue";
 
 defineOptions({
   name: "DataSource"
-})
+});
 
 // 搜索表单
 const searchForm = reactive({
-  name: '',
-  type: ''
-})
+  name: "",
+  type: ""
+});
 
 // 表格数据
 const tableData = ref([
   {
     id: 1,
-    name: 'MySQL主库',
-    type: 'mysql',
-    host: 'localhost',
+    name: "MySQL主库",
+    type: "mysql",
+    host: "localhost",
     port: 3306,
-    database: 'xdata',
-    status: 'connected',
-    createTime: '2024-01-20 10:30:00'
+    database: "xdata",
+    status: "connected",
+    createTime: "2024-01-20 10:30:00"
   },
   {
     id: 2,
-    name: 'Redis缓存',
-    type: 'redis',
-    host: '192.168.1.100',
+    name: "Redis缓存",
+    type: "redis",
+    host: "192.168.1.100",
     port: 6379,
-    database: 'cache',
-    status: 'connected',
-    createTime: '2024-01-19 15:20:00'
+    database: "cache",
+    status: "connected",
+    createTime: "2024-01-19 15:20:00"
   },
   {
     id: 3,
-    name: 'PostgreSQL数据仓库',
-    type: 'postgresql',
-    host: '192.168.1.101',
+    name: "PostgreSQL数据仓库",
+    type: "postgresql",
+    host: "192.168.1.101",
     port: 5432,
-    database: 'warehouse',
-    status: 'disconnected',
-    createTime: '2024-01-18 09:15:00'
+    database: "warehouse",
+    status: "disconnected",
+    createTime: "2024-01-18 09:15:00"
   }
-])
+]);
 
 // 加载状态
-const loading = ref(false)
+const loading = ref(false);
 
 // 分页
 const pagination = reactive({
   page: 1,
   size: 20,
   total: 3
-})
+});
 
 // 获取类型颜色
 const getTypeColor = (type: string) => {
   const colorMap = {
-    mysql: 'primary',
-    postgresql: 'success',
-    oracle: 'warning',
-    sqlserver: 'info',
-    mongodb: 'danger',
-    redis: ''
-  }
-  return colorMap[type] || ''
-}
+    mysql: "primary",
+    postgresql: "success",
+    oracle: "warning",
+    sqlserver: "info",
+    mongodb: "danger",
+    redis: ""
+  };
+  return colorMap[type] || "";
+};
 
 // 搜索
 const handleSearch = () => {
-  console.log('搜索数据源:', searchForm)
+  console.log("搜索数据源:", searchForm);
   // TODO: 实现搜索逻辑
-}
+};
 
 // 重置
 const handleReset = () => {
-  searchForm.name = ''
-  searchForm.type = ''
-  handleSearch()
-}
+  searchForm.name = "";
+  searchForm.type = "";
+  handleSearch();
+};
 
 // 新增
 const handleAdd = () => {
-  console.log('新增数据源')
-  ElMessage.info('新增数据源功能开发中...')
+  console.log("新增数据源");
+  ElMessage.info("新增数据源功能开发中...");
   // TODO: 打开新增对话框
-}
+};
 
 // 编辑
 const handleEdit = (row: any) => {
-  console.log('编辑数据源:', row)
-  ElMessage.info('编辑数据源功能开发中...')
+  console.log("编辑数据源:", row);
+  ElMessage.info("编辑数据源功能开发中...");
   // TODO: 打开编辑对话框
-}
+};
 
 // 测试连接
 const handleTest = async (row: any) => {
-  console.log('测试连接:', row)
-  loading.value = true
+  console.log("测试连接:", row);
+  loading.value = true;
   try {
     // 模拟测试连接
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success('连接测试成功！')
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    ElMessage.success("连接测试成功！");
   } catch (error) {
-    ElMessage.error('连接测试失败！')
+    ElMessage.error("连接测试失败！");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 删除
 const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除数据源"${row.name}"吗？`,
-      '提示',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    console.log('删除数据源:', row)
-    ElMessage.success('删除成功！')
+    await ElMessageBox.confirm(`确定要删除数据源"${row.name}"吗？`, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+
+    console.log("删除数据源:", row);
+    ElMessage.success("删除成功！");
     // TODO: 实现删除逻辑
   } catch (error) {
     // 用户取消删除
   }
-}
+};
 
 // 分页大小改变
 const handleSizeChange = (size: number) => {
-  pagination.size = size
-  handleSearch()
-}
+  pagination.size = size;
+  handleSearch();
+};
 
 // 当前页改变
 const handleCurrentChange = (page: number) => {
-  pagination.page = page
-  handleSearch()
-}
+  pagination.page = page;
+  handleSearch();
+};
 
 // 初始化
 onMounted(() => {
-  console.log('数据源管理页面已加载')
-})
+  console.log("数据源管理页面已加载");
+});
 </script>
 
 <style scoped>
@@ -299,4 +300,4 @@ onMounted(() => {
   display: flex;
   justify-content: center;
 }
-</style> 
+</style>

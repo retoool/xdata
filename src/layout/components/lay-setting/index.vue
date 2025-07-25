@@ -107,8 +107,6 @@ const tagsChange = () => {
   emitter.emit("tagViewsChange", showVal as unknown as string);
 };
 
-
-
 /** 标签页持久化设置 */
 const multiTagsCacheChange = () => {
   const multiTagsCache = settings.multiTagsCache;
@@ -301,7 +299,6 @@ onBeforeMount(() => {
     settings.weakVal &&
       document.querySelector("html")?.classList.add("html-weakness");
     settings.tabsVal && tagsChange();
-    
   });
 });
 

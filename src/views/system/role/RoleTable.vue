@@ -6,18 +6,8 @@
         <el-button type="primary" @click="handleAdd">
           <el-icon><Plus /></el-icon>新增角色
         </el-button>
-        <el-button 
-          type="danger" 
-          :disabled="selectedRoles.length === 0"
-          @click="handleBatchDelete"
-        >
-          <el-icon><Delete /></el-icon>批量删除
-        </el-button>
-        <el-button @click="handleRefresh">
-          <el-icon><Refresh /></el-icon>刷新
-        </el-button>
       </div>
-      
+
       <div class="right-search">
         <el-input
           v-model="searchForm.keyword"
@@ -30,21 +20,16 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-select 
-          v-model="searchForm.status" 
-          placeholder="全部状态" 
-          clearable
-          style="width: 150px"
-          @change="handleSearch"
-        >
-          <el-option label="全部" :value="undefined" />
-          <el-option label="启用" :value="1" />
-          <el-option label="禁用" :value="0" />
-        </el-select>
-        <el-button :loading="loading" @click="handleRefresh" icon="Refresh" circle title="刷新" />
+        <el-button
+          :loading="loading"
+          icon="Refresh"
+          circle
+          title="刷新"
+          @click="handleRefresh"
+        />
       </div>
     </div>
-    
+
     <!-- 角色表格 -->
     <div class="table-container">
       <el-table
@@ -52,10 +37,14 @@
         v-loading="loading"
         :data="tableData"
         row-key="id"
-        @selection-change="handleSelectionChange"
       >
-        <el-table-column type="selection" width="50" />
-        <el-table-column prop="name" label="角色名" width="180" show-overflow-tooltip>
+        <!-- 多选列已移除 -->
+        <el-table-column
+          prop="name"
+          label="角色名"
+          width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <div class="role-name">
               <el-icon class="role-icon">
@@ -65,24 +54,34 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="编码" width="120" show-overflow-tooltip />
-        <el-table-column prop="description" label="描述" width="200" show-overflow-tooltip>
+        <el-table-column
+          prop="code"
+          label="编码"
+          width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="description"
+          label="描述"
+          width="200"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
-            <span class="description">{{ row.description || '暂无描述' }}</span>
+            <span class="description">{{ row.description || "暂无描述" }}</span>
           </template>
         </el-table-column>
         <el-table-column label="权限数量" width="100" align="center">
           <template #default="{ row }">
             <el-tag type="info" size="small">
-              {{ row.permissions?.length || 0 }}
+              {{ row && (typeof row.permissionCount === 'number' ? row.permissionCount : (Array.isArray(row.permissions) ? row.permissions.length : 0)) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="用户数量" width="100" align="center">
           <template #default="{ row }">
-            <el-link 
+            <el-link
               v-if="row.userCount > 0"
-              type="primary" 
+              type="primary"
               @click="handleViewUsers(row)"
             >
               {{ row.userCount }}
@@ -90,33 +89,31 @@
             <span v-else class="text-muted">0</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column prop="createTime" label="创建时间" width="160">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="row.code === 'admin'"
-              @change="handleStatusChange(row)"
-            />
+            <span>{{ row.createTime ? dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="160" />
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">
+            <el-button type="primary" size="small" :disabled="row.code === 'admin'" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="success" size="small" @click="handlePermission(row)">
+            <el-button
+              type="success"
+              size="small"
+              :disabled="row.code === 'admin'"
+              @click="handlePermission(row)"
+            >
               配置权限
             </el-button>
-            <el-button type="warning" size="small" @click="handleCopy(row)">
+            <el-button type="warning" size="small" :disabled="row.code === 'admin'" @click="handleCopy(row)">
               复制
             </el-button>
-            <el-button 
-              type="danger" 
-              size="small" 
-              :disabled="row.code === 'admin' || row.userCount > 0"
+            <el-button
+              type="danger"
+              size="small"
+              :disabled="row.code === 'admin'"
               @click="handleDelete(row)"
             >
               删除
@@ -125,23 +122,31 @@
         </el-table-column>
       </el-table>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination">
       <el-pagination
-        v-model:current-page="pagination.current"
-        v-model:page-size="pagination.size"
+        :current-page="pagination.current"
+        :page-size="pagination.size"
         :total="pagination.total"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
         background
+        @update:current-page="val => { pagination.current = val; loadTableData(); }"
+        @update:page-size="val => { pagination.size = val; pagination.current = 1; loadTableData(); }"
       />
     </div>
-    
+
     <!-- 角色表单对话框 -->
     <el-dialog
       v-model="showForm"
-      :title="formMode === 'create' ? '新增角色' : formMode === 'edit' ? '编辑角色' : '复制角色'"
+      :title="
+        formMode === 'create'
+          ? '新增角色'
+          : formMode === 'edit'
+            ? '编辑角色'
+            : '复制角色'
+      "
       width="600px"
     >
       <RoleForm
@@ -149,9 +154,10 @@
         :form-data="formData"
         :form-mode="formMode"
         @submit="handleFormSubmit"
+        @cancel="handleFormCancel"
       />
     </el-dialog>
-    
+
     <!-- 用户列表对话框 -->
     <el-dialog
       v-model="showUserDialog"
@@ -160,33 +166,48 @@
       @close="resetUserDialog"
     >
       <div v-loading="loadingUsers">
-        <el-table :data="roleUsers" max-height="400" v-if="roleUsers.length > 0">
+        <el-table
+          v-if="roleUsers.length > 0"
+          :data="roleUsers"
+          max-height="400"
+        >
           <el-table-column prop="realName" label="姓名" width="120" />
           <el-table-column prop="username" label="用户名" width="120" />
           <el-table-column prop="email" label="邮箱" width="180" />
-          <el-table-column prop="departmentName" label="部门" width="150" />
+          <el-table-column prop="departmentName" label="部门" width="150">
+            <template #default="{ row }">
+              <span>{{ row.department?.name || '-' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="状态" width="80">
             <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                {{ row.status === 1 ? '启用' : '禁用' }}
+              <el-tag
+                :type="row.status === 1 ? 'success' : 'danger'"
+                size="small"
+              >
+                {{ row.status === 1 ? "启用" : "禁用" }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" width="160" />
+          <el-table-column prop="createTime" label="创建时间" width="160">
+            <template #default="{ row }">
+              <span>{{ row.createTime ? dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}</span>
+            </template>
+          </el-table-column>
         </el-table>
         <el-empty v-else description="暂无用户" />
         <el-pagination
-          v-if="userPagination.total > userPagination.size"
-          v-model:current-page="userPagination.current"
-          v-model:page-size="userPagination.size"
-          :total="userPagination.total"
+          v-if="pagination.total > pagination.size"
+          v-model:current-page="pagination.current"
+          v-model:page-size="pagination.size"
+          :total="pagination.total"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           background
           :disabled="loadingUsers"
+          style="margin-top: 12px; text-align: right"
           @current-change="handleUserPageChange"
           @size-change="handleUserSizeChange"
-          style="margin-top: 12px; text-align: right;"
         />
       </div>
     </el-dialog>
@@ -194,285 +215,279 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  Plus, 
-  Delete, 
-  Refresh, 
-  Search, 
-  UserFilled 
-} from '@element-plus/icons-vue'
-import type { Role, User } from '@/types/system'
-import { 
+import { ref, reactive, computed, watch, onMounted, nextTick } from "vue";
+import dayjs from "dayjs";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Plus,
+  Search,
+  UserFilled
+} from "@element-plus/icons-vue";
+import type { Role } from "@/views/system/role/types/role";
+import type { User } from "@/views/system/user/types/user";
+import {
   getRoleList,
-  updateRoleStatus,
   deleteRole,
-  batchDeleteRoles,
   getRoleUsers,
-  copyRole
-} from '@/api/system/role'
-import RoleForm from './components/RoleForm.vue'
-
+  copyRole,
+  updateRoleSort
+} from "@/api/system/role";
+import { batchDeleteUsers } from "@/api/system/user";
+import RoleForm from "./components/RoleForm.vue";
+import { getRoleById } from "@/api/system/role";
+import Sortable from 'sortablejs';
 // Emits
 const emit = defineEmits<{
-  rolePermission: [roleId: number]
-}>()
+  rolePermission: [roleId: number];
+}>();
 
 // 响应式数据
-const tableRef = ref()
-const formRef = ref()
-const loading = ref(false)
-const loadingUsers = ref(false)
-const showForm = ref(false)
-const showUserDialog = ref(false)
-const formMode = ref<'create' | 'edit' | 'copy'>('create')
-const tableData = ref<Role[]>([])
-const selectedRoles = ref<Role[]>([])
-const roleUsers = ref<User[]>([])
-const currentRole = ref<Role | null>(null)
+const tableRef = ref();
+const formRef = ref();
+const loading = ref(false);
+const loadingUsers = ref(false);
+const showForm = ref(false);
+const showUserDialog = ref(false);
+const formMode = ref<"create" | "edit" | "copy">("create");
+const tableData = ref<Role[]>([]);
+const roleUsers = ref<User[]>([]);
+const currentRole = ref<Role | null>(null);
 
 const searchForm = reactive({
-  keyword: '',
-  status: undefined as number | undefined
-})
+  keyword: ""
+});
 
 const pagination = reactive({
   current: 1,
   size: 20,
   total: 0
-})
+});
 
 const formData = ref<Partial<Role>>({
-  name: '',
-  code: '',
-  description: '',
-  permissions: [],
-  status: 1
-})
+  name: "",
+  code: "",
+  description: "",
+  menus: [],
+});
 
 // 计算属性
 const searchParams = computed(() => ({
   ...searchForm,
   page: pagination.current,
   size: pagination.size
-}))
-
-const canBatchDelete = computed(() => selectedRoles.value.length > 0 && selectedRoles.value.every(role => role.code !== 'admin' && role.userCount === 0))
+}));
 
 // 方法
 const handleSearch = () => {
-  pagination.current = 1
-  loadTableData()
-}
+  pagination.current = 1;
+  loadTableData();
+};
 
 const handleRefresh = () => {
-  loadTableData()
-}
-
-const handleSelectionChange = (selection: Role[]) => {
-  selectedRoles.value = selection
-}
+  loadTableData();
+};
 
 const handleAdd = () => {
-  formMode.value = 'create'
+  formMode.value = "create";
   formData.value = {
-    name: '',
-    code: '',
-    description: '',
-    permissions: [],
-    status: 1
-  }
-  showForm.value = true
-}
+    name: "",
+    code: "",
+    description: "",
+    menus: [],
+  };
+  showForm.value = true;
+};
 
-const handleEdit = (row: Role) => {
-  formMode.value = 'edit'
-  formData.value = { ...row }
-  showForm.value = true
-}
+const handleEdit = async (row: Role) => {
+  if (row.code === 'admin') return;
+  formMode.value = "edit";
+  const detail = await getRoleById(row.id);
+  formData.value = {
+    ...detail
+  };
+  showForm.value = true;
+};
 
 const handleCopy = (row: Role) => {
-  formMode.value = 'copy'
+  if (row.code === 'admin') return;
+  formMode.value = "copy";
+  console.log(formData.value)
   formData.value = {
     ...row,
-    id: undefined,
     name: `${row.name}_副本`,
     code: `${row.code}_copy`,
-    userCount: 0
-  }
-  showForm.value = true
-}
+  };
+  console.log(formData.value)
+  showForm.value = true;
+};
 
 const handleDelete = async (row: Role) => {
+  if (row.code === 'admin') return;
   try {
-    await ElMessageBox.confirm(
-      `确认删除角色 "${row.name}" 吗？删除后不可恢复！`,
-      '警告',
-      { type: 'warning' }
-    )
-    
-    await deleteRole(row.id)
-    ElMessage.success('删除成功')
-    loadTableData()
+    if (row.userCount > 0) {
+      await ElMessageBox.confirm(
+        `该角色下还有 ${row.userCount} 个用户，是否同时删除这些用户并删除角色？`,
+        "警告",
+        { type: "warning" }
+      );
+      // 获取该角色下所有用户
+      const result = await getRoleUsers(row.id, { page: 1, size: 9999 });
+      const userIds = result.records.map(u => u.id);
+      if (userIds.length > 0) {
+        await batchDeleteUsers(userIds);
+      }
+    } else {
+      await ElMessageBox.confirm(
+        `确认删除角色 \"${row.name}\" 吗？删除后不可恢复！`,
+        "警告",
+        { type: "warning" }
+      );
+    }
+    // 删除角色
+    await deleteRole(row.id);
+    ElMessage.success("角色及其下所有用户已删除");
+    loadTableData();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+    if (error !== "cancel") {
+      ElMessage.error("删除失败");
     }
   }
-}
-
-const handleBatchDelete = async () => {
-  if (selectedRoles.value.length === 0) {
-    ElMessage.warning('请选择要删除的角色')
-    return
-  }
-  
-  // 检查是否包含管理员角色或有用户的角色
-  const adminRoles = selectedRoles.value.filter(role => role.code === 'admin')
-  const rolesWithUsers = selectedRoles.value.filter(role => role.userCount > 0)
-  
-  if (adminRoles.length > 0) {
-    ElMessage.warning('不能删除管理员角色')
-    return
-  }
-  
-  if (rolesWithUsers.length > 0) {
-    ElMessage.warning('不能删除已分配给用户的角色')
-    return
-  }
-  
-  try {
-    await ElMessageBox.confirm(
-      `确认删除选中的 ${selectedRoles.value.length} 个角色吗？`,
-      '警告',
-      { type: 'warning' }
-    )
-    
-    const ids = selectedRoles.value.map(role => role.id)
-    await batchDeleteRoles(ids)
-    ElMessage.success('批量删除成功')
-    loadTableData()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('批量删除失败')
-    }
-  }
-}
-
-const handleStatusChange = async (row: Role) => {
-  try {
-    await updateRoleStatus(row.id, row.status)
-    ElMessage.success(row.status ? '角色已启用' : '角色已禁用')
-  } catch (error) {
-    // 恢复原状态
-    row.status = row.status ? 0 : 1
-    ElMessage.error('状态更新失败')
-  }
-}
+};
 
 const handlePermission = (row: Role) => {
-  emit('rolePermission', row.id)
-}
+  if (row.code === 'admin') return;
+  emit("rolePermission", row.id);
+};
 
 const handleViewUsers = async (row: Role) => {
-  currentRole.value = row
-  showUserDialog.value = true
-  userPagination.current = 1
-  loadRoleUsers()
-}
+  currentRole.value = row;
+  showUserDialog.value = true;
+  pagination.current = 1;
+  loadRoleUsers();
+};
 
 const loadRoleUsers = async () => {
-  if (!currentRole.value) return
-  loadingUsers.value = true
+  if (!currentRole.value) return;
+  loadingUsers.value = true;
   try {
     const result = await getRoleUsers(currentRole.value.id, {
-      page: userPagination.current,
-      size: userPagination.size
-    })
-    roleUsers.value = result.records
-    userPagination.total = result.total
+      page: pagination.current,
+      size: pagination.size
+    });
+    roleUsers.value = result.records;
+    pagination.total = result.total;
   } catch (error) {
-    ElMessage.error('加载用户列表失败')
+    ElMessage.error("加载用户列表失败");
   } finally {
-    loadingUsers.value = false
+    loadingUsers.value = false;
   }
-}
+};
 
 const handleUserPageChange = (page: number) => {
-  userPagination.current = page
-  loadRoleUsers()
-}
+  pagination.current = page;
+  loadRoleUsers();
+};
 
 const handleUserSizeChange = (size: number) => {
-  userPagination.size = size
-  userPagination.current = 1
-  loadRoleUsers()
-}
+  pagination.size = size;
+  pagination.current = 1;
+  loadRoleUsers();
+};
 
 const resetUserDialog = () => {
-  roleUsers.value = []
-  userPagination.current = 1
-  userPagination.total = 0
-}
+  roleUsers.value = [];
+  pagination.current = 1;
+  pagination.total = 0;
+};
 
-const handleFormSubmit = async (data: Role) => {
+const handleFormSubmit = async () => {
   try {
-    if (formMode.value === 'copy') {
-      await copyRole(data.id!, data.name, data.code)
-    } else {
-      // 创建或更新逻辑将在具体的API中处理
-    }
-    
-    showForm.value = false
+    showForm.value = false;
     ElMessage.success(
-      formMode.value === 'create' ? '新增成功' : 
-      formMode.value === 'edit' ? '编辑成功' : '复制成功'
-    )
-    loadTableData()
+      formMode.value === "create"
+        ? "新增成功"
+        : formMode.value === "edit"
+          ? "编辑成功"
+          : "复制成功"
+    );
+    loadTableData();
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error("操作失败");
   }
-}
+};
+
+const handleFormCancel = () => {
+  showForm.value = false;
+};
 
 const handleSizeChange = (size: number) => {
-  pagination.size = size
-  loadTableData()
-}
+  pagination.size = size;
+  loadTableData();
+};
 
 const handleCurrentChange = (current: number) => {
-  pagination.current = current
-  loadTableData()
-}
+  pagination.current = current;
+  loadTableData();
+};
 
 const loadTableData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const result = await getRoleList(searchParams.value)
-    tableData.value = result.records
-    pagination.total = result.total
+    const result = await getRoleList(searchParams.value);
+    tableData.value = result.records;
+    pagination.total = result.total;
   } catch (error) {
-    ElMessage.error('加载角色列表失败')
+    ElMessage.error("加载角色列表失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 监听搜索参数变化
-watch(searchParams, () => {
-  // 防抖处理可以在这里添加
-}, { deep: true })
+watch(
+  searchParams,
+  () => {
+    // 防抖处理可以在这里添加
+  },
+  { deep: true }
+);
 
 // 生命周期
 onMounted(() => {
-  loadTableData()
-})
+  loadTableData();
+  nextTick(() => {
+    initRowDrag();
+  });
+});
+
+function initRowDrag() {
+  const tableBody = document.querySelector('.role-table .el-table__body-wrapper tbody') as HTMLElement | null;
+  if (!tableBody) return;
+  Sortable.create(tableBody, {
+    animation: 150,
+    handle: '.el-table__row',
+    onEnd: async (evt) => {
+      if (evt.oldIndex === evt.newIndex) return;
+      // 重新排序tableData
+      const movedRow = tableData.value.splice(evt.oldIndex, 1)[0];
+      tableData.value.splice(evt.newIndex, 0, movedRow);
+      // 生成排序参数
+      const sortItems = tableData.value.map((item, idx) => ({ id: item.id, sort: idx }));
+      try {
+        await updateRoleSort(sortItems);
+        ElMessage.success('排序已更新');
+        loadTableData();
+      } catch (e) {
+        ElMessage.error('排序更新失败');
+      }
+    }
+  });
+}
 
 // 暴露方法
 defineExpose({
-  refreshTable: loadTableData,
-  getSelectedRoles: () => selectedRoles.value
-})
+  refreshTable: loadTableData
+});
 </script>
 
 <style scoped lang="scss">
@@ -481,52 +496,52 @@ defineExpose({
   display: flex;
   flex-direction: column;
   padding: 16px;
-  
+
   .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    
+
     .left-actions {
       display: flex;
       gap: 8px;
     }
-    
+
     .right-search {
       display: flex;
       gap: 8px;
     }
   }
-  
+
   .table-container {
     flex: 1;
     overflow: hidden;
-    
+
     .el-table {
       height: 100%;
     }
-    
+
     .role-name {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .role-icon {
         color: var(--el-color-primary);
         font-size: 16px;
       }
     }
-    
+
     .description {
       color: var(--el-text-color-regular);
     }
-    
+
     .text-muted {
       color: var(--el-text-color-placeholder);
     }
   }
-  
+
   .pagination {
     display: flex;
     justify-content: center;
@@ -544,4 +559,4 @@ defineExpose({
 :deep(.el-switch.is-disabled .el-switch__core) {
   background-color: var(--el-fill-color-darker);
 }
-</style> 
+</style>

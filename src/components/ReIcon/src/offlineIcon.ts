@@ -169,7 +169,7 @@ export const icons: [string, any][] = [
   ["ep/lightning", EpLightning],
   ["ep/sunrise", EpSunrise],
   ["ep/sunset", EpSunset],
-  
+
   // Remix Icons
   ["ri/home-smile-line", RiHomeSmileLine],
   ["ri/search-line", RiSearchLine],
@@ -222,7 +222,7 @@ export const icons: [string, any][] = [
   ["ri/moon-line", RiMoonLine],
   ["ri/umbrella-line", RiUmbrellaLine],
   ["ri/cloudy-line", RiCloudyLine],
-  ["ri/thunderstorms-line", RiThunderstormsLine],
+  ["ri/thunderstorms-line", RiThunderstormsLine]
 ];
 
 // 注册所有图标

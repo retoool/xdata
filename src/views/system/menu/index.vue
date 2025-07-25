@@ -6,6 +6,22 @@
       </el-main>
     </el-container>
     
+    <!-- 菜单详情对话框 -->
+    <el-dialog
+      v-model="showMenuDetail"
+      title="菜单详情"
+      width="600px"
+      :close-on-click-modal="true"
+    >
+      <MenuForm
+        v-if="showMenuDetail"
+        :form-data="selectedMenu"
+        :form-mode="'view'"
+        :parent-menu="currentParentMenu"
+        :readonly="true"
+      />
+    </el-dialog>
+
     <!-- 菜单表单对话框 -->
     <el-dialog
       v-model="showMenuForm"
@@ -42,17 +58,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, provide } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Menu as MenuIcon } from '@element-plus/icons-vue'
-import type { Menu, MenuFormData, FormMode } from '@/types/system'
-import { useSystemStore } from '@/store/modules/system'
 import MenuTable from './MenuTable.vue'
 import MenuForm from './components/MenuForm.vue'
 import IconPicker from './components/IconPicker.vue'
-
-// Store
-const systemStore = useSystemStore()
 
 // 组件引用
 const menuTableRef = ref()
@@ -62,27 +72,24 @@ const menuFormRef = ref()
 const showMenuForm = ref(false)
 const showIconPicker = ref(false)
 const menuFormMode = ref<FormMode>('create')
-const currentSelectedMenu = ref<Menu | null>(null)
-const currentParentMenu = ref<Menu | null>(null)
+const selectedMenu = ref<BackendRoute | null>(null)
+const currentParentMenu = ref<BackendRoute | null>(null)
 const currentIcon = ref('')
+const showMenuDetail = ref(false)
 
-const menuFormData = ref<Partial<MenuFormData>>({
+const menuFormData = ref<Partial<BackendRoute>>({
   title: '',
-  name: '',
+  icon: '',
   path: '',
   component: '',
-  icon: '',
-  type: 2,
+  redirect: '',
   parentId: null,
   sort: 0,
+  type: 2,
   permission: '',
-  status: 1,
-  visible: true,
-  cache: false,
-  affix: false,
-  redirect: '',
-  alwaysShow: false,
-  isFrame: false
+  isKeepAlive: false,
+  isHidden: true,
+  isIframe: false,
 })
 
 // 计算属性和方法
@@ -95,12 +102,12 @@ const getFormTitle = () => {
   return modeTexts[menuFormMode.value] || '菜单管理'
 }
 
-const handleMenuSelect = (menu: Menu | null) => {
-  currentSelectedMenu.value = menu
-  systemStore.setSelectedMenu(menu)
+const handleMenuSelect = (menu: BackendRoute | null) => {
+  selectedMenu.value = menu
+  showMenuDetail.value = !!menu
 }
 
-const handleAddMenu = (parentMenu?: Menu) => {
+const handleAddMenu = (parentMenu?: BackendRoute) => {
   menuFormMode.value = 'create'
   currentParentMenu.value = parentMenu || null
   
@@ -111,7 +118,6 @@ const handleAddMenu = (parentMenu?: Menu) => {
   
   menuFormData.value = {
     title: '',
-    name: '',
     path: '',
     component: '',
     icon: '',
@@ -119,45 +125,110 @@ const handleAddMenu = (parentMenu?: Menu) => {
     parentId: parentMenu?.id || null,
     sort: defaultSort,
     permission: '',
-    status: 1,
-    visible: true,
-    cache: false,
-    affix: false,
+    isKeepAlive: false,
     redirect: '',
-    alwaysShow: false,
-    isFrame: false
+    isIframe: false,
+    isHidden: true
   }
   
   showMenuForm.value = true
 }
 
-const handleEditMenu = (menu: Menu) => {
+// 系统菜单限制相关方法
+const isSystemMenu = (menu: BackendRoute): boolean => {
+  return menu.title == '系统管理';
+};
+
+const isSystemMenuOrChild = (menu: BackendRoute): boolean => {
+  // 检查当前菜单是否为系统菜单
+  if (isSystemMenu(menu)) {
+    return true;
+  }
+  
+  // 检查当前菜单的父级是否为系统菜单
+  const checkParent = (menus: BackendRoute[], targetId: number): boolean => {
+    for (const item of menus) {
+      if (item.id === targetId) {
+        return isSystemMenu(item);
+      }
+      if (item.children && item.children.length > 0) {
+        if (checkParent(item.children, targetId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  
+  // 从菜单表格组件获取数据
+  const tableData = menuTableRef.value?.tableData || [];
+  return checkParent(tableData, menu.parentId || 0);
+};
+
+const getSystemMenuRestrictionReason = (menu: BackendRoute, operation: string): string => {
+  if (isSystemMenu(menu)) {
+    return `系统菜单不支持${operation}`;
+  }
+  if (isSystemMenuOrChild(menu)) {
+    return `系统菜单的子菜单不支持${operation}`;
+  }
+  return '';
+};
+
+const handleEditMenu = (menu: BackendRoute) => {
+  // 检查是否为系统菜单
+  if (isSystemMenuOrChild(menu)) {
+    ElMessage.warning(getSystemMenuRestrictionReason(menu, '编辑'));
+    return;
+  }
+
   menuFormMode.value = 'edit'
   currentParentMenu.value = null
   menuFormData.value = { 
     ...menu,
     parentId: menu.parentId || 0, // 确保第一级菜单的parentId为0
-    isFrame: menu.isFrame ?? false
+    isIframe: menu.isIframe ?? false,
+    isHidden: menu.isHidden ?? true
   }
   showMenuForm.value = true
+  console.log(menuFormData.value);
 }
 
-const handleCopyMenu = (menu: Menu) => {
+const handleCopyMenu = (menu: BackendRoute) => {
+  // 检查是否为系统菜单
+  if (isSystemMenuOrChild(menu)) {
+    ElMessage.warning(getSystemMenuRestrictionReason(menu, '复制'));
+    return;
+  }
+
   menuFormMode.value = 'copy'
   currentParentMenu.value = null
   menuFormData.value = {
     ...menu,
     id: undefined,
     title: `${menu.title}_副本`,
-    name: menu.name ? `${menu.name}_copy` : '',
     path: menu.path ? `${menu.path}_copy` : '',
     permission: menu.permission ? `${menu.permission}:copy` : '',
-    isFrame: menu.isFrame ?? false
+    isIframe: menu.isIframe ?? false,
+    isHidden: menu.isHidden ?? true,
+    isKeepAlive: menu.isKeepAlive ?? false,
+    redirect: menu.redirect ?? '',
+    sort: menu.sort ?? 0,
+    component: menu.component ?? '',
+    icon: menu.icon ?? '',
+    type: menu.type ?? 2,
+    parentId: menu.parentId ?? 0,
   }
   showMenuForm.value = true
 }
 
-const handleDeleteMenu = async (menu: Menu) => {
+const handleDeleteMenu = async (menu: BackendRoute) => {
+  // 检查是否为系统菜单
+  if (isSystemMenuOrChild(menu)) {
+    ElMessage.warning(getSystemMenuRestrictionReason(menu, '删除'));
+    return;
+  }
+
   // 检查是否有子菜单
   if (menu.children && menu.children.length > 0) {
     ElMessage.warning('请先删除子菜单')
@@ -183,7 +254,7 @@ const handleDeleteMenu = async (menu: Menu) => {
     await refreshMenuTable()
     
     // 如果删除的是当前选中的菜单，清空选中状态
-    if (currentSelectedMenu.value?.id === menu.id) {
+    if (selectedMenu.value?.id === menu.id) {
       handleMenuSelect(null)
     }
   } catch (error: any) {
@@ -193,7 +264,7 @@ const handleDeleteMenu = async (menu: Menu) => {
   }
 }
 
-const handleMenuFormSubmit = async (formData: MenuFormData) => {
+const handleMenuFormSubmit = async (formData: BackendRoute) => {
   try {
     if (menuFormMode.value === 'create') {
       await menuTableRef.value?.createMenu(formData)
@@ -209,6 +280,7 @@ const handleMenuFormSubmit = async (formData: MenuFormData) => {
     showMenuForm.value = false
     await refreshMenuTable()
   } catch (error) {
+    console.error(error);
     ElMessage.error('操作失败')
   }
 }

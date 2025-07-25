@@ -64,6 +64,7 @@ export type menuType = {
   id?: number;
   name?: string;
   path?: string;
+  component?: string;
   noShowingChildren?: boolean;
   children?: menuType[];
   value: unknown;
@@ -73,6 +74,8 @@ export type menuType = {
     rank?: number;
     showParent?: boolean;
     extraIcon?: string;
+    isIframe?: boolean;
+    frameSrc?: string;
   };
   showTooltip?: boolean;
   parentId?: number;

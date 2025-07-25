@@ -69,7 +69,10 @@ export const useWorkflowStore = defineStore("workflow", {
     },
 
     // 设置选中的分类
-    setSelectedCategory(categoryId: number | number[] | null, categoryPath: string[] | null) {
+    setSelectedCategory(
+      categoryId: number | number[] | null,
+      categoryPath: string[] | null
+    ) {
       this.selectedCategoryId = categoryId;
       this.selectedCategoryPath = categoryPath;
     },
@@ -115,4 +118,4 @@ export const useWorkflowStore = defineStore("workflow", {
 
 export function useWorkflowStoreHook() {
   return useWorkflowStore(store);
-} 
+}

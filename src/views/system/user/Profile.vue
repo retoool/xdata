@@ -314,6 +314,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
+import { useUserStoreHook } from '@/store/modules/user'
 import { 
   User as UserIcon, 
   Message, 
@@ -325,9 +326,9 @@ import {
 } from '@element-plus/icons-vue'
 import { changePassword, updateUserInfo, logoutUser, getCurrentUser, UpdateUserInfoData } from '@/api/system/user'
 import multiavatar from '@multiavatar/multiavatar'
-import type { User } from '@/types/system'
+import type { User } from './types/user'
 // 用户store
-const userStore = useUserStore()
+const userStore = useUserStoreHook()
 
 // 响应式数据
 const showEditDialog = ref(false)

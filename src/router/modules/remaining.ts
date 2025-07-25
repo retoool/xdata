@@ -11,6 +11,7 @@ export default [
       rank: 101
     }
   },
+
   {
     path: "/redirect",
     component: Layout,

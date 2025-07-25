@@ -95,7 +95,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount, watch, h } from 'vue'
 import { ElButton, ElTree, ElMessageBox, ElMessage, ElInput, ElTooltip, ElIcon } from 'element-plus'
 import { Plus, Delete, Close, Search, Edit, FolderOpened, Select, OfficeBuilding } from '@element-plus/icons-vue'
 import type { RenderContentContext, RenderContentFunction } from 'element-plus'
-import type { Department } from '@/types/system'
+import type { Department } from './types/department'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, batchDeleteDepartments } from '@/api/system/department'
 
 interface Tree {

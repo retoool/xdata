@@ -100,7 +100,32 @@ declare global {
     /** 子路由配置项 */
     children?: Array<RouteChildrenConfigsTable>;
   }
+
+  /**
+   * @description 后端路由配置表
+   */
+  interface BackendRoute {
+    id: number;
+    title: string;
+    icon: string;
+    path: string;
+    component: string;
+    redirect: string;
+    parentId: number | null;
+    sort: number;
+    level: number;
+    type: number;
+    isHidden: boolean;
+    isKeepAlive: boolean;
+    permission: string;
+    isIframe: boolean;
+    createTime: string;
+    updateTime: string;
+    children?: BackendRoute[];
+  } 
 }
+
+export type { BackendRoute };
 
 // https://router.vuejs.org/zh/guide/advanced/meta.html#typescript
 declare module "vue-router" {

@@ -1,45 +1,43 @@
 import {
   type RouterHistory,
   type RouteRecordRaw,
-  type RouteComponent,
   createWebHistory,
   createWebHashHistory
 } from "vue-router";
+import type { Component } from "vue";
 import { router } from "./index";
 import { isProxy, toRaw } from "vue";
 import { useTimeoutFn } from "@vueuse/core";
 import {
   isString,
   cloneDeep,
-  isAllEmpty,
-  intersection,
   storageLocal,
   isIncludeAllChildren
 } from "@pureadmin/utils";
 import { getConfig } from "@/config";
 import { buildHierarchyTree } from "@/utils/tree";
-import { userKey, type DataInfo } from "@/utils/auth";
 import { type menuType, routerArrays } from "@/layout/types";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 
 // 动态路由
 import { getAsyncRoutes } from "@/api/routes";
+import { useUserStoreHook } from "@/store/modules/user";
+import { alias } from "@build/utils";
 
 // ==================== 常量定义 ====================
 const IFrame = () => import("@/layout/frame.vue");
 // https://cn.vitejs.dev/guide/features.html#glob-import
 const modulesRoutes = import.meta.glob("/src/views/**/*.{vue,tsx}");
 // 组件路径管理相关功能（复用 modulesRoutes）
-const viewModules = modulesRoutes
-
+const viewModules = modulesRoutes;
 
 // ==================== 动态路由处理 ====================
 /** 初始化路由（`new Promise` 写法防止在异步请求中造成无限循环）*/
 function initRouter() {
   return new Promise(resolve => {
-    const loadRoutes = (data: any) => {
-      handleAsyncRoutes(cloneDeep(data));
+    const loadRoutes = (data: BackendRoute[]) => {
+      handleAsyncRoutes(cloneDeep(data) as BackendRoute[]);
       resolve(router);
     };
 
@@ -50,7 +48,7 @@ function initRouter() {
       if (asyncRouteList && asyncRouteList?.length > 0) {
         loadRoutes(asyncRouteList);
       } else {
-        getAsyncRoutes().then((data) => {
+        getAsyncRoutes().then(data => {
           storageLocal().setItem(key, data);
           loadRoutes(data);
         });
@@ -62,23 +60,25 @@ function initRouter() {
 }
 
 /** 处理动态路由（后端返回的路由） */
-function handleAsyncRoutes(routeList) {
-  console.log('[handleAsyncRoutes] 入口 routeList:', routeList);
+function handleAsyncRoutes(routeList: BackendRoute[]) {
   // 添加参数校验，防止传入 undefined 或 null
   if (!routeList || !Array.isArray(routeList)) {
     routeList = [];
   }
 
-  // 1. 存储完整菜单树到 store
-  usePermissionStoreHook().handleWholeMenus(routeList);
+  // 1. 存储完整菜单树到 menu store
+  useMenuStoreHook().handleWholeMenus(routeList);
 
-  // 2. 转换并注册所有路由
+  // 2. 存储按钮权限到 user Store
+  useUserStoreHook().setPermissions(routeList.map(route => route.permission));
+  
+  // 3. 转换并注册所有路由
   registerAllRoutes(routeList);
-  
-  // 3. 处理标签页缓存
+
+  // 4. 处理标签页缓存
   handleMultiTags();
-  
-  // 4. 添加 404 匹配
+
+  // 5. 添加 404 匹配
   addPathMatch();
 }
 
@@ -88,7 +88,7 @@ function handleAsyncRoutes(routeList) {
 function registerAllRoutes(routeList) {
   // 转换路由结构（addAsyncRoutes 内部会处理外链注册）
   const asyncRoutes = formatFlatteningRoutes(addAsyncRoutes(routeList));
-  
+
   // 检查路由结构是否存在
   if (
     !router.options.routes ||
@@ -106,9 +106,9 @@ function registerAllRoutes(routeList) {
     asyncRoutes.forEach((v: RouteRecordRaw) => {
       // 防止重复添加路由
       const existingRouteIndex = router.options.routes[0].children.findIndex(
-          value => value.path === v.path
+        value => value.path === v.path
       );
-      
+
       if (existingRouteIndex !== -1) {
         return;
       } else {
@@ -119,83 +119,85 @@ function registerAllRoutes(routeList) {
         if (!router.hasRoute(v?.name)) router.addRoute(v);
       }
     });
-    
+
     // 同步路由结构
     const flattenRouters: any = router.getRoutes().find(n => n.path === "/");
     if (flattenRouters) {
-        flattenRouters.children = router.options.routes[0].children;
-        router.addRoute(flattenRouters);
-      }
+      flattenRouters.children = router.options.routes[0].children;
+      router.addRoute(flattenRouters);
     }
+  }
 }
 
 /** 过滤后端传来的动态路由 重新生成规范路由 */
-function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
-  if (!arrRoutes || !arrRoutes.length) return arrRoutes;
-  
+function addAsyncRoutes(arrRoutes: Array<BackendRoute>): RouteRecordRaw[] {
+  if (!arrRoutes || !arrRoutes.length) return [];
+
   const modulesRoutesKeys = Object.keys(modulesRoutes);
-  
-  arrRoutes.forEach((v: RouteRecordRaw) => {
-    // 将backstage属性加入meta，标识此路由为后端返回路由
-    console.log('[addAsyncRoutes] 入口 v:', v);
-    v.meta.backstage = true;
-    
-    // 处理外链路由
-    const isFrame = (v as any).isFrame || (v.meta && v.meta.isFrame);
-    if (isFrame && /^https?:\/\//.test(v.path)) {
-      // 外链路由直接注册到 vue-router，不返回给后续处理
-      const meta = v.meta || {};
-      const alias = (typeof v.name === 'string' ? v.name : '') ||
-        'external_' + Buffer.from(v.path).toString('base64').replace(/=+$/, '')
-      const frameRoute = {
-        path: `/${alias}`,
-        name: alias,
-        meta: {
-          ...meta,
-          isFrame: true,
-          frameSrc: v.path,
-          title: (v as any).title,
-          icon: (v as any).icon,
-          backstage: true
-        },
-        component: () => import('@/layout/frame.vue')
-      };
-      
-      if (!router.hasRoute(frameRoute.name)) {
-        router.addRoute(frameRoute);
+
+  return arrRoutes
+    .map((v: BackendRoute) => {
+      // 外链（通过 component 字段识别）
+      if (/^https?:\/\//.test(v.component)) {
+        return {
+          path: v.path,
+          name: v.title || generateRouteName(v.path),
+          meta: {
+            isIframe: !!v.isIframe,
+            frameSrc: v.component,
+            title: v.title,
+            icon: v.icon,
+            backstage: true,
+            id: v.id,
+            parentId: v.parentId,
+            sort: v.sort,
+            level: v.level,
+            type: v.type,
+            isKeepAlive: v.isKeepAlive,
+            isHidden: v.isHidden,
+            permission: v.permission
+          },
+          component: v.isIframe ? IFrame : undefined
+        };
       }
-      
-      // 外链路由不返回，避免重复处理
-      return;
-    }
-    
-    // 父级的redirect属性取值：如果子级存在且父级的redirect属性不存在，默认取第一个子级的path
-    if (v?.children && v.children.length && !v.redirect)
-      v.redirect = v.children[0].path;
-    
-    // 父级的name属性取值：如果子级存在且父级的name属性不存在，默认取第一个子级的name
-    if (v?.children && v.children.length && !v.name)
-      v.name = (v.children[0].name as string) + "Parent";
-    
-    // 处理组件
-    if (v.meta?.frameSrc) {
-      v.component = IFrame;
-    } else {
-      // 对后端传component组件路径和不传做兼容
-      const index = v?.component
-        ? modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any))
-        : modulesRoutesKeys.findIndex(ev => ev.includes(v.path));
-      v.component = modulesRoutes[modulesRoutesKeys[index]];
-    }
-    
-    // 递归处理子路由
-    if (v?.children && v.children.length) {
-      addAsyncRoutes(v.children);
-    }
-  });
-  
-  // 过滤掉外链路由，只返回普通路由
-  return arrRoutes.filter(v => !(/^https?:\/\//.test(v.path)));
+
+      // 普通路由
+      let route: any = {
+        path: v.path,
+        name: v.title || generateRouteName(v.path),
+        meta: {
+          title: v.title,
+          icon: v.icon,
+          backstage: true,
+          id: v.id,
+          parentId: v.parentId,
+          sort: v.sort,
+          level: v.level,
+          type: v.type,
+          isKeepAlive: v.isKeepAlive,
+          isHidden: v.isHidden,
+          permission: v.permission
+        },
+        component: undefined,
+        // redirect: undefined
+      };
+
+      // 处理component
+      if (v.component) {
+        const index = modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any));
+        if (index !== -1) {
+          route.component = modulesRoutes[modulesRoutesKeys[index]] as any;
+        }
+      }
+
+      // 递归处理子路由
+      if (v.children && v.children.length) {
+        route.children = addAsyncRoutes(v.children);
+      }
+
+      return route;
+    })
+    .filter(Boolean) as RouteRecordRaw[];
 }
 
 // ==================== 菜单转路由 ====================
@@ -205,156 +207,119 @@ function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
  */
 function generateRouteName(path: string): string {
   return path
-    .split('/')
+    .split("/")
     .filter(Boolean)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('')
+    .join("");
 }
 
 /**
  * 将菜单配置转换为路由配置
  */
-function menuToRoute(menu: any): any {
+function menuToRoute(menu: BackendRoute): any {
   const route: any = {
     path: menu.path,
-    name: menu.name || generateRouteName(menu.path),
+    name: menu.title || generateRouteName(menu.path),
     meta: {
       title: menu.title,
       icon: menu.icon,
-      keepAlive: menu.cache,
-      hidden: !menu.visible,
-      affix: menu.affix,
-      showLink: menu.visible !== false,
-      rank: menu.sort,
+      keepAlive: menu.isKeepAlive,
+      hidden: menu.isHidden,
+      showLink: !menu.isHidden,
+      rank: menu.sort || 0,
       backstage: true // 标识为后端配置的路由
     }
-  }
+  };
 
   // 根据菜单类型设置路由属性
   switch (menu.type) {
     case 1: // 目录
-      route.redirect = menu.redirect || (menu.children?.[0]?.path)
+      route.redirect = menu.redirect || menu.children?.[0]?.path;
       if (menu.children && menu.children.length > 0) {
-        route.children = menu.children.map((child: any) => menuToRoute(child))
+        route.children = menu.children.map((child: BackendRoute) =>
+          menuToRoute(child)
+        );
       }
-      break
-
+      break;
     case 2: // 菜单
       if (menu.component) {
-        route.component = resolveComponent(menu.component)
+        route.component = resolveComponent(menu.component);
       }
       if (menu.redirect) {
-        route.redirect = menu.redirect
+        route.redirect = menu.redirect;
       }
-      break
-
+      break;
     case 3: // 按钮
       // 按钮类型不生成路由
-      return null
+      return null;
   }
 
-  return route
+  return route;
 }
 
 /**
  * 预览生成的路由配置
  */
-function previewRouteConfig(menu: any): any {
-  return menuToRoute(cloneDeep(menu))
+function previewRouteConfig(menu: BackendRoute): any {
+  return menuToRoute(cloneDeep(menu));
 }
 
 /**
  * 验证菜单配置的路由有效性
  */
-function validateMenuRoute(menu: any): {
-  valid: boolean
-  errors: string[]
+function validateMenuRoute(menu: BackendRoute): {
+  valid: boolean;
+  errors: string[];
 } {
-  const errors: string[] = []
+  const errors: string[] = [];
 
   // 验证路径格式
-  if (menu.path && !menu.path.startsWith('/') && !menu.path.startsWith('http')) {
-    errors.push('路由路径必须以 / 开头或者是完整的URL地址')
+  if (
+    menu.path &&
+    !menu.path.startsWith("/") &&
+    !menu.path.startsWith("http")
+  ) {
+    errors.push("路由路径必须以 / 开头或者是完整的URL地址");
   }
 
   // 验证组件路径
-  if (menu.type === 2 && menu.component && !validateComponentPath(menu.component)) {
-    errors.push(`组件路径 ${menu.component} 不存在`)
+  if (
+    menu.type === 2 &&
+    menu.component &&
+    !validateComponentPath(menu.component)
+  ) {
+    errors.push(`组件路径 ${menu.component} 不存在`);
   }
 
   return {
     valid: errors.length === 0,
     errors
-  }
+  };
 }
 
 // ==================== 路由排序和过滤 ====================
-
-function handRank(routeInfo: any) {
-  const { name, path, parentId, meta } = routeInfo;
-  return isAllEmpty(parentId)
-    ? isAllEmpty(meta?.rank) ||
-      (meta?.rank === 0 && name !== "Home" && path !== "/")
-      ? true
-      : false
-    : false;
-}
-
 /** 按照路由中meta下的rank等级升序来排序路由 */
 function ascending(arr: any[]) {
+  // 确保所有路由都有有效的meta和rank
   arr.forEach((v, index) => {
-    // 当rank不存在时，根据顺序自动创建，首页路由永远在第一位
-    if (handRank(v)) v.meta.rank = index + 2;
+    if (!v.meta) {
+      throw new Error(
+        `菜单项缺少 meta 字段，path: ${String(v.path) || ""}, name: ${String(v.name) || ""}`
+      );
+    }
+    // 确保rank有默认值
+    if (v.meta.rank === undefined || v.meta.rank === null) {
+      v.meta.rank = index + 1;
+    }
   });
   return arr.sort(
     (a: { meta: { rank: number } }, b: { meta: { rank: number } }) => {
-      return a?.meta.rank - b?.meta.rank;
+      const rankA = a?.meta?.rank ?? 0;
+      const rankB = b?.meta?.rank ?? 0;
+      return rankA - rankB;
     }
   );
 }
-
-/** 过滤meta中showLink为false的菜单 */
-function filterTree(data: RouteComponent[]) {
-  const newTree = cloneDeep(data).filter(
-    (v: { meta: { showLink: boolean } }) => v.meta?.showLink !== false
-  );
-  newTree.forEach(
-    (v: { children }) => v.children && (v.children = filterTree(v.children))
-  );
-  return newTree;
-}
-
-/** 过滤children长度为0的的目录，当目录下没有菜单时，会过滤此目录，目录没有赋予roles权限，当目录下只要有一个菜单有显示权限，那么此目录就会显示 */
-function filterChildrenTree(data: RouteComponent[]) {
-  const newTree = cloneDeep(data).filter((v: any) => v?.children?.length !== 0);
-  newTree.forEach(
-    (v: { children }) => v.children && (v.children = filterTree(v.children))
-  );
-  return newTree;
-}
-
-/** 判断两个数组彼此是否存在相同值 */
-function isOneOfArray(a: Array<string>, b: Array<string>) {
-  return Array.isArray(a) && Array.isArray(b)
-    ? intersection(a, b).length > 0
-      ? true
-      : false
-    : true;
-}
-
-/** 从localStorage里取出当前登录用户的角色roles，过滤无权限的菜单 */
-function filterNoPermissionTree(data: RouteComponent[]) {
-  const currentRoles =
-    storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [];
-  const newTree = cloneDeep(data).filter((v: any) =>
-    isOneOfArray(v.meta?.roles, currentRoles)
-  );
-  newTree.forEach(
-    (v: any) => v.children && (v.children = filterNoPermissionTree(v.children))
-  );
-  return filterChildrenTree(newTree);
-}
-
 // ==================== 路由查找和路径处理 ====================
 
 /** 通过指定 `key` 获取父级路径集合，默认 `key` 为 `path` */
@@ -387,7 +352,7 @@ function findRouteByPath(path: string, routes: RouteRecordRaw[]) {
   if (!routes || !Array.isArray(routes) || routes.length === 0) {
     return null;
   }
-  
+
   let res = routes.find((item: { path: string }) => item.path == path);
   if (res) {
     return isProxy(res) ? toRaw(res) : res;
@@ -452,7 +417,6 @@ function formatTwoStageRoutes(routesList: RouteRecordRaw[]) {
   });
   return newRoutesList;
 }
-
 
 // ==================== 路由工具函数 ====================
 
@@ -527,7 +491,7 @@ function handleTopMenu(route) {
 
 /** 获取所有菜单中的第一个菜单（顶级菜单）*/
 function getTopMenu(tag = false): menuType {
-  const wholeMenus = usePermissionStoreHook().wholeMenus;
+  const wholeMenus = useMenuStoreHook().wholeMenus;
   if (!wholeMenus || wholeMenus.length === 0) {
     return null;
   }
@@ -574,30 +538,30 @@ function getTopMenu(tag = false): menuType {
 function handleAliveRoute({ name }: ToRouteType, mode?: string) {
   switch (mode) {
     case "add":
-      usePermissionStoreHook().cacheOperate({
+      useMenuStoreHook().cacheOperate({
         mode: "add",
         name
       });
       break;
     case "delete":
-      usePermissionStoreHook().cacheOperate({
+      useMenuStoreHook().cacheOperate({
         mode: "delete",
         name
       });
       break;
     case "refresh":
-      usePermissionStoreHook().cacheOperate({
+      useMenuStoreHook().cacheOperate({
         mode: "refresh",
         name
       });
       break;
     default:
-      usePermissionStoreHook().cacheOperate({
+      useMenuStoreHook().cacheOperate({
         mode: "delete",
         name
       });
       useTimeoutFn(() => {
-        usePermissionStoreHook().cacheOperate({
+        useMenuStoreHook().cacheOperate({
           mode: "add",
           name
         });
@@ -612,9 +576,7 @@ function handleMultiTags() {
   if (!useMultiTagsStoreHook().getMultiTagsCache) {
     useMultiTagsStoreHook().handleTags("equal", [
       ...routerArrays,
-      ...usePermissionStoreHook().flatteningRoutes.filter(
-        v => v?.meta?.fixedTag
-      )
+      ...useMenuStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
     ]);
   }
 }
@@ -625,75 +587,81 @@ function handleMultiTags() {
  * 获取所有可用的组件路径
  */
 function getAvailableComponents(): string[] {
-  return Object.keys(viewModules).map(path =>
-    path.replace('/src/views/', '@/views/').replace(/\.(vue|tsx)$/, '')
-  ).sort()
+  return Object.keys(viewModules)
+    .map(path =>
+      path.replace("/src/views/", "@/views/").replace(/\.(vue|tsx)$/, "")
+    )
+    .sort();
 }
 
 /**
  * 验证组件路径是否存在
  */
 function validateComponentPath(componentPath: string): boolean {
-  if (!componentPath) return false
-  
-  const fullPath = componentPath.startsWith('@/views/')
-    ? componentPath.replace('@/views/', '/src/views/')
-    : `/src/views/${componentPath}`
+  if (!componentPath) return false;
 
-  const existsAsVue = viewModules[`${fullPath}.vue`] !== undefined
-  const existsAsTsx = viewModules[`${fullPath}.tsx`] !== undefined
+  const fullPath = componentPath.startsWith("@/views/")
+    ? componentPath.replace("@/views/", "/src/views/")
+    : `/src/views/${componentPath}`;
 
-  return existsAsVue || existsAsTsx
+  const existsAsVue = viewModules[`${fullPath}.vue`] !== undefined;
+  const existsAsTsx = viewModules[`${fullPath}.tsx`] !== undefined;
+
+  return existsAsVue || existsAsTsx;
 }
 
 /**
  * 智能组件路径建议
  */
 function suggestComponentPath(menuPath: string, menuName?: string): string[] {
-  const suggestions: string[] = []
+  const suggestions: string[] = [];
 
   // 基于路径的建议
-  if (menuPath && menuPath.startsWith('/')) {
-    const pathParts = menuPath.split('/').filter(Boolean)
+  if (menuPath && menuPath.startsWith("/")) {
+    const pathParts = menuPath.split("/").filter(Boolean);
     if (pathParts.length > 0) {
-      suggestions.push(`@/views/${pathParts.join('/')}/index`)
+      suggestions.push(`@/views/${pathParts.join("/")}/index`);
       if (pathParts.length > 1) {
-        suggestions.push(`@/views/${pathParts.slice(0, -1).join('/')}/${pathParts[pathParts.length - 1]}`)
+        suggestions.push(
+          `@/views/${pathParts.slice(0, -1).join("/")}/${pathParts[pathParts.length - 1]}`
+        );
       }
     }
   }
 
   // 基于名称的建议
   if (menuName) {
-    const nameParts = menuName.split(/(?=[A-Z])/).map(part => part.toLowerCase())
-    suggestions.push(`@/views/${nameParts.join('/')}/index`)
+    const nameParts = menuName
+      .split(/(?=[A-Z])/)
+      .map(part => part.toLowerCase());
+    suggestions.push(`@/views/${nameParts.join("/")}/index`);
   }
 
   // 过滤出实际存在的路径
-  return suggestions.filter(path => validateComponentPath(path))
+  return suggestions.filter(path => validateComponentPath(path));
 }
 
 /**
  * 解析组件
  */
 function resolveComponent(componentPath: string): any {
-  if (!componentPath) return undefined
+  if (!componentPath) return undefined;
 
-  const fullPath = componentPath.startsWith('@/views/')
-    ? componentPath.replace('@/views/', '/src/views/')
-    : `/src/views/${componentPath}`
+  const fullPath = componentPath.startsWith("@/views/")
+    ? componentPath.replace("@/views/", "/src/views/")
+    : `/src/views/${componentPath}`;
 
   // 尝试.vue文件
   if (viewModules[`${fullPath}.vue`]) {
-    return viewModules[`${fullPath}.vue`]
+    return viewModules[`${fullPath}.vue`];
   }
 
   // 尝试.tsx文件
   if (viewModules[`${fullPath}.tsx`]) {
-    return viewModules[`${fullPath}.tsx`]
+    return viewModules[`${fullPath}.tsx`];
   }
 
-  return undefined
+  return undefined;
 }
 
 // ==================== 导出 ====================
@@ -702,45 +670,42 @@ export {
   // 权限相关
   hasAuth, // 判断是否有按钮级别权限
   getAuths, // 获取当前页面按钮级别权限
-  
-  // 路由排序和过滤
+
+  // 路由排序
   ascending, // 路由按 rank 升序排序
-  filterTree, // 过滤 showLink=false 的菜单
-  filterNoPermissionTree, // 过滤无权限菜单
-  isOneOfArray, // 判断两个数组是否有交集
-  
+
   // 动态路由处理
   initRouter, // 初始化动态路由
   addAsyncRoutes, // 递归处理后端返回的动态路由，生成标准路由结构
   handleAsyncRoutes, // 处理动态路由的完整流程（包含注册、缓存等）
   registerAllRoutes, // 注册所有路由（包含外链和普通路由）
-  
+
   // 菜单处理
   getTopMenu, // 获取第一个顶级菜单
-  
+
   // 路由工具函数
   addPathMatch, // 添加 404 匹配路由
   getHistoryMode, // 获取路由历史模式
   getParentPaths, // 获取指定路由的所有父级路径
   findRouteByPath, // 通过 path 查找路由信息
-  
+
   // 缓存处理
   handleAliveRoute, // 处理 keep-alive 缓存路由
   handleMultiTags, // 处理多标签页缓存
-  
+
   // 路由格式转换
   formatTwoStageRoutes, // 一维路由转为两级嵌套路由
   formatFlatteningRoutes, // 多级嵌套路由拍平成一维
-  
+
   // 组件路径管理
   validateComponentPath, // 校验组件路径是否存在
   suggestComponentPath, // 智能建议组件路径
   getAvailableComponents, // 获取所有可用组件路径
   resolveComponent, // 解析组件路径为 import 组件
-  
+
   // 菜单转路由
   validateMenuRoute, // 校验菜单路由配置有效性
   previewRouteConfig, // 预览菜单生成的路由配置
   menuToRoute, // 菜单对象转为路由对象
-  generateRouteName, // 根据 path 生成路由名称
+  generateRouteName // 根据 path 生成路由名称
 };

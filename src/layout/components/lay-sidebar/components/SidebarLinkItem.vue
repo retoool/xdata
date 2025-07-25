@@ -7,17 +7,23 @@ const props = defineProps<{
   to: menuType;
 }>();
 
-const isFrameLink = computed(() => (props.to.meta && (props.to.meta as any).isFrame) && isUrl(props.to.path));
-const isExternalLink = computed(() => isUrl(props.to.path) && !(props.to.meta && (props.to.meta as any).isFrame));
+const isIframeLink = computed(
+  () => 
+    isUrl(props.to.meta?.frameSrc) && props.to.meta?.isIframe
+);
+const isExternalLink = computed(
+  () =>
+    isUrl(props.to.meta?.frameSrc) && !props.to.meta?.isIframe
+);
 const getLinkProps = (item: menuType) => {
-  if (isFrameLink.value) {
-    return {
-      to: `/external/${encodeURIComponent(item.path)}`
-    };
-  }
+  // if (isIframeLink.value) {
+  //   return {
+  //     to: `/external/${encodeURIComponent(item.path)}`
+  //   };
+  // }
   if (isExternalLink.value) {
     return {
-      href: item.path,
+      href: item.meta?.frameSrc,
       target: "_blank",
       rel: "noopener"
     };
@@ -30,7 +36,7 @@ const getLinkProps = (item: menuType) => {
 
 <template>
   <component
-    :is="isFrameLink ? 'router-link' : isExternalLink ? 'a' : 'router-link'"
+    :is="isIframeLink ? 'router-link' : isExternalLink ? 'a' : 'router-link'"
     v-bind="getLinkProps(to)"
   >
     <slot />

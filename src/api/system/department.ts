@@ -1,10 +1,10 @@
-import { http } from '@/utils/http'
+import { http } from "@/utils/http";
 import type {
   Department,
   DepartmentFormData,
   DepartmentSearchParams,
   PageResult
-} from '@/types/system'
+} from "@/types/system";
 
 /**
  * 部门管理相关API
@@ -13,73 +13,95 @@ export class DepartmentApi {
   /**
    * 获取部门列表（分页）
    */
-  static async getDepartmentList(params: DepartmentSearchParams): Promise<PageResult<Department>> {
-    return http.request<PageResult<Department>>('GET', '/system/department/list', { params })
+  static async getDepartmentList(
+    params: DepartmentSearchParams
+  ): Promise<PageResult<Department>> {
+    return http.request<PageResult<Department>>(
+      "GET",
+      "/system/department/list",
+      { params }
+    );
   }
 
   /**
    * 获取部门树形结构
    */
   static async getDepartmentTree(): Promise<Department[]> {
-    return http.request<Department[]>('GET', '/system/department/tree')
+    return http.request<Department[]>("GET", "/system/department/tree");
   }
 
   /**
    * 根据ID获取部门详情
    */
   static async getDepartmentById(id: number): Promise<Department> {
-    return http.request<Department>('GET', `/system/department/${id}`)
+    return http.request<Department>("GET", `/system/department/${id}`);
   }
 
   /**
    * 创建部门
    */
   static async createDepartment(data: DepartmentFormData): Promise<Department> {
-    return http.request<Department>('POST', '/system/department', { data })
+    return http.request<Department>("POST", "/system/department", { data });
   }
 
   /**
    * 更新部门
    */
-  static async updateDepartment(id: number, data: Partial<DepartmentFormData>): Promise<Department> {
-    return http.request<Department>('POST', `/system/department/${id}`, { data })
+  static async updateDepartment(
+    id: number,
+    data: Partial<DepartmentFormData>
+  ): Promise<Department> {
+    return http.request<Department>("POST", `/system/department/${id}`, {
+      data
+    });
   }
 
   /**
    * 删除部门
    */
   static async deleteDepartment(id: number): Promise<void> {
-    return http.request<void>('POST', `/system/department/${id}/delete`)
+    return http.request<void>("POST", `/system/department/${id}/delete`);
   }
 
   /**
    * 批量删除部门
    */
   static async batchDeleteDepartments(ids: number[]): Promise<void> {
-    return http.request<void>('POST', '/system/department/batch-delete', { data: { ids } })
+    return http.request<void>("POST", "/system/department/batch-delete", {
+      data: { ids }
+    });
   }
 
   /**
    * 更新部门状态
    */
-  static async updateDepartmentStatus(id: number, status: number): Promise<void> {
-    return http.request<void>('POST', `/system/department/${id}/status`, { data: { status } })
+  static async updateDepartmentStatus(
+    id: number,
+    status: number
+  ): Promise<void> {
+    return http.request<void>("POST", `/system/department/${id}/status`, {
+      data: { status }
+    });
   }
 
   /**
    * 检查部门名称是否可用
    */
-  static async checkDepartmentName(name: string, parentId?: number, excludeId?: number): Promise<boolean> {
-    return http.request<boolean>('POST', '/system/department/check-name', {
+  static async checkDepartmentName(
+    name: string,
+    parentId?: number,
+    excludeId?: number
+  ): Promise<boolean> {
+    return http.request<boolean>("POST", "/system/department/check-name", {
       data: { name, parentId, excludeId }
-    })
+    });
   }
 
   /**
    * 获取部门统计信息
    */
   static async getDepartmentStats(): Promise<any> {
-    return http.request<any>('GET', '/system/department/stats')
+    return http.request<any>("GET", "/system/department/stats");
   }
 }
 
@@ -95,4 +117,4 @@ export const {
   updateDepartmentStatus,
   checkDepartmentName,
   getDepartmentStats
-} = DepartmentApi 
+} = DepartmentApi;

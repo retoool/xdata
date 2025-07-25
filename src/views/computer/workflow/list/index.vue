@@ -1,13 +1,10 @@
 <template>
   <div class="workflow-page">
-    <div class="category-tree" :class="{ 'collapsed': isTreeCollapsed }">
-      <CategoryTree 
-        ref="categoryTreeRef"
-        @node-select="handleNodeSelect"
-      />
+    <div class="category-tree" :class="{ collapsed: isTreeCollapsed }">
+      <CategoryTree ref="categoryTreeRef" @node-select="handleNodeSelect" />
     </div>
-    <div class="content-area" :class="{ 'expanded': isTreeCollapsed }">
-      <WorkflowTable 
+    <div class="content-area" :class="{ expanded: isTreeCollapsed }">
+      <WorkflowTable
         ref="workflowTableRef"
         :selected-category-id="selectedCategoryIds"
         :selected-category-path="selectedCategoryPath"
@@ -15,7 +12,7 @@
       />
     </div>
     <div class="collapse-button" @click="toggleTreeCollapse">
-      <el-icon :class="{ 'rotated': isTreeCollapsed }">
+      <el-icon :class="{ rotated: isTreeCollapsed }">
         <ArrowLeft />
       </el-icon>
     </div>
@@ -23,47 +20,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ref, onMounted } from "vue";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import CategoryTree from "./CategoryTree.vue";
 import WorkflowTable from "./WorkflowTable.vue";
 import { useWorkflowStoreHook } from "@/store/modules/workflow";
 
 const workflowStore = useWorkflowStoreHook();
-const workflowTableRef = ref()
-const categoryTreeRef = ref()
-const selectedCategoryIds = ref<number[] | null>(null)
-const selectedCategoryPath = ref<string[] | null>(null)
-const isTreeCollapsed = ref(false)
+const workflowTableRef = ref();
+const categoryTreeRef = ref();
+const selectedCategoryIds = ref<number[] | null>(null);
+const selectedCategoryPath = ref<string[] | null>(null);
+const isTreeCollapsed = ref(false);
 
-const handleNodeSelect = (payload: { ids: number[], node: any }) => {
-  selectedCategoryIds.value = payload.ids
+const handleNodeSelect = (payload: { ids: number[]; node: any }) => {
+  selectedCategoryIds.value = payload.ids;
   // 获取分类树数据源
-  dataSource.value = categoryTreeRef.value?.getDataSource() || []
+  dataSource.value = categoryTreeRef.value?.getDataSource() || [];
   // 构建分类路径
-  selectedCategoryPath.value = buildCategoryPath(payload.node)
-  
+  selectedCategoryPath.value = buildCategoryPath(payload.node);
+
   // 保存到状态管理
-  workflowStore.setSelectedCategory(payload.ids, selectedCategoryPath.value)
+  workflowStore.setSelectedCategory(payload.ids, selectedCategoryPath.value);
   // 通过 props 更新，不需要手动调用 setCategoryId
-}
+};
 
 // 构建分类路径
 const buildCategoryPath = (node: any): string[] => {
-  if (!node) return []
-  
-  const path: string[] = []
-  let currentNode = node
-  
+  if (!node) return [];
+
+  const path: string[] = [];
+  let currentNode = node;
+
   // 从当前节点向上遍历到根节点
   while (currentNode) {
-    path.unshift(currentNode.label)
+    path.unshift(currentNode.label);
     // 查找父节点
-    currentNode = findParentNode(dataSource.value, currentNode.id)
+    currentNode = findParentNode(dataSource.value, currentNode.id);
   }
-  
-  return path
-}
+
+  return path;
+};
 
 // 查找父节点
 const findParentNode = (nodes: any[], targetId: number): any => {
@@ -71,44 +68,46 @@ const findParentNode = (nodes: any[], targetId: number): any => {
     if (node.children) {
       for (const child of node.children) {
         if (child.id === targetId) {
-          return node
+          return node;
         }
       }
-      const found = findParentNode(node.children, targetId)
-      if (found) return found
+      const found = findParentNode(node.children, targetId);
+      if (found) return found;
     }
   }
-  return null
-}
+  return null;
+};
 
 // 分类树数据源
-const dataSource = ref<any[]>([])
+const dataSource = ref<any[]>([]);
 
-const handleCategoryClick = (payload: { path: string[], index: number }) => {
+const handleCategoryClick = (payload: { path: string[]; index: number }) => {
   // 根据分类路径查找对应的分类节点并选中
   categoryTreeRef.value?.selectNodeByPath(payload.path);
-}
+};
 
 // 切换分类树收起/展开状态
 const toggleTreeCollapse = () => {
   isTreeCollapsed.value = !isTreeCollapsed.value;
   // 保存到状态管理
   workflowStore.setTreeCollapsed(isTreeCollapsed.value);
-}
+};
 
 // 恢复状态
 const restoreState = () => {
   // 恢复分类树折叠状态
   isTreeCollapsed.value = workflowStore.getIsTreeCollapsed;
-  
+
   // 恢复选中的分类
   const storedCategoryId = workflowStore.getSelectedCategoryId;
   const storedCategoryPath = workflowStore.getSelectedCategoryPath;
-  
+
   if (storedCategoryId && storedCategoryPath) {
-    selectedCategoryIds.value = Array.isArray(storedCategoryId) ? storedCategoryId : [storedCategoryId];
+    selectedCategoryIds.value = Array.isArray(storedCategoryId)
+      ? storedCategoryId
+      : [storedCategoryId];
     selectedCategoryPath.value = storedCategoryPath;
-    
+
     // 通知分类树恢复选中状态
     setTimeout(() => {
       if (categoryTreeRef.value?.selectNodeByPath) {
@@ -116,12 +115,12 @@ const restoreState = () => {
       }
     }, 100);
   }
-}
+};
 
 // 组件挂载时恢复状态
 onMounted(() => {
   restoreState();
-})
+});
 </script>
 
 <style scoped>
@@ -193,7 +192,11 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  background: linear-gradient(
+    to right,
+    var(--el-border-color-lighter) 0%,
+    var(--el-bg-color) 70%
+  );
   box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
 }
 
@@ -227,4 +230,4 @@ onMounted(() => {
   border-left: 1px solid var(--el-border-color-lighter);
   border-radius: 0 8px 8px 0;
 }
-</style> 
+</style>

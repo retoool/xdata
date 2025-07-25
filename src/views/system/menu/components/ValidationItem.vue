@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { SuccessFilled, CircleCloseFilled } from '@element-plus/icons-vue'
+import { SuccessFilled, CircleCloseFilled } from "@element-plus/icons-vue";
 
 // Props
 defineProps<{
-  valid: boolean
-  message: string
-}>()
+  valid: boolean;
+  message: string;
+}>();
 </script>
 
 <style scoped lang="scss">
@@ -29,24 +29,24 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   .status-icon {
     .el-icon {
       font-size: 16px;
-      
+
       &.success {
         color: var(--el-color-success);
       }
-      
+
       &.error {
         color: var(--el-color-error);
       }
     }
   }
-  
+
   .message {
     font-size: 14px;
     color: var(--el-text-color-primary);
   }
 }
-</style> 
+</style>

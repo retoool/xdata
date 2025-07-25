@@ -1,7 +1,7 @@
 <template>
   <div class="user-management-page">
-    <div class="department-tree" :class="{ 'collapsed': isTreeCollapsed }">
-      <DepartmentTree 
+    <div class="department-tree" :class="{ collapsed: isTreeCollapsed }">
+      <DepartmentTree
         ref="departmentTreeRef"
         @node-select="handleDepartmentSelect"
         @node-create="handleDepartmentCreate"
@@ -10,8 +10,8 @@
         @batch-delete="handleDepartmentBatchDelete"
       />
     </div>
-    <div class="content-area" :class="{ 'expanded': isTreeCollapsed }">
-      <UserTable 
+    <div class="content-area" :class="{ expanded: isTreeCollapsed }">
+      <UserTable
         ref="userTableRef"
         :selected-department-id="selectedDepartmentId"
         :selected-department-path="selectedDepartmentPath"
@@ -19,7 +19,7 @@
       />
     </div>
     <div class="collapse-button" @click="toggleTreeCollapse">
-      <el-icon :class="{ 'rotated': isTreeCollapsed }">
+      <el-icon :class="{ rotated: isTreeCollapsed }">
         <ArrowLeft />
       </el-icon>
     </div>
@@ -27,71 +27,82 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { useSystemStore } from '@/store/modules/system'
-import DepartmentTree from './DepartmentTree.vue'
-import UserTable from './UserTable.vue'
+import { ref, computed, onMounted } from "vue";
+import { ArrowLeft } from "@element-plus/icons-vue";
+// import { useSystemStore } from '@/store/modules/system'
+import DepartmentTree from "./DepartmentTree.vue";
+import UserTable from "./UserTable.vue";
 
-const systemStore = useSystemStore()
-const departmentTreeRef = ref()
-const userTableRef = ref()
-
-// 响应式数据
-const isTreeCollapsed = computed(() => systemStore.isDepartmentTreeCollapsed)
-const selectedDepartmentId = computed(() => systemStore.selectedDepartmentId)
-const selectedDepartmentPath = computed(() => systemStore.selectedDepartmentPath)
+// 本地状态
+const departmentTreeRef = ref();
+const userTableRef = ref();
+const isTreeCollapsed = ref(false);
+const selectedDepartmentId = ref<number | null>(null);
+const selectedDepartmentPath = ref<string[]>([]);
 
 // 部门相关操作
-const handleDepartmentSelect = ({ ids, node }: { ids: number[]; node: any }) => {
-  systemStore.setSelectedDepartment(ids[0] ?? null, node ? [node.name] : [])
-}
+const setSelectedDepartment = (id: number | null, path: string[] = []) => {
+  selectedDepartmentId.value = id;
+  selectedDepartmentPath.value = [...path];
+};
+const clearSelectedDepartment = () => {
+  selectedDepartmentId.value = null;
+  selectedDepartmentPath.value = [];
+};
+const toggleTreeCollapse = () => {
+  isTreeCollapsed.value = !isTreeCollapsed.value;
+};
+
+// 响应式数据
+// const isTreeCollapsed = computed(() => systemStore.isDepartmentTreeCollapsed)
+// const selectedDepartmentId = computed(() => systemStore.selectedDepartmentId)
+// const selectedDepartmentPath = computed(() => systemStore.selectedDepartmentPath)
+
+const handleDepartmentSelect = ({
+  ids,
+  node
+}: {
+  ids: number[];
+  node: any;
+}) => {
+  setSelectedDepartment(ids[0] ?? null, node ? [node.name] : []);
+};
 
 const handleDepartmentCreate = (department: any) => {
-  // 部门创建成功后刷新部门树
-  departmentTreeRef.value?.loadTree()
-}
+  departmentTreeRef.value?.loadTree();
+};
 
 const handleDepartmentUpdate = (department: any) => {
-  // 部门更新成功后刷新部门树
-  departmentTreeRef.value?.loadTree()
-}
+  departmentTreeRef.value?.loadTree();
+};
 
 const handleDepartmentDelete = (departmentId: number) => {
-  // 部门删除成功后刷新部门树
-  departmentTreeRef.value?.loadTree()
-  // 如果删除的是当前选中的部门，清空选择
+  departmentTreeRef.value?.loadTree();
   if (selectedDepartmentId.value === departmentId) {
-    systemStore.clearSelectedDepartment()
+    clearSelectedDepartment();
   }
-}
+};
 
 const handleDepartmentBatchDelete = (departmentIds: number[]) => {
-  // 部门批量删除成功后刷新部门树
-  departmentTreeRef.value?.loadTree()
-  // 如果删除的部门中包含当前选中的部门，清空选择
-  if (selectedDepartmentId.value && departmentIds.includes(selectedDepartmentId.value)) {
-    systemStore.clearSelectedDepartment()
+  departmentTreeRef.value?.loadTree();
+  if (
+    selectedDepartmentId.value &&
+    departmentIds.includes(selectedDepartmentId.value)
+  ) {
+    clearSelectedDepartment();
   }
-}
+};
 
 const handleDepartmentBreadcrumbClick = (departmentId: number) => {
-  // 面包屑点击时选中对应部门
-  departmentTreeRef.value?.setCurrentKey(departmentId)
-}
-
-// 树形控制
-const toggleTreeCollapse = () => {
-  systemStore.toggleDepartmentTree()
-}
+  departmentTreeRef.value?.setCurrentKey(departmentId);
+};
 
 // 生命周期
 onMounted(() => {
-  // 部门树加载完成后自动选择系统部门
   setTimeout(() => {
-    departmentTreeRef.value?.selectSystemDepartmentAndEmit()
-  }, 100)
-})
+    departmentTreeRef.value?.selectSystemDepartmentAndEmit();
+  }, 100);
+});
 </script>
 
 <style scoped>
@@ -164,7 +175,11 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  background: linear-gradient(
+    to right,
+    var(--el-border-color-lighter) 0%,
+    var(--el-bg-color) 70%
+  );
   box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
 }
 
@@ -198,4 +213,4 @@ onMounted(() => {
   border-left: 1px solid var(--el-border-color-lighter);
   border-radius: 0 8px 8px 0;
 }
-</style> 
+</style>

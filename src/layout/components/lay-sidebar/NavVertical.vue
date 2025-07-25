@@ -5,7 +5,7 @@ import { useNav } from "@/layout/hooks/useNav";
 import { responsiveStorageNameSpace } from "@/config";
 import { storageLocal, isAllEmpty } from "@pureadmin/utils";
 import { findRouteByPath, getParentPaths } from "@/router/utils";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import LaySidebarLogo from "../lay-sidebar/components/SidebarLogo.vue";
 import LaySidebarItem from "../lay-sidebar/components/SidebarItem.vue";
@@ -34,21 +34,18 @@ const subMenuData = ref([]);
 const menuData = computed(() => {
   function filterVisible(menus) {
     return menus
-      .filter(menu => menu.visible !== false)
+      .filter(menu => !menu.isHidden)
       .map(menu => ({
         ...menu,
         children: menu.children ? filterVisible(menu.children) : []
       }));
   }
-  const rawMenus = pureApp.layout === "mix" && device.value !== "mobile"
-    ? subMenuData.value
-    : usePermissionStoreHook().wholeMenus;
+  const rawMenus =
+    pureApp.layout === "mix" && device.value !== "mobile"
+      ? subMenuData.value
+      : useMenuStoreHook().wholeMenus;
   return filterVisible(rawMenus);
 });
-
-watch(menuData, (val) => {
-  console.log('【调试】菜单栏 menuData:', val);
-}, { immediate: true });
 
 const loading = computed(() =>
   pureApp.layout === "mix" ? false : menuData.value.length === 0 ? true : false
@@ -63,21 +60,18 @@ function getSubMenuData() {
   path = defaultActive.value;
   subMenuData.value = [];
   // path的上级路由组成的数组
-  const parentPathArr = getParentPaths(
-    path,
-    usePermissionStoreHook().wholeMenus
-  );
+  const parentPathArr = getParentPaths(path, useMenuStoreHook().wholeMenus);
   // 当前路由的父级路由信息
   const parenetRoute = findRouteByPath(
     parentPathArr[0] || path,
-    usePermissionStoreHook().wholeMenus
+    useMenuStoreHook().wholeMenus
   );
   if (!parenetRoute?.children) return;
   subMenuData.value = parenetRoute?.children;
 }
 
 watch(
-  () => [route.path, usePermissionStoreHook().wholeMenus],
+  () => [route.path, useMenuStoreHook().wholeMenus],
   () => {
     if (route.path.includes("/redirect")) return;
     getSubMenuData();

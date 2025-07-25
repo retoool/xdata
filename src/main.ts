@@ -1,7 +1,7 @@
-import { loadCustomIcons } from '@/utils/customIconManager'
+import { loadCustomIcons } from "@/utils/customIconManager";
 
 // 应用启动时全局注册自定义图标
-loadCustomIcons()
+loadCustomIcons();
 
 import App from "./App.vue";
 import router from "./router";
@@ -58,14 +58,26 @@ import "tippy.js/themes/light.css";
 import VueTippy from "vue-tippy";
 app.use(VueTippy);
 
-getPlatformConfig(app).then(async config => {
-  setupStore(app);
-  setupHttpConfig(); // 配置HTTP工具
-  app.use(router);
-  await router.isReady();
-  injectResponsiveStorage(app, config);
-  app.use(MotionPlugin).use(useElementPlus).use(Table);
-  // .use(PureDescriptions)
-  // .use(useEcharts);
-  app.mount("#app");
-});
+getPlatformConfig(app)
+  .then(async config => {
+    setupStore(app);
+    setupHttpConfig(); // 配置HTTP工具
+    app.use(router);
+    await router.isReady();
+    injectResponsiveStorage(app, config);
+    app.use(MotionPlugin).use(useElementPlus).use(Table);
+    // .use(PureDescriptions)
+    // .use(useEcharts);
+    app.mount("#app");
+  })
+  .catch(error => {
+    console.error("Failed to load platform config:", error);
+    // 即使配置加载失败，也继续启动应用
+    setupStore(app);
+    setupHttpConfig();
+    app.use(router);
+    router.isReady().then(() => {
+      app.use(MotionPlugin).use(useElementPlus).use(Table);
+      app.mount("#app");
+    });
+  });

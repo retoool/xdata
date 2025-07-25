@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
-import { useUserStore } from "@/store/modules/user";
 import { storageLocal, isString, isIncludeAllChildren } from "@pureadmin/utils";
+import { useUserStoreHook } from "@/store/modules/user";
 
 export interface DataInfo<T> {
   /** token */
@@ -48,7 +48,7 @@ export function getToken(): DataInfo<number> {
 export function setToken(data: DataInfo<Date>) {
   let expires = 0;
   const { accessToken, refreshToken } = data;
-  const userStore = useUserStore();
+  const userStore = useUserStoreHook();
   // 默认值，因为新store没有这些属性
   const isRemembered = false;
   const loginDay = 7;
@@ -57,8 +57,8 @@ export function setToken(data: DataInfo<Date>) {
 
   expires > 0
     ? Cookies.set(TokenKey, cookieString, {
-      expires: (expires - Date.now()) / 86400000
-    })
+        expires: (expires - Date.now()) / 86400000
+      })
     : Cookies.set(TokenKey, cookieString);
 
   Cookies.set(
@@ -66,8 +66,8 @@ export function setToken(data: DataInfo<Date>) {
     "true",
     isRemembered
       ? {
-        expires: loginDay
-      }
+          expires: loginDay
+        }
       : {}
   );
 
@@ -78,10 +78,10 @@ export function setToken(data: DataInfo<Date>) {
       username,
       realName: nickname || username,
       avatar,
-      email: userStore.userInfo?.email || '',
-      phone: userStore.userInfo?.phone || '',
+      email: userStore.userInfo?.email || "",
+      phone: userStore.userInfo?.phone || "",
       departmentId: userStore.userInfo?.departmentId || 0,
-      departmentName: userStore.userInfo?.departmentName || '',
+      departmentName: userStore.userInfo?.departmentName || "",
       roleIds: userStore.userInfo?.roleIds || [],
       status: userStore.userInfo?.status || 1,
       createTime: userStore.userInfo?.createTime || new Date().toISOString(),
@@ -146,7 +146,7 @@ export const formatToken = (token: string): string => {
 export const hasPerms = (value: string | Array<string>): boolean => {
   if (!value) return false;
   const allPerms = "*:*:*";
-  const userStore = useUserStore();
+  const userStore = useUserStoreHook();
   const { permissions } = userStore;
   if (!permissions) return false;
   if (permissions.length === 1 && permissions[0] === allPerms) return true;

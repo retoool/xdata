@@ -5,11 +5,7 @@
         <span>{{ language }}</span>
       </div>
       <div class="actions">
-        <el-button 
-          size="small" 
-          text 
-          @click="copyCode"
-        >
+        <el-button size="small" text @click="copyCode">
           <el-icon><DocumentCopy /></el-icon>
           复制
         </el-button>
@@ -22,31 +18,31 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { DocumentCopy } from '@element-plus/icons-vue'
+import { computed } from "vue";
+import { ElMessage } from "element-plus";
+import { DocumentCopy } from "@element-plus/icons-vue";
 
 // Props
 const props = defineProps<{
-  code: string
-  language?: string
-  readonly?: boolean
-}>()
+  code: string;
+  language?: string;
+  readonly?: boolean;
+}>();
 
 // 计算属性
 const formattedCode = computed(() => {
-  return props.code || ''
-})
+  return props.code || "";
+});
 
 // 方法
 const copyCode = async () => {
   try {
-    await navigator.clipboard.writeText(props.code)
-    ElMessage.success('代码已复制到剪贴板')
+    await navigator.clipboard.writeText(props.code);
+    ElMessage.success("代码已复制到剪贴板");
   } catch (error) {
-    ElMessage.error('复制失败')
+    ElMessage.error("复制失败");
   }
-}
+};
 </script>
 
 <style scoped lang="scss">
@@ -67,7 +63,7 @@ const copyCode = async () => {
       span {
         font-size: 12px;
         color: var(--el-text-color-secondary);
-        font-family: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+        font-family: "JetBrains Mono", "Monaco", "Consolas", monospace;
       }
     }
 
@@ -87,7 +83,7 @@ const copyCode = async () => {
       margin: 0;
       padding: 0;
       background: transparent;
-      font-family: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+      font-family: "JetBrains Mono", "Monaco", "Consolas", monospace;
       font-size: 13px;
       line-height: 1.5;
       color: var(--el-text-color-primary);
@@ -115,22 +111,22 @@ const copyCode = async () => {
     color: #569cd6;
     font-weight: bold;
   }
-  
+
   .string {
     color: #ce9178;
   }
-  
+
   .number {
     color: #b5cea8;
   }
-  
+
   .comment {
     color: #6a9955;
     font-style: italic;
   }
-  
+
   .function {
     color: #dcdcaa;
   }
 }
-</style> 
+</style>

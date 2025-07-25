@@ -20,7 +20,7 @@
           </template>
         </el-input>
       </el-form-item>
-      
+
       <el-form-item label="角色编码" prop="code">
         <el-input
           v-model="formData.code"
@@ -33,11 +33,8 @@
             <el-icon><Key /></el-icon>
           </template>
         </el-input>
-        <div class="form-tip">
-          角色编码用于系统权限识别，创建后不可修改（管理员角色除外）
-        </div>
       </el-form-item>
-      
+
       <el-form-item label="角色描述" prop="description">
         <el-input
           v-model="formData.description"
@@ -48,71 +45,38 @@
           show-word-limit
         />
       </el-form-item>
-      
-      <el-form-item label="角色状态" prop="status">
-        <el-radio-group v-model="formData.status" @change="handleStatusChange">
-          <el-radio :value="1">
-            <el-tag type="success" size="small">启用</el-tag>
-            <span style="margin-left: 8px;">角色可正常使用</span>
-          </el-radio>
-          <el-radio :value="0">
-            <el-tag type="danger" size="small">禁用</el-tag>
-            <span style="margin-left: 8px;">角色将被禁用，用户无法使用此角色权限</span>
-          </el-radio>
-        </el-radio-group>
-      </el-form-item>
-      
-      <!-- 预设权限模板（仅新建时显示） -->
-      <el-form-item v-if="formMode === 'create'" label="权限模板" prop="template">
-        <el-select 
-          v-model="selectedTemplate" 
-          placeholder="选择权限模板（可选）"
-          clearable
-          style="width: 100%"
-          @change="handleTemplateChange"
-        >
-          <el-option
-            v-for="template in permissionTemplates"
-            :key="template.value"
-            :label="template.label"
-            :value="template.value"
-          >
-            <div class="template-option">
-              <div class="template-name">{{ template.label }}</div>
-              <div class="template-desc">{{ template.description }}</div>
-            </div>
-          </el-option>
-        </el-select>
-        <div class="form-tip">
-          选择权限模板可快速配置常用权限，创建后可在权限配置中详细调整
-        </div>
-      </el-form-item>
-      
-      <!-- 角色信息预览（编辑模式） -->
+
+      <!-- 角色信息预览（编辑模式） 拆分为角色信息和时间信息 -->
       <el-form-item v-if="formMode === 'edit'" label="角色信息">
         <div class="role-info">
           <el-descriptions :column="2" size="small" border>
             <el-descriptions-item label="权限数量">
               <el-tag type="info" size="small">
-                {{ formData.permissions?.length || 0 }} 个
+                {{ formData.permissionCount ?? 0 }} 个
               </el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="用户数量">
-              <el-tag :type="formData.userCount > 0 ? 'warning' : 'info'" size="small">
-                {{ formData.userCount || 0 }} 人
+              <el-tag type="info" size="small">
+                {{ formData.userCount ?? 0 }} 人
               </el-tag>
             </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-form-item>
+      <el-form-item v-if="formMode === 'edit'" label="时间信息">
+        <div class="role-info">
+          <el-descriptions :column="2" size="small" border>
             <el-descriptions-item label="创建时间">
-              {{ formData.createTime || '未知' }}
+              {{ formData.createTime ? dayjs(formData.createTime).format('YYYY-MM-DD HH:mm:ss') : "未知" }}
             </el-descriptions-item>
             <el-descriptions-item label="最后更新">
-              {{ formData.updateTime || '未知' }}
+              {{ formData.updateTime ? dayjs(formData.updateTime).format('YYYY-MM-DD HH:mm:ss') : "未知" }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
       </el-form-item>
     </el-form>
-    
+
     <div class="form-footer">
       <el-button @click="handleCancel">取消</el-button>
       <el-button type="primary" :loading="submitting" @click="handleSubmit">
@@ -123,253 +87,157 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import type { Role, RoleFormData, FormMode } from '@/types/system'
-import { UserFilled, Key } from '@element-plus/icons-vue'
-import { 
-  checkRoleName, 
+import { ref, reactive, watch, computed, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import dayjs from "dayjs";
+import type { FormInstance, FormRules } from "element-plus";
+import type { Role, RoleFormData } from "@/views/system/role/types/role";
+import { UserFilled, Key } from "@element-plus/icons-vue";
+import {
+  checkRoleName,
   checkRoleCode,
   createRole,
-  updateRole
-} from '@/api/system/role'
+  updateRole,
+  copyRole
+} from "@/api/system/role";
 
 // Props
 const props = defineProps<{
-  formData: Partial<RoleFormData>
-  formMode: FormMode
-}>()
+  formData: Partial<RoleFormData>;
+  formMode: FormMode;
+}>();
 
 // Emits
 const emit = defineEmits<{
-  submit: [data: Role]
-  cancel: []
-}>()
+  submit: [];
+  cancel: [];
+}>();
 
 // 响应式数据
-const formRef = ref<FormInstance>()
-const submitting = ref(false)
-const selectedTemplate = ref('')
+const formRef = ref<FormInstance>();
+const submitting = ref(false);
 
 const formData = reactive<RoleFormData>({
   id: undefined,
-  name: '',
-  code: '',
-  description: '',
+  name: "",
+  code: "",
+  description: "",
   permissions: [],
-  status: 1,
-  userCount: 0,
-  createTime: '',
-  updateTime: ''
-})
-
-// 权限模板定义
-const permissionTemplates = ref([
-  {
-    label: '只读用户',
-    value: 'readonly',
-    description: '仅具有查看权限，无法进行增删改操作',
-    permissions: [
-      'system:user:view',
-      'system:role:view',
-      'system:menu:view',
-      'system:dept:view'
-    ]
-  },
-  {
-    label: '普通管理员',
-    value: 'manager',
-    description: '具有用户管理权限，但无法管理角色和菜单',
-    permissions: [
-      'system:user:view',
-      'system:user:create',
-      'system:user:update',
-      'system:user:delete',
-      'system:dept:view',
-      'system:dept:create',
-      'system:dept:update',
-      'system:role:view'
-    ]
-  },
-  {
-    label: '高级管理员',
-    value: 'advanced',
-    description: '具有大部分管理权限，但无法管理菜单',
-    permissions: [
-      'system:user:view',
-      'system:user:create',
-      'system:user:update',
-      'system:user:delete',
-      'system:user:reset-password',
-      'system:dept:view',
-      'system:dept:create',
-      'system:dept:update',
-      'system:dept:delete',
-      'system:role:view',
-      'system:role:create',
-      'system:role:update'
-    ]
-  }
-])
+  createTime: "",
+  updateTime: "",
+});
 
 // 计算属性
 const isCodeDisabled = computed(() => {
-  return props.formMode === 'edit' && formData.code !== 'admin'
-})
+  return props.formMode === "edit" && formData.code !== "admin";
+});
 
 // 表单验证规则
 const formRules: FormRules<RoleFormData> = {
   name: [
-    { required: true, message: '请输入角色名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '角色名称长度为2-50个字符', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (!value) return callback()
-        
-        checkRoleName(
-          value, 
-          props.formMode === 'edit' ? formData.id : undefined
-        )
-          .then(isAvailable => {
-            if (!isAvailable) {
-              callback(new Error('该角色名称已存在'))
-            } else {
-              callback()
-            }
-          })
-          .catch(() => {
-            callback(new Error('角色名称验证失败'))
-          })
-      },
-      trigger: 'blur'
-    }
+    { required: true, message: "请输入角色名称", trigger: "blur" },
+    { min: 2, max: 50, message: "角色名称长度为2-50个字符", trigger: "blur" }
+    // 移除异步唯一性校验
   ],
   code: [
-    { required: true, message: '请输入角色编码', trigger: 'blur' },
-    { min: 2, max: 50, message: '角色编码长度为2-50个字符', trigger: 'blur' },
-    { 
-      pattern: /^[a-zA-Z0-9_]+$/, 
-      message: '角色编码只能包含字母、数字和下划线', 
-      trigger: 'blur' 
-    },
+    { required: true, message: "请输入角色编码", trigger: "blur" },
+    { min: 2, max: 50, message: "角色编码长度为2-50个字符", trigger: "blur" },
     {
-      validator: (rule, value, callback) => {
-        if (!value || isCodeDisabled.value) return callback()
-        
-        checkRoleCode(
-          value, 
-          props.formMode === 'edit' ? formData.id : undefined
-        )
-          .then(isAvailable => {
-            if (!isAvailable) {
-              callback(new Error('该角色编码已存在'))
-            } else {
-              callback()
-            }
-          })
-          .catch(() => {
-            callback(new Error('角色编码验证失败'))
-          })
-      },
-      trigger: 'blur'
+      pattern: /^[a-zA-Z0-9_]+$/,
+      message: "角色编码只能包含字母、数字和下划线",
+      trigger: "blur"
     }
   ],
   description: [
-    { max: 200, message: '描述长度不能超过200个字符', trigger: 'blur' }
-  ],
-  status: [
-    { required: true, message: '请选择角色状态', trigger: 'change' }
+    { max: 200, message: "描述长度不能超过200个字符", trigger: "blur" }
   ]
-}
+};
 
 // 方法
 const handleSubmit = async () => {
-  if (!formRef.value) return
-  
+  if (!formRef.value) return;
+
   try {
-    await formRef.value.validate()
-    submitting.value = true
-    
-    let result: Role
-    if (props.formMode === 'create') {
-      result = await createRole(formData)
-    } else {
-      result = await updateRole(formData.id!, formData)
+    await formRef.value.validate();
+    // 新增：提交时唯一性校验
+    const [nameAvailable, codeAvailable] = await Promise.all([
+      checkRoleName(formData.name, props.formMode === "edit" ? formData.id : undefined),
+      checkRoleCode(formData.code, props.formMode === "edit" ? formData.id : undefined)
+    ]);
+    if (!nameAvailable) {
+      ElMessage.error("该角色名称已存在");
+      return;
     }
-    
-    emit('submit', result)
+    if (!codeAvailable) {
+      ElMessage.error("该角色编码已存在");
+      return;
+    }
+    submitting.value = true;
+
+    let result: Role;
+    if (props.formMode === "create") {
+      await createRole(formData);
+    } else if (props.formMode === "edit"){
+      await updateRole(formData.id!, formData);
+    } else if (props.formMode === "copy"){
+      await copyRole(formData.id!, formData.name, formData.code);
+    }
+
+    emit("submit");
   } catch (error: any) {
-    ElMessage.error(error?.message || '请检查表单数据')
+    ElMessage.error(error?.message || "请检查表单数据");
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
+};
 
 const handleCancel = () => {
-  emit('cancel')
-}
-
-const handleTemplateChange = (template: string) => {
-  if (!template) {
-    formData.permissions = []
-    return
-  }
-  
-  const selectedTemplateData = permissionTemplates.value.find(t => t.value === template)
-  if (selectedTemplateData) {
-    formData.permissions = [...selectedTemplateData.permissions]
-    ElMessage.success(`已应用"${selectedTemplateData.label}"权限模板`)
-  }
-}
-
-const handleStatusChange = async (val: number) => {
-  if (val === 0) {
-    try {
-      await ElMessageBox.confirm('禁用角色后，用户将无法使用此角色权限，确定要禁用吗？', '提示', { type: 'warning' })
-    } catch {
-      formData.status = 1
-    }
-  }
-}
+  emit("cancel");
+};
 
 const getSubmitButtonText = () => {
-  if (props.formMode === 'create') return '创建角色'
-  if (props.formMode === 'edit') return '更新角色'
-  if (props.formMode === 'copy') return '复制角色'
-  return '提交'
-}
+  if (props.formMode === "create") return "创建角色";
+  if (props.formMode === "edit") return "更新角色";
+  if (props.formMode === "copy") return "复制角色";
+  return "提交";
+};
 
 const resetForm = () => {
   if (formRef.value) {
-    formRef.value.resetFields()
+    formRef.value.resetFields();
   }
-  selectedTemplate.value = ''
-}
+};
 
 // 监听props变化，更新表单数据
-watch(() => props.formData, (newData) => {
-  if (newData) {
-    Object.assign(formData, {
-      id: newData.id,
-      name: newData.name || '',
-      code: props.formMode === 'copy' ? `${newData.code || ''}_copy_${Math.floor(Math.random()*10000)}` : (newData.code || ''),
-      description: newData.description || '',
-      permissions: newData.permissions || [],
-      status: newData.status ?? 1,
-      userCount: newData.userCount,
-      createTime: newData.createTime,
-      updateTime: newData.updateTime
-    })
-  }
-}, { immediate: true, deep: true })
+watch(
+  () => props.formData,
+  newData => {
+    if (newData) {
+      Object.assign(formData, {
+        id: newData.id,
+        name: newData.name || "",
+        code:
+          props.formMode === "copy"
+            ? `${newData.code || ""}`
+            : newData.code || "",
+        description: newData.description || "",
+        permissions: newData.permissions || [],
+        userCount: newData.userCount ?? 0,
+        permissionCount: newData.permissionCount ?? 0,
+        createTime: newData.createTime,
+        updateTime: newData.updateTime,
+      });
+    }
+  },
+  { immediate: true, deep: true }
+);
 
 // 暴露方法
 defineExpose({
   resetForm,
   validate: () => formRef.value?.validate(),
   clearValidate: () => formRef.value?.clearValidate()
-})
+});
 </script>
 
 <style scoped lang="scss">
@@ -380,27 +248,27 @@ defineExpose({
     margin-top: 4px;
     line-height: 1.4;
   }
-  
+
   .template-option {
     .template-name {
       font-weight: 500;
       color: var(--el-text-color-primary);
     }
-    
+
     .template-desc {
       font-size: 12px;
       color: var(--el-text-color-secondary);
       margin-top: 2px;
     }
   }
-  
+
   .role-info {
     .el-descriptions {
       background: var(--el-fill-color-lighter);
       border-radius: 6px;
     }
   }
-  
+
   .form-footer {
     display: flex;
     justify-content: flex-end;
@@ -419,7 +287,7 @@ defineExpose({
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-  
+
   .el-radio__label {
     display: flex;
     align-items: center;
@@ -435,4 +303,4 @@ defineExpose({
 :deep(.el-input.is-disabled .el-input__wrapper) {
   background-color: var(--el-fill-color-lighter);
 }
-</style> 
+</style>

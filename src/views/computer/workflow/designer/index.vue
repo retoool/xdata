@@ -89,7 +89,7 @@
           <!-- 面包屑导航 -->
           <el-breadcrumb separator="/">
             <el-breadcrumb-item>
-              <el-link @click="handleBack" :underline="false">工作流管理</el-link>
+              <el-link :underline="false" @click="handleBack">工作流管理</el-link>
             </el-breadcrumb-item>
             <el-breadcrumb-item>
               {{ isNewWorkflow ? '新建工作流' : '编辑工作流' }}
@@ -106,8 +106,8 @@
             </span>
             <el-input
               v-else
-              v-model="editingTitle"
               ref="titleInputRef"
+              v-model="editingTitle"
               size="small"
               style="width: 200px;"
               @blur="finishEditTitle"
@@ -162,17 +162,17 @@
       <!-- 设计器主体 -->
       <div class="designer-main">
         <!-- 画布区域 -->
-        <div class="designer-canvas" ref="canvasRef">
+        <div ref="canvasRef" class="designer-canvas">
           <VueFlow
             v-model="nodes"
             :edges="edges"
             :node-types="nodeTypes"
-            @connect="handleConnect"
-            @dragover="handleDragOver"
-            @drop="handleDrop"
             :default-viewport="{ zoom: 1 }"
             :min-zoom="0.2"
             :max-zoom="4"
+            @connect="handleConnect"
+            @dragover="handleDragOver"
+            @drop="handleDrop"
           >
             <Background pattern-color="#aaa" :gap="8" />
             <MiniMap />
@@ -186,7 +186,7 @@
         </div>
 
         <!-- 右侧属性面板 -->
-        <div class="properties-panel" v-if="selectedNode">
+        <div v-if="selectedNode" class="properties-panel">
           <PropertiesPanel 
             :selected-node="selectedNode"
             @close="selectedNode = null"

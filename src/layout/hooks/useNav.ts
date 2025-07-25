@@ -8,9 +8,9 @@ import { useRouter, useRoute } from "vue-router";
 import { router, remainingPaths } from "@/router";
 import { computed, type CSSProperties } from "vue";
 import { useAppStoreHook } from "@/store/modules/app";
-import { useUserStore } from "@/store/modules/user";
+import { useUserStoreHook } from "@/store/modules/user";
 import { useGlobal, isAllEmpty } from "@pureadmin/utils";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import ExitFullscreen from "~icons/ri/fullscreen-exit-fill";
 import Fullscreen from "~icons/ri/fullscreen-fill";
 
@@ -22,7 +22,7 @@ export function useNav() {
   const pureApp = useAppStoreHook();
   const routers = useRouter().options.routes;
   const { isFullscreen, toggle } = useFullscreen();
-  const { wholeMenus } = storeToRefs(usePermissionStoreHook());
+  const { wholeMenus } = storeToRefs(useMenuStoreHook());
   /** 平台`layout`中所有`el-tooltip`的`effect`配置，默认`light` */
   const tooltipEffect = getConfig()?.TooltipEffect ?? "light";
 
@@ -37,13 +37,13 @@ export function useNav() {
   });
 
   const userAvatar = computed(() => {
-    return isAllEmpty(useUserStore().userAvatar)
+    return isAllEmpty(useUserStoreHook().userAvatar)
       ? "/src/assets/user.svg"
-      : useUserStore().userAvatar;
+      : useUserStoreHook().userAvatar;
   });
 
   const username = computed(() => {
-    return useUserStore().userName;
+    return useUserStoreHook().userName;
   });
 
   const avatarsStyle = computed(() => {
@@ -51,7 +51,7 @@ export function useNav() {
   });
 
   const isCollapse = computed(() => {
-    return !pureApp.getSidebarStatus;
+    return !pureApp?.getSidebarStatus;
   });
 
   const device = computed(() => {
@@ -60,7 +60,7 @@ export function useNav() {
 
   const { $storage, $config } = useGlobal<GlobalPropertiesApi>();
   const layout = computed(() => {
-    return $storage?.layout?.layout;
+    return $storage?.layout?.layout || "vertical";
   });
 
   const title = computed(() => {
@@ -75,7 +75,7 @@ export function useNav() {
   }
 
   function logout() {
-    useUserStore().logout();
+    useUserStoreHook().logout();
   }
 
   function goToProfile() {

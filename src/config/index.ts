@@ -23,7 +23,7 @@ const getConfig = (key?: string): PlatformConfigs => {
       return data;
     }
   }
-  return config;
+  return config || {};
 };
 
 /** 获取项目动态全局配置 */

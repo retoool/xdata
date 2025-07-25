@@ -2,22 +2,35 @@
   <div class="custom-tree-container">
     <!-- 类型切换按钮 -->
     <div class="type-switcher">
-      <el-radio-group v-model="selectedOperatorType" @change="handleTypeChange" size="default">
-        <el-radio-button value="basic" @click="handleRadioClick(OperatorType.BASIC)">
+      <el-radio-group
+        v-model="selectedOperatorType"
+        size="default"
+        @change="handleTypeChange"
+      >
+        <el-radio-button
+          value="basic"
+          @click="handleRadioClick(OperatorType.BASIC)"
+        >
           <el-icon><Cpu /></el-icon>
           基础算子
         </el-radio-button>
-        <el-radio-button value="script" @click="handleRadioClick(OperatorType.SCRIPT)">
+        <el-radio-button
+          value="script"
+          @click="handleRadioClick(OperatorType.SCRIPT)"
+        >
           <el-icon><Document /></el-icon>
           脚本算子
         </el-radio-button>
-        <el-radio-button value="external" @click="handleRadioClick(OperatorType.EXTERNAL)">
+        <el-radio-button
+          value="external"
+          @click="handleRadioClick(OperatorType.EXTERNAL)"
+        >
           <el-icon><Link /></el-icon>
           外部算子
         </el-radio-button>
       </el-radio-group>
     </div>
-    
+
     <div class="tree-toolbar">
       <div class="toolbar-left">
         <el-input
@@ -33,73 +46,100 @@
         </el-input>
       </div>
       <div class="toolbar-right">
-        <el-tooltip :content="batchSelectMode ? '退出批量选择' : '批量选择'" placement="top">
-          <el-button 
-            :type="batchSelectMode ? 'warning' : 'info'" 
-            @click="toggleBatchSelect" 
+        <el-tooltip
+          :content="batchSelectMode ? '退出批量选择' : '批量选择'"
+          placement="top"
+        >
+          <el-button
+            :type="batchSelectMode ? 'warning' : 'info'"
             class="toolbar-btn"
             :icon="batchSelectMode ? Close : Select"
+            @click="toggleBatchSelect"
           />
         </el-tooltip>
-        <el-tooltip v-if="!batchSelectMode" content="新增根节点" placement="top">
-          <el-button type="primary" @click="addRootNode" class="toolbar-btn" :icon="Plus" />
+        <el-tooltip
+          v-if="!batchSelectMode"
+          content="新增根节点"
+          placement="top"
+        >
+          <el-button
+            type="primary"
+            class="toolbar-btn"
+            :icon="Plus"
+            @click="addRootNode"
+          />
         </el-tooltip>
         <el-tooltip v-if="batchSelectMode" content="批量删除" placement="top">
-          <el-button 
-            type="danger" 
-            @click="batchDelete" 
-            :disabled="checkedKeys.length === 0" 
-            class="toolbar-btn" 
-            :icon="Delete" 
+          <el-button
+            type="danger"
+            :disabled="checkedKeys.length === 0"
+            class="toolbar-btn"
+            :icon="Delete"
+            @click="batchDelete"
           />
         </el-tooltip>
       </div>
     </div>
-    
+
     <div class="tree-scroll-area" @contextmenu="handleTreeAreaContextMenu">
       <el-tree
+        ref="treeRef"
         :data="dataSource"
         :show-checkbox="batchSelectMode"
         node-key="id"
         default-expand-all
         :expand-on-click-node="false"
         :render-content="renderContent"
-        ref="treeRef"
-        @check="handleCheck"
-        @node-click="handleNodeClick"
         draggable
         :allow-drop="allowDrop"
-        @node-drop="handleDrop"
         :filter-node-method="filterNode"
         highlight-current
         :current-node-key="currentKey"
         class="custom-tree"
+        @check="handleCheck"
+        @node-click="handleNodeClick"
+        @node-drop="handleDrop"
       />
-      
+
       <!-- 空状态 -->
       <div v-if="dataSource.length === 0" class="empty-state">
         <el-icon class="empty-icon"><FolderOpened /></el-icon>
         <p class="empty-text">暂无分类数据</p>
-        <el-button type="primary" @click="addRootNode" :icon="Plus">新增根节点</el-button>
+        <el-button type="primary" :icon="Plus" @click="addRootNode"
+          >新增根节点</el-button
+        >
       </div>
     </div>
-    
+
     <!-- 右键菜单 -->
     <div
       v-if="contextMenu.visible"
-      :style="{ position: 'fixed', left: contextMenu.x + 'px', top: contextMenu.y + 'px', zIndex: 9999 }"
+      :style="{
+        position: 'fixed',
+        left: contextMenu.x + 'px',
+        top: contextMenu.y + 'px',
+        zIndex: 9999
+      }"
       class="context-menu"
       @mousedown.stop
     >
       <div class="context-menu-item" @click="handleContextAdd">
         <el-icon><Plus /></el-icon>
-        {{ contextMenu.data ? '新增子节点' : '新增根节点' }}
+        {{ contextMenu.data ? "新增子节点" : "新增根节点" }}
       </div>
-      <div v-if="contextMenu.data" class="context-menu-item" @click="handleContextRename">
+      <div
+        v-if="contextMenu.data"
+        class="context-menu-item"
+        @click="handleContextRename"
+      >
         <el-icon><Edit /></el-icon>
         重命名
       </div>
-      <div v-if="contextMenu.data" class="context-menu-item danger" @click="handleContextDelete">
+      <div
+        v-if="contextMenu.data"
+        class="context-menu-item danger"
+        @click="handleContextDelete"
+      >
         <el-icon><Delete /></el-icon>
         删除
       </div>
@@ -108,11 +148,32 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
-import { ElButton, ElTree, ElMessageBox, ElMessage, ElInput, ElTooltip, ElIcon, ElRadioGroup, ElRadioButton } from 'element-plus'
-import { Plus, Delete, Close, Search, Cpu, Document, Link, Edit, FolderOpened, Select } from '@element-plus/icons-vue'
-import type { RenderContentContext, RenderContentFunction } from 'element-plus'
-import { OperatorType } from '@/api/operator'
+import { ref, nextTick, onMounted, onBeforeUnmount, watch } from "vue";
+import {
+  ElButton,
+  ElTree,
+  ElMessageBox,
+  ElMessage,
+  ElInput,
+  ElTooltip,
+  ElIcon,
+  ElRadioGroup,
+  ElRadioButton
+} from "element-plus";
+import {
+  Plus,
+  Delete,
+  Close,
+  Search,
+  Cpu,
+  Document,
+  Link,
+  Edit,
+  FolderOpened,
+  Select
+} from "@element-plus/icons-vue";
+import type { RenderContentContext, RenderContentFunction } from "element-plus";
+import { OperatorType } from "@/api/operator";
 import {
   fetchCategoryTree,
   addCategoryNode,
@@ -120,22 +181,22 @@ import {
   deleteCategoryNode,
   batchDeleteCategoryNodes,
   moveCategoryNode
-} from '@/api/operatorCategoryTree';
-import { fetchOperators } from '@/api/operator';
+} from "@/api/operatorCategoryTree";
+import { fetchOperators } from "@/api/operator";
 
 interface Tree {
-  id: number
-  label: string
-  children?: Tree[]
+  id: number;
+  label: string;
+  children?: Tree[];
 }
-type Node = RenderContentContext['node']
-type Data = RenderContentContext['data']
+type Node = RenderContentContext["node"];
+type Data = RenderContentContext["data"];
 
-let id = 1000
+let id = 1000;
 const treeRef = ref<InstanceType<typeof ElTree>>();
 const batchSelectMode = ref(false);
 const checkedKeys = ref<number[]>([]);
-const searchText = ref('');
+const searchText = ref("");
 const selectedOperatorType = ref<OperatorType>(OperatorType.BASIC);
 const currentKey = ref<number | string | null>(null);
 
@@ -144,14 +205,14 @@ const contextMenu = ref({
   x: 0,
   y: 0,
   node: null as null | Node,
-  data: null as null | Data,
+  data: null as null | Data
 });
 
 const dataSource = ref<Tree[]>([]);
 
 const emit = defineEmits<{
-  'type-change': [type: OperatorType];
-  'node-select': [{ ids: number[], node: any }];
+  "type-change": [type: OperatorType];
+  "node-select": [{ ids: number[]; node: any }];
 }>();
 
 // 定义props
@@ -160,7 +221,7 @@ const props = defineProps<{
 }>();
 
 // 辅助函数：查找第一个叶子节点
-type TreeNode = Tree & { children?: TreeNode[] }
+type TreeNode = Tree & { children?: TreeNode[] };
 function findFirstLeafNode(nodes: TreeNode[]): TreeNode | null {
   for (const node of nodes) {
     if (!node.children || node.children.length === 0) {
@@ -196,7 +257,10 @@ function getAllLeafNodeIds(node: TreeNode): number[] {
       ids = ids.concat(getAllLeafNodeIds(child));
     }
   }
-  console.log(`getAllLeafNodeIds for node "${node.label}" (ID: ${node.id}):`, ids);
+  console.log(
+    `getAllLeafNodeIds for node "${node.label}" (ID: ${node.id}):`,
+    ids
+  );
   return ids;
 }
 
@@ -207,112 +271,123 @@ const selectFirstLeafAndEmit = () => {
       treeRef.value?.setCurrentKey(firstLeaf.id);
       // 对于叶子节点，直接返回自己的id
       const ids = [firstLeaf.id];
-      console.log('Auto selected first leaf:', firstLeaf.label, 'Leaf ID:', firstLeaf.id, 'Selected leaf IDs:', ids);
-      emit('node-select', { ids, node: firstLeaf });
+      console.log(
+        "Auto selected first leaf:",
+        firstLeaf.label,
+        "Leaf ID:",
+        firstLeaf.id,
+        "Selected leaf IDs:",
+        ids
+      );
+      emit("node-select", { ids, node: firstLeaf });
     }
   });
 };
 
 const loadTree = async () => {
   try {
-    const data = await fetchCategoryTree(selectedOperatorType.value) as Tree[];
+    const data = (await fetchCategoryTree(
+      selectedOperatorType.value
+    )) as Tree[];
     dataSource.value = data;
     currentKey.value = undefined;
     treeRef.value?.setCurrentKey(null);
     checkedKeys.value = [];
     treeRef.value?.setCheckedKeys([]);
   } catch (error) {
-    ElMessage.error('获取分类树失败');
+    ElMessage.error("获取分类树失败");
   }
 };
 
 const append = async (data: Data) => {
   if (!data) return;
   const id = data.id;
-  const { value } = await ElMessageBox.prompt('请输入节点名称', '新增子节点', {
-    inputValue: '',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  const { value } = await ElMessageBox.prompt("请输入节点名称", "新增子节点", {
+    inputValue: "",
+    confirmButtonText: "确定",
+    cancelButtonText: "取消"
   });
   if (value && value.trim()) {
     try {
-      await addCategoryNode({ 
-        parentId: id, 
+      await addCategoryNode({
+        parentId: id,
         label: value.trim(),
         type: selectedOperatorType.value
       });
       loadTree();
     } catch (error) {
-      ElMessage.error('新增失败');
+      ElMessage.error("新增失败");
     }
   } else if (value !== undefined) {
-    ElMessage.error('节点名称不能为空');
+    ElMessage.error("节点名称不能为空");
   }
 };
 
 const addRootNode = async () => {
-  const { value } = await ElMessageBox.prompt('请输入节点名称', '新增根节点', {
-    inputValue: '',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  const { value } = await ElMessageBox.prompt("请输入节点名称", "新增根节点", {
+    inputValue: "",
+    confirmButtonText: "确定",
+    cancelButtonText: "取消"
   });
   if (value && value.trim()) {
     try {
-      await addCategoryNode({ 
+      await addCategoryNode({
         label: value.trim(),
         type: selectedOperatorType.value
       });
       loadTree();
     } catch (error) {
-      ElMessage.error('新增失败');
+      ElMessage.error("新增失败");
     }
   } else if (value !== undefined) {
-    ElMessage.error('节点名称不能为空');
+    ElMessage.error("节点名称不能为空");
   }
 };
 
 const remove = (node: Node, data: Data) => {
-  const parent = node.parent
-  const children: Tree[] = parent.data.children || parent.data
-  const index = children.findIndex((d) => d.id === data.id)
-  children.splice(index, 1)
-  dataSource.value = [...dataSource.value]
-}
+  const parent = node.parent;
+  const children: Tree[] = parent.data.children || parent.data;
+  const index = children.findIndex(d => d.id === data.id);
+  children.splice(index, 1);
+  dataSource.value = [...dataSource.value];
+};
 
 const batchDelete = async () => {
   if (!treeRef.value) return;
   const keys = checkedKeys.value;
-  
+
   if (keys.length === 0) {
-    ElMessage.warning('请选择要删除的分类');
+    ElMessage.warning("请选择要删除的分类");
     return;
   }
-  
+
   // 检查选中的分类及其所有子分类下是否有算子
   try {
     let totalOperators = 0;
     const categoriesWithOperators: { name: string; count: number }[] = [];
-    
+
     for (const categoryId of keys) {
       // 获取当前节点及其所有子节点的id
       const categoryNode = treeRef.value.getNode(categoryId);
       if (!categoryNode) continue;
-      
+
       const allCategoryIds = getAllChildNodeIds(categoryNode.data as TreeNode);
-      
+
       for (const childCategoryId of allCategoryIds) {
-        const operatorsRes = await fetchOperators({
+        const operatorsRes = (await fetchOperators({
           categoryId: childCategoryId,
           type: selectedOperatorType.value,
           pageSize: 1
-        }) as any;
-        
+        })) as any;
+
         if (operatorsRes.total > 0) {
           totalOperators += operatorsRes.total;
           // 获取子分类名称
           const childCategoryNode = treeRef.value.getNode(childCategoryId);
           if (childCategoryNode) {
-            const existingCategory = categoriesWithOperators.find(cat => cat.name === childCategoryNode.data.label);
+            const existingCategory = categoriesWithOperators.find(
+              cat => cat.name === childCategoryNode.data.label
+            );
             if (existingCategory) {
               existingCategory.count += operatorsRes.total;
             } else {
@@ -325,47 +400,47 @@ const batchDelete = async () => {
         }
       }
     }
-    
+
     if (totalOperators > 0) {
       // 构建提示信息
       let message = `选中的分类及其子分类下共有 ${totalOperators} 个算子，删除分类将同时删除该分类下的所有算子。\n\n`;
-      
+
       if (categoriesWithOperators.length > 0) {
-        message += '包含算子的分类：\n';
+        message += "包含算子的分类：\n";
         categoriesWithOperators.forEach(cat => {
           message += `• ${cat.name}: ${cat.count} 个算子\n`;
         });
       }
-      
-      message += '\n确定要删除吗？';
-      
+
+      message += "\n确定要删除吗？";
+
       const confirmResult = await ElMessageBox.confirm(
         message,
-        '确认批量删除',
+        "确认批量删除",
         {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning',
+          confirmButtonText: "确定删除",
+          cancelButtonText: "取消",
+          type: "warning",
           dangerouslyUseHTMLString: false
         }
       );
-      
-      if (confirmResult !== 'confirm') {
+
+      if (confirmResult !== "confirm") {
         return; // 用户取消删除
       }
     }
-    
+
     // 执行批量删除操作
     await batchDeleteCategoryNodes(keys, selectedOperatorType.value);
-    ElMessage.success('批量删除成功');
+    ElMessage.success("批量删除成功");
     checkedKeys.value = [];
     treeRef.value.setCheckedKeys([]);
     loadTree();
   } catch (error) {
-    console.error('批量删除分类时出错:', error);
-    ElMessage.error('批量删除失败，请重试');
+    console.error("批量删除分类时出错:", error);
+    ElMessage.error("批量删除失败，请重试");
   }
-}
+};
 
 const toggleBatchSelect = () => {
   batchSelectMode.value = !batchSelectMode.value;
@@ -373,11 +448,11 @@ const toggleBatchSelect = () => {
     checkedKeys.value = [];
     treeRef.value?.setCheckedKeys([]);
   }
-}
+};
 
 const handleCheck = (_: any, checked: any) => {
   checkedKeys.value = checked.checkedKeys;
-}
+};
 
 const showContextMenu = (event: MouseEvent, node: Node, data: Data) => {
   event.preventDefault();
@@ -386,14 +461,14 @@ const showContextMenu = (event: MouseEvent, node: Node, data: Data) => {
   contextMenu.value.y = event.clientY;
   contextMenu.value.node = node;
   contextMenu.value.data = data;
-  document.body.style.userSelect = 'none';
+  document.body.style.userSelect = "none";
 };
 
 const hideContextMenu = () => {
   contextMenu.value.visible = false;
   contextMenu.value.node = null;
   contextMenu.value.data = null;
-  document.body.style.userSelect = '';
+  document.body.style.userSelect = "";
 };
 
 const handleContextAdd = () => {
@@ -425,24 +500,28 @@ const handleContextDelete = async () => {
     const data = contextMenu.value.data;
     const id = data.id;
     hideContextMenu();
-    
+
     // 获取当前节点及其所有子节点的id
     const nodeObj = treeRef.value?.getNode(id);
     const fullNode = nodeObj ? nodeObj.data : data;
     const allCategoryIds = getAllChildNodeIds(fullNode as TreeNode);
-    
+
     // 检查该分类及其所有子分类下是否有算子
     try {
       let totalOperators = 0;
-      const categoriesWithOperators: { id: number; name: string; count: number }[] = [];
-      
+      const categoriesWithOperators: {
+        id: number;
+        name: string;
+        count: number;
+      }[] = [];
+
       for (const categoryId of allCategoryIds) {
-        const operatorsRes = await fetchOperators({
+        const operatorsRes = (await fetchOperators({
           categoryId: categoryId,
           type: selectedOperatorType.value,
           pageSize: 1
-        }) as any;
-        
+        })) as any;
+
         if (operatorsRes.total > 0) {
           totalOperators += operatorsRes.total;
           // 获取分类名称
@@ -456,43 +535,39 @@ const handleContextDelete = async () => {
           }
         }
       }
-      
+
       if (totalOperators > 0) {
         // 构建提示信息
         let message = `分类"${data.label}"及其子分类下共有 ${totalOperators} 个算子，删除分类将同时删除该分类下的所有算子。\n\n`;
-        
+
         if (categoriesWithOperators.length > 0) {
-          message += '包含算子的分类：\n';
+          message += "包含算子的分类：\n";
           categoriesWithOperators.forEach(cat => {
             message += `• ${cat.name}: ${cat.count} 个算子\n`;
           });
         }
-        
-        message += '\n确定要删除吗？';
-        
-        const confirmResult = await ElMessageBox.confirm(
-          message,
-          '确认删除',
-          {
-            confirmButtonText: '确定删除',
-            cancelButtonText: '取消',
-            type: 'warning',
-            dangerouslyUseHTMLString: false
-          }
-        );
-        
-        if (confirmResult !== 'confirm') {
+
+        message += "\n确定要删除吗？";
+
+        const confirmResult = await ElMessageBox.confirm(message, "确认删除", {
+          confirmButtonText: "确定删除",
+          cancelButtonText: "取消",
+          type: "warning",
+          dangerouslyUseHTMLString: false
+        });
+
+        if (confirmResult !== "confirm") {
           return; // 用户取消删除
         }
       }
-      
+
       // 执行删除操作
       await deleteCategoryNode(id, selectedOperatorType.value);
-      ElMessage.success('删除成功');
+      ElMessage.success("删除成功");
       loadTree();
     } catch (error) {
-      console.error('删除分类时出错:', error);
-      ElMessage.error('删除失败，请重试');
+      console.error("删除分类时出错:", error);
+      ElMessage.error("删除失败，请重试");
     }
   }
 };
@@ -502,17 +577,21 @@ const handleContextRename = async () => {
     const id = contextMenu.value.data.id;
     const oldLabel = contextMenu.value.data.label;
     hideContextMenu();
-    const { value } = await ElMessageBox.prompt('请输入新名称', '重命名', {
+    const { value } = await ElMessageBox.prompt("请输入新名称", "重命名", {
       inputValue: oldLabel,
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+      confirmButtonText: "确定",
+      cancelButtonText: "取消"
     });
     if (value && value.trim()) {
       try {
-        await editCategoryNode(id, { label: value.trim() }, selectedOperatorType.value);
+        await editCategoryNode(
+          id,
+          { label: value.trim() },
+          selectedOperatorType.value
+        );
         loadTree();
       } catch (error) {
-        ElMessage.error('重命名失败');
+        ElMessage.error("重命名失败");
       }
     }
   }
@@ -526,45 +605,49 @@ const handleClickOutside = (e: MouseEvent) => {
 
 onMounted(() => {
   loadTree();
-  window.addEventListener('mousedown', handleClickOutside);
+  window.addEventListener("mousedown", handleClickOutside);
   // 初次挂载时自动选中第一个叶子节点（loadTree 内已处理）
 });
 onBeforeUnmount(() => {
-  window.removeEventListener('mousedown', handleClickOutside);
+  window.removeEventListener("mousedown", handleClickOutside);
 });
 
 const renderContent: RenderContentFunction = (h, { node, data }) => {
   return h(
-    'div',
+    "div",
     {
-      class: 'custom-tree-node',
+      class: "custom-tree-node",
       onContextmenu: (event: MouseEvent) => showContextMenu(event, node, data),
       style: {
-        width: '100%',
-        minHeight: '32px',
-        display: 'flex',
-        alignItems: 'center',
-        cursor: 'pointer'
+        width: "100%",
+        minHeight: "32px",
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer"
       }
     },
     [
-      h('span', {
-        style: {
-          flex: '1',
-          minWidth: '0',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        }
-      }, node.label),
+      h(
+        "span",
+        {
+          style: {
+            flex: "1",
+            minWidth: "0",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }
+        },
+        node.label
+      )
     ]
-  )
-}
+  );
+};
 
 const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
   // 允许拖拽到任意节点（可根据需要自定义规则）
   return true;
-}
+};
 
 function findAndRemoveNode(nodes: Tree[], id: number): [Tree | null, Tree[]] {
   for (let i = 0; i < nodes.length; i++) {
@@ -580,15 +663,23 @@ function findAndRemoveNode(nodes: Tree[], id: number): [Tree | null, Tree[]] {
   return [null, nodes];
 }
 
-const handleDrop = async (draggingNode: any, dropNode: any, dropType: string, ev: DragEvent) => {
-  const res = await moveCategoryNode({
-    id: draggingNode.data.id,
-    targetId: dropNode.data.id,
-    type: dropType
-  }, selectedOperatorType.value) as any;
+const handleDrop = async (
+  draggingNode: any,
+  dropNode: any,
+  dropType: string,
+  ev: DragEvent
+) => {
+  const res = (await moveCategoryNode(
+    {
+      id: draggingNode.data.id,
+      targetId: dropNode.data.id,
+      type: dropType
+    },
+    selectedOperatorType.value
+  )) as any;
   // 移动成功，重新加载树
   loadTree();
-}
+};
 
 const handleSearch = () => {
   treeRef.value?.filter(searchText.value);
@@ -598,7 +689,7 @@ const handleTypeChange = async (type: OperatorType) => {
   selectedOperatorType.value = type;
   // 重新加载对应类型的分类树，并清空所有选中
   await loadTree();
-  emit('type-change', type);
+  emit("type-change", type);
 };
 
 const handleNodeClick = (data: Tree) => {
@@ -609,17 +700,21 @@ const handleNodeClick = (data: Tree) => {
   // 如果是叶子节点，只返回自己的id
   // 如果是父节点，返回该节点及其所有子节点的id
   const ids = getAllChildNodeIds(fullNode as TreeNode);
-  emit('node-select', { ids, node: fullNode });
+  emit("node-select", { ids, node: fullNode });
 };
 
 // 根据路径查找并选中节点
 const selectNodeByPath = (path: string[]) => {
   if (!path || path.length === 0) return;
-  
+
   // 递归查找节点
-  const findNodeByPath = (nodes: Tree[], targetPath: string[], currentIndex: number): Tree | null => {
+  const findNodeByPath = (
+    nodes: Tree[],
+    targetPath: string[],
+    currentIndex: number
+  ): Tree | null => {
     if (currentIndex >= targetPath.length) return null;
-    
+
     const targetLabel = targetPath[currentIndex];
     for (const node of nodes) {
       if (node.label === targetLabel) {
@@ -628,14 +723,18 @@ const selectNodeByPath = (path: string[]) => {
           return node;
         } else if (node.children) {
           // 继续查找子节点
-          const found = findNodeByPath(node.children, targetPath, currentIndex + 1);
+          const found = findNodeByPath(
+            node.children,
+            targetPath,
+            currentIndex + 1
+          );
           if (found) return found;
         }
       }
     }
     return null;
   };
-  
+
   const targetNode = findNodeByPath(dataSource.value, path, 0);
   if (targetNode) {
     // 选中该节点
@@ -667,40 +766,46 @@ watch(selectedOperatorType, () => {
 });
 
 // 监听外部传入的算子类型变化
-watch(() => props.currentOperatorType, (newType) => {
-  if (newType && newType !== selectedOperatorType.value) {
-    selectedOperatorType.value = newType;
-    loadTree();
-  }
-}, { immediate: true });
+watch(
+  () => props.currentOperatorType,
+  newType => {
+    if (newType && newType !== selectedOperatorType.value) {
+      selectedOperatorType.value = newType;
+      loadTree();
+    }
+  },
+  { immediate: true }
+);
 
 defineExpose({
-  clearCurrentKey: () => { currentKey.value = undefined; },
+  clearCurrentKey: () => {
+    currentKey.value = undefined;
+  },
   selectNodeByPath,
   getDataSource: () => dataSource.value
-})
+});
 
 const handleRadioClick = async (type: OperatorType) => {
   if (selectedOperatorType.value === type) {
     await loadTree();
-    emit('type-change', type);
+    emit("type-change", type);
   }
 };
 
 const handleTreeAreaContextMenu = (event: MouseEvent) => {
   // 检查是否点击在树节点上
   const target = event.target as HTMLElement;
-  if (target.closest('.el-tree-node')) {
+  if (target.closest(".el-tree-node")) {
     return; // 如果点击在树节点上，不显示空白区域的右键菜单
   }
-  
+
   event.preventDefault();
   contextMenu.value.visible = true;
   contextMenu.value.x = event.clientX;
   contextMenu.value.y = event.clientY;
   contextMenu.value.node = null;
   contextMenu.value.data = null;
-  document.body.style.userSelect = 'none';
+  document.body.style.userSelect = "none";
 };
 </script>
 
@@ -745,7 +850,9 @@ html.dark .type-switcher :deep(.el-radio-group) {
   font-weight: 500;
   padding: 6px 12px;
   border-radius: 4px;
-  transition: color 0.3s, background 0.3s;
+  transition:
+    color 0.3s,
+    background 0.3s;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -758,7 +865,8 @@ html.dark .type-switcher :deep(.el-radio-group) {
 html.dark .type-switcher :deep(.el-radio-button__inner:hover) {
   background: var(--el-color-primary-dark-2);
 }
-.type-switcher :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+.type-switcher
+  :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
   background: var(--el-color-primary);
   color: white;
   box-shadow: 0 1px 4px rgba(64, 158, 255, 0.3);
@@ -795,7 +903,9 @@ html.dark .tree-toolbar {
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--el-border-color);
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
   height: 32px;
   background: var(--el-bg-color);
 }
@@ -817,7 +927,9 @@ html.dark .tree-toolbar {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  transition: box-shadow 0.3s, transform 0.3s;
+  transition:
+    box-shadow 0.3s,
+    transform 0.3s;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   padding: 0;
 }
@@ -875,7 +987,9 @@ html.dark .tree-scroll-area::-webkit-scrollbar-track {
   cursor: pointer;
   user-select: none;
   background: transparent;
-  transition: color 0.3s, box-shadow 0.3s;
+  transition:
+    color 0.3s,
+    box-shadow 0.3s;
 }
 .custom-tree :deep(.el-tree-node__content:hover) {
   background: var(--el-fill-color-light);
@@ -890,7 +1004,9 @@ html.dark .custom-tree :deep(.el-tree-node__content:hover) {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   transition: none;
 }
-html.dark .custom-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+html.dark
+  .custom-tree
+  :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
 }
 .custom-tree :deep(.el-tree-node.is-current > .el-tree-node__content:hover) {
@@ -933,7 +1049,7 @@ html.dark .custom-tree-node:hover {
   background: var(--el-color-primary-dark-2);
 }
 .custom-tree-node:hover::after {
-  content: '';
+  content: "";
   position: absolute;
   right: 8px;
   top: 50%;
@@ -983,7 +1099,9 @@ html.dark .context-menu {
   padding: 8px 12px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   display: flex;
   align-items: center;
   gap: 6px;

@@ -72,7 +72,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Department, DepartmentFormData, FormMode } from '@/types/system'
+import type { Department, DepartmentFormData} from '../types/department'
 import { getDepartmentTree, checkDepartmentName } from '@/api/system/department'
 
 // Props

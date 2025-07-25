@@ -4,8 +4,8 @@
     <div class="breadcrumb-nav">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item>用户管理</el-breadcrumb-item>
-        <el-breadcrumb-item 
-          v-for="(item, index) in selectedDepartmentPath" 
+        <el-breadcrumb-item
+          v-for="(item, index) in selectedDepartmentPath"
           :key="index"
           :class="{ 'is-link': index < selectedDepartmentPath.length - 1 }"
           @click="handleBreadcrumbClick(index)"
@@ -14,22 +14,22 @@
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    
+
     <!-- 操作工具栏 -->
     <div class="toolbar">
       <div class="left-actions">
         <el-button type="primary" @click="handleAdd">
           <el-icon><Plus /></el-icon>新增用户
         </el-button>
-        <el-button 
-          type="danger" 
+        <el-button
+          type="danger"
           :disabled="selectedUsers.length === 0"
           @click="handleBatchDelete"
         >
           <el-icon><Delete /></el-icon>批量删除
         </el-button>
       </div>
-      
+
       <div class="right-search">
         <el-input
           v-model="searchForm.keyword"
@@ -47,7 +47,7 @@
         </el-button>
       </div>
     </div>
-    
+
     <!-- 高级搜索 -->
     <el-collapse-transition>
       <div v-show="showAdvancedSearch" class="advanced-search">
@@ -60,11 +60,11 @@
           </el-form-item>
           <el-form-item label="用户角色">
             <el-select v-model="searchForm.roleId" placeholder="全部" clearable>
-              <el-option 
-                v-for="role in roleOptions" 
-                :key="role.id" 
-                :label="role.name" 
-                :value="role.id" 
+              <el-option
+                v-for="role in roleOptions"
+                :key="role.id"
+                :label="role.name"
+                :value="role.id"
               />
             </el-select>
           </el-form-item>
@@ -86,7 +86,7 @@
         </el-form>
       </div>
     </el-collapse-transition>
-    
+
     <!-- 用户表格 -->
     <div class="table-container">
       <el-table
@@ -99,26 +99,31 @@
         <el-table-column type="selection" width="50" />
         <el-table-column label="头像" width="80">
           <template #default="{ row }">
-            <el-avatar 
-              :size="40" 
+            <el-avatar
+              :size="40"
               :src="row.avatar || defaultAvatar"
               :icon="!row.avatar ? UserIcon : undefined"
             >
-              {{ !row.avatar ? row.realName?.charAt(0) : '' }}
+              {{ !row.avatar ? row.realName?.charAt(0) : "" }}
             </el-avatar>
           </template>
         </el-table-column>
         <el-table-column prop="username" label="用户名" width="120" />
         <el-table-column prop="realName" label="真实姓名" width="120" />
         <el-table-column prop="employeeNo" label="工号" width="120" />
-        <el-table-column prop="email" label="邮箱" width="180" show-overflow-tooltip />
+        <el-table-column
+          prop="email"
+          label="邮箱"
+          width="180"
+          show-overflow-tooltip
+        />
         <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column label="角色" width="150">
           <template #default="{ row }">
-            <el-tag 
-              v-for="role in row.roles" 
-              :key="role.id" 
-              size="small" 
+            <el-tag
+              v-for="role in row.roles"
+              :key="role.id"
+              size="small"
               style="margin-right: 4px"
             >
               {{ role.name }}
@@ -148,27 +153,27 @@
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="handleEdit(row)"
+            <el-button
+              type="primary"
+              size="small"
               :disabled="row.id === 1"
+              @click="handleEdit(row)"
             >
               编辑
             </el-button>
-            <el-button 
-              type="warning" 
-              size="small" 
-              @click="handleResetPassword(row)"
+            <el-button
+              type="warning"
+              size="small"
               :disabled="row.id === 1"
+              @click="handleResetPassword(row)"
             >
               重置密码
             </el-button>
-            <el-button 
-              type="danger" 
-              size="small" 
-              @click="handleDelete(row)"
+            <el-button
+              type="danger"
+              size="small"
               :disabled="row.id === 1"
+              @click="handleDelete(row)"
             >
               删除
             </el-button>
@@ -176,7 +181,7 @@
         </el-table-column>
       </el-table>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination">
       <el-pagination
@@ -188,7 +193,7 @@
         background
       />
     </div>
-    
+
     <!-- 用户表单对话框 -->
     <el-dialog
       v-model="showForm"
@@ -208,70 +213,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, Search, Filter, User as UserIcon } from '@element-plus/icons-vue'
-import type { User, Role } from '@/types/system'
-import { 
-  getUserList, 
-  createUser, 
-  updateUser, 
-  deleteUser, 
-  batchDeleteUsers, 
-  updateUserStatus, 
-  resetUserPassword 
-} from '@/api/system/user'
-import { getAllRoles } from '@/api/system/role'
-import UserForm from './components/UserForm.vue'
+import { ref, reactive, computed, watch, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Plus,
+  Delete,
+  Search,
+  Filter,
+  User as UserIcon
+} from "@element-plus/icons-vue";
+import { User } from "./types/user";
+import { Role } from "@/views/system/role/types/role";
+import {
+  getUserList,
+  createUser,
+  updateUser,
+  deleteUser,
+  batchDeleteUsers,
+  updateUserStatus,
+  resetUserPassword
+} from "@/api/system/user";
+import { getAllRoles } from "@/api/system/role";
+import UserForm from "./components/UserForm.vue";
 
 // Props
 const props = defineProps<{
-  selectedDepartmentId: number | null
-  selectedDepartmentPath: string[]
-}>()
+  selectedDepartmentId: number | null;
+  selectedDepartmentPath: string[];
+}>();
 
 // Emits
 const emit = defineEmits<{
-  departmentBreadcrumbClick: [departmentId: number]
-}>()
+  departmentBreadcrumbClick: [departmentId: number];
+}>();
 
 // 响应式数据
-const tableRef = ref()
-const formRef = ref()
-const loading = ref(false)
-const showForm = ref(false)
-const showAdvancedSearch = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
-const tableData = ref<User[]>([])
-const selectedUsers = ref<User[]>([])
-const roleOptions = ref<Role[]>([])
+const tableRef = ref();
+const formRef = ref();
+const loading = ref(false);
+const showForm = ref(false);
+const showAdvancedSearch = ref(false);
+const formMode = ref<"create" | "edit">("create");
+const tableData = ref<User[]>([]);
+const selectedUsers = ref<User[]>([]);
+const roleOptions = ref<Role[]>([]);
 
 // 默认头像
-const defaultAvatar = ref('')
+const defaultAvatar = ref("");
 
 const searchForm = reactive({
-  keyword: '',
+  keyword: "",
   status: undefined as number | undefined,
   roleId: undefined as number | undefined,
   createTimeRange: [] as string[]
-})
+});
 
 const pagination = reactive({
   current: 1,
   size: 20,
   total: 0
-})
+});
 
 const formData = ref<Partial<User>>({
-  username: '',
-  realName: '',
-  email: '',
-  phone: '',
-  employeeNo: '',
+  username: "",
+  realName: "",
+  email: "",
+  phone: "",
+  employeeNo: "",
   departmentId: undefined,
   roleIds: [],
   status: 1
-})
+});
 
 // 计算属性
 const searchParams = computed(() => ({
@@ -279,218 +291,226 @@ const searchParams = computed(() => ({
   departmentId: props.selectedDepartmentId,
   page: pagination.current,
   size: pagination.size
-}))
+}));
 
 // 时间格式化方法
 const formatDateTime = (dateTime: string | undefined) => {
-  if (!dateTime) return '-'
-  const date = new Date(dateTime)
-  if (isNaN(date.getTime())) return '-'
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+  if (!dateTime) return "-";
+  const date = new Date(dateTime);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
 
 // 方法
 const handleSearch = () => {
-  pagination.current = 1
-  loadTableData()
-}
+  pagination.current = 1;
+  loadTableData();
+};
 
 const handleResetSearch = () => {
   Object.assign(searchForm, {
-    keyword: '',
+    keyword: "",
     status: undefined,
     roleId: undefined,
     createTimeRange: []
-  })
-  handleSearch()
-}
+  });
+  handleSearch();
+};
 
 const handleSelectionChange = (selection: User[]) => {
-  selectedUsers.value = selection
-}
+  selectedUsers.value = selection;
+};
 
 const handleAdd = () => {
-  formMode.value = 'create'
+  formMode.value = "create";
   formData.value = {
-    username: '',
-    realName: '',
-    email: '',
-    phone: '',
-    employeeNo: '',
+    username: "",
+    realName: "",
+    email: "",
+    phone: "",
+    employeeNo: "",
     departmentId: props.selectedDepartmentId || 1, // 使用选中的部门或系统部门作为默认值
     roleIds: [],
     status: 1
-  }
-  showForm.value = true
-}
+  };
+  showForm.value = true;
+};
 
 const handleEdit = (row: User) => {
-  formMode.value = 'edit'
-  formData.value = { 
+  formMode.value = "edit";
+  formData.value = {
     ...row,
     roleIds: row.roles?.map(r => r.id) || []
-  }
-  showForm.value = true
-}
+  };
+  showForm.value = true;
+};
 
 const handleDelete = async (row: User) => {
   try {
     await ElMessageBox.confirm(
-      '确认删除该用户吗？删除后将无法恢复。',
-      '确认删除',
-      { type: 'warning' }
-    )
-    await deleteUser(row.id)
-    ElMessage.success('删除成功')
-    loadTableData()
+      "确认删除该用户吗？删除后将无法恢复。",
+      "确认删除",
+      { type: "warning" }
+    );
+    await deleteUser(row.id);
+    ElMessage.success("删除成功");
+    loadTableData();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error('删除失败:', error)
-      ElMessage.error(error.message || '删除失败')
+    if (error !== "cancel") {
+      console.error("删除失败:", error);
+      ElMessage.error(error.message || "删除失败");
     }
   }
-}
+};
 
 const handleBatchDelete = async () => {
   if (selectedUsers.value.length === 0) {
-    ElMessage.warning('请选择要删除的用户')
-    return
+    ElMessage.warning("请选择要删除的用户");
+    return;
   }
-  
+
   try {
     await ElMessageBox.confirm(
       `确认删除选中的 ${selectedUsers.value.length} 个用户吗？`,
-      '警告',
-      { type: 'warning' }
-    )
-    const ids = selectedUsers.value.map(user => user.id)
-    await batchDeleteUsers(ids)
-    ElMessage.success('批量删除成功')
-    loadTableData()
+      "警告",
+      { type: "warning" }
+    );
+    const ids = selectedUsers.value.map(user => user.id);
+    await batchDeleteUsers(ids);
+    ElMessage.success("批量删除成功");
+    loadTableData();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error('批量删除失败:', error)
-      ElMessage.error(error.message || '批量删除失败')
+    if (error !== "cancel") {
+      console.error("批量删除失败:", error);
+      ElMessage.error(error.message || "批量删除失败");
     }
   }
-}
+};
 
 const handleStatusChange = async (row: User) => {
   // 保护系统管理员，不允许禁用
   if (row.id === 1 && row.status === 0) {
-    ElMessage.error('系统管理员不允许禁用')
-    row.status = 1 // 恢复为启用状态
-    return
+    ElMessage.error("系统管理员不允许禁用");
+    row.status = 1; // 恢复为启用状态
+    return;
   }
 
   try {
-    console.log('更新用户状态:', { id: row.id, status: row.status })
-    await updateUserStatus(row.id, row.status)
-    ElMessage.success(row.status ? '用户已启用' : '用户已禁用')
+    console.log("更新用户状态:", { id: row.id, status: row.status });
+    await updateUserStatus(row.id, row.status);
+    ElMessage.success(row.status ? "用户已启用" : "用户已禁用");
   } catch (error: any) {
     // 恢复原状态
-    row.status = row.status ? 0 : 1
-    console.error('状态更新失败:', error)
-    console.error('错误详情:', error.response?.data || error)
-    ElMessage.error(error.message || '状态更新失败')
+    row.status = row.status ? 0 : 1;
+    console.error("状态更新失败:", error);
+    console.error("错误详情:", error.response?.data || error);
+    ElMessage.error(error.message || "状态更新失败");
   }
-}
+};
 
 const handleResetPassword = async (row: User) => {
   try {
-    await ElMessageBox.confirm(`确认重置用户 "${row.realName}" 的密码吗？`, '确认', {
-      type: 'warning'
-    })
-    const newPassword = await resetUserPassword(row.id)
-    ElMessage.success(`密码重置成功，新密码为：${newPassword}`)
+    await ElMessageBox.confirm(
+      `确认重置用户 "${row.realName}" 的密码吗？`,
+      "确认",
+      {
+        type: "warning"
+      }
+    );
+    const newPassword = await resetUserPassword(row.id);
+    ElMessage.success(`密码重置成功，新密码为：${newPassword}`);
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error('重置密码失败:', error)
-      ElMessage.error(error.message || '重置密码失败')
+    if (error !== "cancel") {
+      console.error("重置密码失败:", error);
+      ElMessage.error(error.message || "重置密码失败");
     }
   }
-}
+};
 
 const handleFormSubmit = async (data: User) => {
   try {
-    if (formMode.value === 'create') {
-      await createUser(data)
-      ElMessage.success('新增成功')
+    if (formMode.value === "create") {
+      await createUser(data);
+      ElMessage.success("新增成功");
     } else {
-      await updateUser(data.id, data)
-      ElMessage.success('编辑成功')
+      await updateUser(data.id, data);
+      ElMessage.success("编辑成功");
     }
-    showForm.value = false
-    loadTableData()
+    showForm.value = false;
+    loadTableData();
   } catch (error: any) {
-    console.error('提交失败:', error)
-    ElMessage.error(error.message || '操作失败')
+    console.error("提交失败:", error);
+    ElMessage.error(error.message || "操作失败");
   }
-}
+};
 
 const handleFormCancel = () => {
-  showForm.value = false
-}
+  showForm.value = false;
+};
 
 const handleSizeChange = (size: number) => {
-  pagination.size = size
-  loadTableData()
-}
+  pagination.size = size;
+  loadTableData();
+};
 
 const handleCurrentChange = (current: number) => {
-  pagination.current = current
-  loadTableData()
-}
+  pagination.current = current;
+  loadTableData();
+};
 
 const handleBreadcrumbClick = (index: number) => {
   // 面包屑点击时选中对应部门
-  emit('departmentBreadcrumbClick', index)
-}
+  emit("departmentBreadcrumbClick", index);
+};
 
 const loadTableData = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await getUserList(searchParams.value)
-    tableData.value = response.records || []
-    pagination.total = response.total || 0
+    const response = await getUserList(searchParams.value);
+    tableData.value = response.records || [];
+    pagination.total = response.total || 0;
   } catch (error) {
-    console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户列表失败')
-    tableData.value = []
-    pagination.total = 0
+    console.error("获取用户列表失败:", error);
+    ElMessage.error("获取用户列表失败");
+    tableData.value = [];
+    pagination.total = 0;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const loadRoleOptions = async () => {
   try {
-    const response = await getAllRoles()
-    roleOptions.value = response || []
+    const response = await getAllRoles();
+    roleOptions.value = response || [];
   } catch (error) {
-    console.error('获取角色列表失败:', error)
-    roleOptions.value = []
+    console.error("获取角色列表失败:", error);
+    roleOptions.value = [];
   }
-}
+};
 
 // 监听部门变化
-watch(() => props.selectedDepartmentId, () => {
-  pagination.current = 1
-  loadTableData()
-}, { immediate: true })
+watch(
+  () => props.selectedDepartmentId,
+  () => {
+    pagination.current = 1;
+    loadTableData();
+  },
+  { immediate: true }
+);
 
 // 生命周期
 onMounted(() => {
-  loadRoleOptions()
+  loadRoleOptions();
   // 设置默认头像 - 直接引用SVG文件
-  defaultAvatar.value = '/src/assets/user.svg'
-})
+  defaultAvatar.value = "/src/assets/user.svg";
+});
 </script>
 
 <style scoped lang="scss">
@@ -499,58 +519,58 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  
+
   .breadcrumb-nav {
     margin-bottom: 16px;
-    
+
     :deep(.el-breadcrumb__item) {
       &.is-link {
         cursor: pointer;
-        
+
         .el-breadcrumb__inner:hover {
           color: var(--el-color-primary);
         }
       }
     }
   }
-  
+
   .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    
+
     .left-actions {
       display: flex;
       gap: 8px;
     }
-    
+
     .right-search {
       display: flex;
       gap: 8px;
     }
   }
-  
+
   .advanced-search {
     background: var(--el-fill-color-lighter);
     padding: 16px;
     border-radius: 6px;
     margin-bottom: 16px;
   }
-  
+
   .table-container {
     flex: 1;
     overflow: hidden;
-    
+
     .el-table {
       height: 100%;
     }
   }
-  
+
   .pagination {
     display: flex;
     justify-content: center;
     padding: 16px 0;
   }
 }
-</style> 
+</style>

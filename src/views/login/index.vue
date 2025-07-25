@@ -9,14 +9,14 @@ import { useNav } from "@/layout/hooks/useNav";
 import { useEventListener } from "@vueuse/core";
 import type { FormInstance } from "element-plus";
 import { useLayout } from "@/layout/hooks/useLayout";
-import { useUserStore } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-  import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
+import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
 import { PasswordCrypto } from "@/utils/crypto";
+import { useUserStoreHook } from "@/store/modules/user";
 
-  import dayIcon from "@/assets/svg/day.svg?component";
+import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
 import Lock from "~icons/ri/lock-fill";
 import User from "~icons/ri/user-3-fill";
@@ -49,14 +49,14 @@ const onLogin = async (formEl: FormInstance | undefined) => {
   await formEl.validate(valid => {
     if (valid) {
       loading.value = true;
-      
+
       // 检查公钥是否已设置
       if (!PasswordCrypto.isPublicKeySet()) {
         message("系统错误：公钥未设置", { type: "error" });
         loading.value = false;
         return;
       }
-      
+
       // 加密密码
       let encryptedPassword;
       try {
@@ -66,8 +66,8 @@ const onLogin = async (formEl: FormInstance | undefined) => {
         loading.value = false;
         return;
       }
-      
-      useUserStore()
+
+      useUserStoreHook()
         .login({
           username: ruleForm.username,
           password: encryptedPassword
@@ -78,31 +78,36 @@ const onLogin = async (formEl: FormInstance | undefined) => {
             disabled.value = true;
             // 获取首页路径，如果获取失败则使用默认路径
             const topMenu = getTopMenu(true);
-            const targetPath = topMenu?.path || '/welcome';
-            
-            console.log('登录成功，准备跳转到:', targetPath);
-            
+            const targetPath = topMenu?.path || "/welcome";
+
+            console.log("登录成功，准备跳转到:", targetPath);
+
             router
               .push(targetPath)
               .then(() => {
                 message("登录成功", { type: "success" });
               })
               .catch(error => {
-                console.error('路由跳转失败:', error);
+                console.error("路由跳转失败:", error);
                 // 如果跳转失败，尝试跳转到根路径
-                router.push('/').then(() => {
-                  message("登录成功", { type: "success" });
-                }).catch(err => {
-                  console.error('备用路由跳转也失败:', err);
-                  message("登录成功，但页面跳转失败", { type: "warning" });
-                });
+                router
+                  .push("/")
+                  .then(() => {
+                    message("登录成功", { type: "success" });
+                  })
+                  .catch(err => {
+                    console.error("备用路由跳转也失败:", err);
+                    message("登录成功，但页面跳转失败", { type: "warning" });
+                  });
               })
               .finally(() => (disabled.value = false));
           });
         })
         .catch(error => {
-          console.error('登录失败:', error);
-          message("登录失败: " + (error.message || '未知错误'), { type: "error" });
+          console.error("登录失败:", error);
+          message("登录失败: " + (error.message || "未知错误"), {
+            type: "error"
+          });
         })
         .finally(() => (loading.value = false));
     }
@@ -126,41 +131,41 @@ useEventListener(document, "keydown", ({ code }) => {
 
 onMounted(async () => {
   // 清理所有登录状态，确保显示登录页面
-  Cookies.remove('multiple-tabs')
-  localStorage.removeItem('user-info')
-  localStorage.removeItem('userInfo')
-  localStorage.removeItem('roles')
-  localStorage.removeItem('permissions')
-  localStorage.removeItem('menuList')
-  localStorage.removeItem('authorized-token')
-  
+  Cookies.remove("multiple-tabs");
+  localStorage.removeItem("user-info");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("roles");
+  localStorage.removeItem("permissions");
+  localStorage.removeItem("menuList");
+  localStorage.removeItem("authorized-token");
+
   // 清理用户store状态
-  const userStore = useUserStore()
-  userStore.logout()
-  
+  const userStore = useUserStoreHook();
+  userStore.logout();
+
   // 获取RSA公钥
   try {
-    const response = await fetch('/api/v1/public-key')
+    const response = await fetch("/api/v1/public-key");
     if (response.ok) {
-      const data = await response.json()
+      const data = await response.json();
       if (data.success && data.data.publicKey) {
-        PasswordCrypto.setPublicKey(data.data.publicKey)
-        console.log("RSA公钥设置成功")
+        PasswordCrypto.setPublicKey(data.data.publicKey);
+        console.log("RSA公钥设置成功");
       } else {
-        console.error("获取公钥失败：", data.message)
-        message("获取公钥失败，请刷新页面重试", { type: "error" })
+        console.error("获取公钥失败：", data.message);
+        message("获取公钥失败，请刷新页面重试", { type: "error" });
       }
     } else {
-      console.error("获取公钥请求失败：", response.status)
-      message("获取公钥失败，请刷新页面重试", { type: "error" })
+      console.error("获取公钥请求失败：", response.status);
+      message("获取公钥失败，请刷新页面重试", { type: "error" });
     }
   } catch (error) {
-    console.error("获取公钥异常：", error)
-    message("获取公钥失败，请刷新页面重试", { type: "error" })
+    console.error("获取公钥异常：", error);
+    message("获取公钥失败，请刷新页面重试", { type: "error" });
   }
-  
-  console.log("登录页面：清理登录状态完成")
-})
+
+  console.log("登录页面：清理登录状态完成");
+});
 </script>
 
 <template>

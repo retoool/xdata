@@ -1,5 +1,9 @@
 import { http } from "@/utils/http";
-import type { WorkflowData, NodeData, EdgeData } from "@/views/computer/workflow/designer/types";
+import type {
+  WorkflowData,
+  NodeData,
+  EdgeData
+} from "@/views/computer/workflow/designer/types";
 import type { ApiResponse, PageResult } from "@/types/system";
 
 // 工作流查询参数
@@ -11,7 +15,7 @@ export interface WorkflowQueryParams {
   dateRange?: string[];
   categoryIds?: number[];
   sortField?: string;
-  sortOrder?: 'ascend' | 'descend';
+  sortOrder?: "ascend" | "descend";
 }
 
 // 工作流列表响应
@@ -28,8 +32,12 @@ export interface WorkflowUpdateParams {
 }
 
 // 获取工作流列表
-export const getWorkflowList = (params: WorkflowQueryParams): Promise<WorkflowListResponse> => {
-  return http.request<WorkflowListResponse>("get", "/workflow/list", { params });
+export const getWorkflowList = (
+  params: WorkflowQueryParams
+): Promise<WorkflowListResponse> => {
+  return http.request<WorkflowListResponse>("get", "/workflow/list", {
+    params
+  });
 };
 
 // 获取工作流详情
@@ -38,12 +46,16 @@ export const getWorkflow = (id: string | number): Promise<WorkflowData> => {
 };
 
 // 创建工作流
-export const createWorkflow = (data: Omit<WorkflowUpdateParams, "id">): Promise<WorkflowData> => {
+export const createWorkflow = (
+  data: Omit<WorkflowUpdateParams, "id">
+): Promise<WorkflowData> => {
   return http.request<WorkflowData>("post", "/workflow", { data });
 };
 
 // 更新工作流
-export const updateWorkflow = (data: WorkflowUpdateParams): Promise<WorkflowData> => {
+export const updateWorkflow = (
+  data: WorkflowUpdateParams
+): Promise<WorkflowData> => {
   return http.request<WorkflowData>("post", `/workflow/${data.id}`, { data });
 };
 
@@ -54,7 +66,9 @@ export const deleteWorkflow = (id: number): Promise<void> => {
 
 // 批量删除工作流
 export const batchDeleteWorkflow = (ids: number[]): Promise<void> => {
-  return http.request<void>("post", "/workflow/batch-delete", { data: { ids } });
+  return http.request<void>("post", "/workflow/batch-delete", {
+    data: { ids }
+  });
 };
 
 // 发布工作流
@@ -94,8 +108,8 @@ export const getWorkflowDashboard = (): Promise<any> => {
 
 // 批量导出工作流
 export const batchExportWorkflow = (ids: number[]) => {
-  return http.request<Blob>("get", "/workflow/export", { 
+  return http.request<Blob>("get", "/workflow/export", {
     params: { ids },
-    responseType: 'blob'  // 指定响应类型为blob，用于文件下载
+    responseType: "blob" // 指定响应类型为blob，用于文件下载
   });
-}; 
+};

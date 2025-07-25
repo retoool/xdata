@@ -6,7 +6,7 @@ import LayNotice from "../lay-notice/index.vue";
 import { ref, toRaw, watch, onMounted, nextTick } from "vue";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { getParentPaths, findRouteByPath } from "@/router/utils";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import LaySidebarExtraIcon from "../lay-sidebar/components/SidebarExtraIcon.vue";
 import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vue";
 
@@ -31,7 +31,7 @@ const {
 } = useNav();
 
 function getDefaultActive(routePath) {
-  const wholeMenus = usePermissionStoreHook().wholeMenus;
+  const wholeMenus = useMenuStoreHook().wholeMenus;
   /** 当前路由的父级路径 */
   const parentRoutes = getParentPaths(routePath, wholeMenus)[0];
   defaultActive.value = !isAllEmpty(route.meta?.activePath)
@@ -48,7 +48,7 @@ nextTick(() => {
 });
 
 watch(
-  () => [route.path, usePermissionStoreHook().wholeMenus],
+  () => [route.path, useMenuStoreHook().wholeMenus],
   () => {
     getDefaultActive(route.path);
   }
@@ -58,7 +58,7 @@ watch(
 <template>
   <div
     v-if="device !== 'mobile'"
-    v-loading="usePermissionStoreHook().wholeMenus.length === 0"
+    v-loading="useMenuStoreHook().wholeMenus.length === 0"
     class="horizontal-header"
   >
     <el-menu
@@ -70,7 +70,7 @@ watch(
       :default-active="defaultActive"
     >
       <el-menu-item
-        v-for="route in usePermissionStoreHook().wholeMenus"
+        v-for="route in useMenuStoreHook().wholeMenus"
         :key="route.path"
         :index="resolvePath(route) || route.redirect"
       >
@@ -108,10 +108,7 @@ watch(
         <template #dropdown>
           <el-dropdown-menu class="logout">
             <el-dropdown-item @click="goToProfile">
-              <IconifyIconOffline
-                :icon="User"
-                style="margin: 5px"
-              />
+              <IconifyIconOffline :icon="User" style="margin: 5px" />
               个人详情
             </el-dropdown-item>
             <el-dropdown-item divided @click="logout">

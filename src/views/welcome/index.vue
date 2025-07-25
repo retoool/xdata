@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, h, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
-import { 
-  Setting, 
-  TrendCharts, 
-  CircleCheck, 
+import { ref, onMounted, h, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import * as echarts from "echarts";
+import {
+  Setting,
+  TrendCharts,
+  CircleCheck,
   Operation,
   Share,
   DataAnalysis,
@@ -18,13 +18,13 @@ import {
   Edit,
   Monitor,
   Document
-} from '@element-plus/icons-vue'
+} from "@element-plus/icons-vue";
 
 defineOptions({
   name: "Welcome"
 });
 
-const router = useRouter()
+const router = useRouter();
 
 // 统计数据
 const stats = ref({
@@ -32,210 +32,214 @@ const stats = ref({
   workflows: 0,
   executions: 0,
   successRate: 0
-})
+});
 
 // 最近工作流数据
 const recentWorkflows = ref([
-  { id: 1, name: '数据清洗工作流', createTime: '2024-01-20 14:30' },
-  { id: 2, name: '机器学习训练流程', createTime: '2024-01-20 10:15' },
-  { id: 3, name: '数据分析管道', createTime: '2024-01-19 16:45' },
-  { id: 4, name: '报表生成流程', createTime: '2024-01-19 09:20' }
-])
+  { id: 1, name: "数据清洗工作流", createTime: "2024-01-20 14:30" },
+  { id: 2, name: "机器学习训练流程", createTime: "2024-01-20 10:15" },
+  { id: 3, name: "数据分析管道", createTime: "2024-01-19 16:45" },
+  { id: 4, name: "报表生成流程", createTime: "2024-01-19 09:20" }
+]);
 
 // 图表引用
-const executionTrendChart = ref()
-const operatorDistributionChart = ref()
+const executionTrendChart = ref();
+const operatorDistributionChart = ref();
 
 // 导航到指定页面
 const navigateTo = (path: string) => {
-  router.push(path)
-}
+  router.push(path);
+};
 
 // 模拟加载统计数据
 const loadStats = () => {
   // 模拟异步加载数据，添加动画效果
   setTimeout(() => {
-    animateNumber('algorithms', 156)
-    animateNumber('workflows', 42)
-    animateNumber('executions', 1248)
-    animateNumber('successRate', 98.5)
-  }, 600)
-}
+    animateNumber("algorithms", 156);
+    animateNumber("workflows", 42);
+    animateNumber("executions", 1248);
+    animateNumber("successRate", 98.5);
+  }, 600);
+};
 
 // 数字动画效果
 const animateNumber = (key: string, target: number) => {
-  const duration = 1000
-  const steps = 60
-  const stepValue = target / steps
-  let current = 0
-  
+  const duration = 1000;
+  const steps = 60;
+  const stepValue = target / steps;
+  let current = 0;
+
   const timer = setInterval(() => {
-    current += stepValue
+    current += stepValue;
     if (current >= target) {
-      stats.value[key] = target
-      clearInterval(timer)
+      stats.value[key] = target;
+      clearInterval(timer);
     } else {
-      stats.value[key] = Math.floor(current)
+      stats.value[key] = Math.floor(current);
     }
-  }, duration / steps)
-}
+  }, duration / steps);
+};
 
 // 添加 Workflow 图标组件
 const Workflow = {
-  name: 'Workflow',
+  name: "Workflow",
   render() {
-    return h('svg', {
-      viewBox: '0 0 1024 1024',
-      width: '1em',
-      height: '1em',
-      fill: 'currentColor'
-    }, [
-      h('path', {
-        d: 'M300 120a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 384a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 648a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 912a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0z'
-      })
-    ])
+    return h(
+      "svg",
+      {
+        viewBox: "0 0 1024 1024",
+        width: "1em",
+        height: "1em",
+        fill: "currentColor"
+      },
+      [
+        h("path", {
+          d: "M300 120a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 384a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 648a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zM300 912a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0zm264 0a60 60 0 1 1-120 0 60 60 0 0 1 120 0z"
+        })
+      ]
+    );
   }
-}
+};
 
 // 初始化执行趋势图表
 const initExecutionTrendChart = () => {
-  if (!executionTrendChart.value) return
-  
-  const chart = echarts.init(executionTrendChart.value)
+  if (!executionTrendChart.value) return;
+
+  const chart = echarts.init(executionTrendChart.value);
   const option = {
     tooltip: {
-      trigger: 'axis',
+      trigger: "axis",
       axisPointer: {
-        type: 'cross'
+        type: "cross"
       }
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: '8%',
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
+      top: "8%",
       containLabel: true
     },
     xAxis: {
-      type: 'category',
-      data: ['01-14', '01-15', '01-16', '01-17', '01-18', '01-19', '01-20'],
+      type: "category",
+      data: ["01-14", "01-15", "01-16", "01-17", "01-18", "01-19", "01-20"],
       axisLine: {
         lineStyle: {
-          color: 'var(--el-border-color)'
+          color: "var(--el-border-color)"
         }
       }
     },
     yAxis: {
-      type: 'value',
+      type: "value",
       axisLine: {
         lineStyle: {
-          color: 'var(--el-border-color)'
+          color: "var(--el-border-color)"
         }
       }
     },
     series: [
       {
-        name: '执行次数',
-        type: 'line',
+        name: "执行次数",
+        type: "line",
         data: [45, 52, 61, 58, 67, 72, 85],
         smooth: true,
         lineStyle: {
           width: 3,
           color: {
-            type: 'linear',
+            type: "linear",
             x: 0,
             y: 0,
             x2: 1,
             y2: 0,
             colorStops: [
-              { offset: 0, color: '#409EFF' },
-              { offset: 1, color: '#6366f1' }
+              { offset: 0, color: "#409EFF" },
+              { offset: 1, color: "#6366f1" }
             ]
           }
         },
         areaStyle: {
           color: {
-            type: 'linear',
+            type: "linear",
             x: 0,
             y: 0,
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-              { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
+              { offset: 0, color: "rgba(64, 158, 255, 0.3)" },
+              { offset: 1, color: "rgba(64, 158, 255, 0.05)" }
             ]
           }
         }
       }
     ]
-  }
-  chart.setOption(option)
-  
+  };
+  chart.setOption(option);
+
   // 监听主题变化
-  window.addEventListener('resize', () => chart.resize())
-}
+  window.addEventListener("resize", () => chart.resize());
+};
 
 // 初始化算子分布图表
 const initOperatorDistributionChart = () => {
-  if (!operatorDistributionChart.value) return
-  
-  const chart = echarts.init(operatorDistributionChart.value)
+  if (!operatorDistributionChart.value) return;
+
+  const chart = echarts.init(operatorDistributionChart.value);
   const option = {
     tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b} : {c} ({d}%)'
+      trigger: "item",
+      formatter: "{a} <br/>{b} : {c} ({d}%)"
     },
     legend: {
-      orient: 'vertical',
-      left: 'left',
+      orient: "vertical",
+      left: "left",
       textStyle: {
-        color: 'var(--el-text-color-primary)'
+        color: "var(--el-text-color-primary)"
       }
     },
     series: [
       {
-        name: '算子分类',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['60%', '50%'],
+        name: "算子分类",
+        type: "pie",
+        radius: ["40%", "70%"],
+        center: ["60%", "50%"],
         data: [
-          { value: 35, name: '数据处理', itemStyle: { color: '#409EFF' } },
-          { value: 28, name: '机器学习', itemStyle: { color: '#67C23A' } },
-          { value: 22, name: '数据分析', itemStyle: { color: '#E6A23C' } },
-          { value: 18, name: '可视化', itemStyle: { color: '#F56C6C' } },
-          { value: 12, name: '其他', itemStyle: { color: '#909399' } }
+          { value: 35, name: "数据处理", itemStyle: { color: "#409EFF" } },
+          { value: 28, name: "机器学习", itemStyle: { color: "#67C23A" } },
+          { value: 22, name: "数据分析", itemStyle: { color: "#E6A23C" } },
+          { value: 18, name: "可视化", itemStyle: { color: "#F56C6C" } },
+          { value: 12, name: "其他", itemStyle: { color: "#909399" } }
         ],
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: "rgba(0, 0, 0, 0.5)"
           }
         }
       }
     ]
-  }
-  chart.setOption(option)
-  
+  };
+  chart.setOption(option);
+
   // 监听主题变化
-  window.addEventListener('resize', () => chart.resize())
-}
+  window.addEventListener("resize", () => chart.resize());
+};
 
 onMounted(() => {
-  loadStats()
+  loadStats();
   nextTick(() => {
     setTimeout(() => {
-      initExecutionTrendChart()
-      initOperatorDistributionChart()
-    }, 800)
-  })
-})
+      initExecutionTrendChart();
+      initOperatorDistributionChart();
+    }, 800);
+  });
+});
 </script>
 
 <template>
   <div class="welcome-page">
     <!-- 顶部标题区域 -->
-    <div 
+    <div
       v-motion
       class="hero-section"
       :initial="{ opacity: 0, y: -30 }"
@@ -253,7 +257,7 @@ onMounted(() => {
     </div>
 
     <!-- 数据概览卡片 -->
-    <div 
+    <div
       v-motion
       class="stats-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -269,7 +273,7 @@ onMounted(() => {
             <div class="stat-label">算子总数</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon workflows">
             <el-icon><Workflow /></el-icon>
@@ -279,7 +283,7 @@ onMounted(() => {
             <div class="stat-label">工作流</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon executions">
             <el-icon><TrendCharts /></el-icon>
@@ -289,7 +293,7 @@ onMounted(() => {
             <div class="stat-label">执行次数</div>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon success-rate">
             <el-icon><CircleCheck /></el-icon>
@@ -303,7 +307,7 @@ onMounted(() => {
     </div>
 
     <!-- 功能特性展示 -->
-    <div 
+    <div
       v-motion
       class="features-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -325,7 +329,7 @@ onMounted(() => {
             </el-button>
           </div>
         </div>
-        
+
         <div class="feature-card" @click="navigateTo('/computer/workflow')">
           <div class="feature-icon">
             <el-icon><Share /></el-icon>
@@ -340,7 +344,7 @@ onMounted(() => {
             </el-button>
           </div>
         </div>
-        
+
         <div class="feature-card">
           <div class="feature-icon">
             <el-icon><DataAnalysis /></el-icon>
@@ -359,7 +363,7 @@ onMounted(() => {
     </div>
 
     <!-- 功能导航网格 -->
-    <div 
+    <div
       v-motion
       class="navigation-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -367,10 +371,7 @@ onMounted(() => {
     >
       <h2 class="section-title">功能导航</h2>
       <div class="navigation-grid">
-        <div 
-          class="nav-item" 
-          @click="navigateTo('/computer/operator')"
-        >
+        <div class="nav-item" @click="navigateTo('/computer/operator')">
           <div class="nav-icon">
             <el-icon><Operation /></el-icon>
           </div>
@@ -379,11 +380,8 @@ onMounted(() => {
             <p class="nav-desc">管理和配置数据处理算子</p>
           </div>
         </div>
-        
-        <div 
-          class="nav-item" 
-          @click="navigateTo('/computer/workflow')"
-        >
+
+        <div class="nav-item" @click="navigateTo('/computer/workflow')">
           <div class="nav-icon">
             <el-icon><Share /></el-icon>
           </div>
@@ -392,9 +390,9 @@ onMounted(() => {
             <p class="nav-desc">查看和管理数据处理工作流</p>
           </div>
         </div>
-        
-        <div 
-          class="nav-item" 
+
+        <div
+          class="nav-item"
           @click="navigateTo('/computer/workflow/designer')"
         >
           <div class="nav-icon">
@@ -405,7 +403,7 @@ onMounted(() => {
             <p class="nav-desc">可视化设计数据处理流程</p>
           </div>
         </div>
-        
+
         <div class="nav-item">
           <div class="nav-icon">
             <el-icon><Monitor /></el-icon>
@@ -415,7 +413,7 @@ onMounted(() => {
             <p class="nav-desc">监控系统运行状态和性能</p>
           </div>
         </div>
-        
+
         <div class="nav-item">
           <div class="nav-icon">
             <el-icon><Document /></el-icon>
@@ -425,7 +423,7 @@ onMounted(() => {
             <p class="nav-desc">查看系统使用文档和API</p>
           </div>
         </div>
-        
+
         <div class="nav-item">
           <div class="nav-icon">
             <el-icon><Setting /></el-icon>
@@ -439,7 +437,7 @@ onMounted(() => {
     </div>
 
     <!-- 数据可视化图表 -->
-    <div 
+    <div
       v-motion
       class="charts-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -452,21 +450,21 @@ onMounted(() => {
             <h3 class="chart-title">工作流执行趋势</h3>
             <p class="chart-subtitle">最近7天执行统计</p>
           </div>
-          <div ref="executionTrendChart" class="chart-container"></div>
+          <div ref="executionTrendChart" class="chart-container" />
         </div>
-        
+
         <div class="chart-card">
           <div class="chart-header">
             <h3 class="chart-title">算子分类分布</h3>
             <p class="chart-subtitle">按类型统计算子数量</p>
           </div>
-          <div ref="operatorDistributionChart" class="chart-container"></div>
+          <div ref="operatorDistributionChart" class="chart-container" />
         </div>
       </div>
     </div>
 
     <!-- 最近活动面板 -->
-    <div 
+    <div
       v-motion
       class="recent-activity-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -482,11 +480,13 @@ onMounted(() => {
             </h3>
           </div>
           <div class="activity-list">
-            <div 
-              v-for="workflow in recentWorkflows" 
-              :key="workflow.id" 
+            <div
+              v-for="workflow in recentWorkflows"
+              :key="workflow.id"
               class="activity-item"
-              @click="navigateTo(`/computer/workflow/designer?id=${workflow.id}`)"
+              @click="
+                navigateTo(`/computer/workflow/designer?id=${workflow.id}`)
+              "
             >
               <div class="activity-icon">
                 <el-icon><Share /></el-icon>
@@ -501,7 +501,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        
+
         <div class="activity-card">
           <div class="activity-header">
             <h3 class="activity-title">
@@ -511,22 +511,22 @@ onMounted(() => {
           </div>
           <div class="status-list">
             <div class="status-item">
-              <div class="status-indicator running"></div>
+              <div class="status-indicator running" />
               <span class="status-text">数据处理服务</span>
               <span class="status-value">运行中</span>
             </div>
             <div class="status-item">
-              <div class="status-indicator running"></div>
+              <div class="status-indicator running" />
               <span class="status-text">工作流引擎</span>
               <span class="status-value">运行中</span>
             </div>
             <div class="status-item">
-              <div class="status-indicator running"></div>
+              <div class="status-indicator running" />
               <span class="status-text">算子管理器</span>
               <span class="status-value">运行中</span>
             </div>
             <div class="status-item">
-              <div class="status-indicator warning"></div>
+              <div class="status-indicator warning" />
               <span class="status-text">缓存服务</span>
               <span class="status-value">繁忙</span>
             </div>
@@ -536,7 +536,7 @@ onMounted(() => {
     </div>
 
     <!-- 快速操作区域 -->
-    <div 
+    <div
       v-motion
       class="quick-actions-section"
       :initial="{ opacity: 0, y: 30 }"
@@ -544,29 +544,29 @@ onMounted(() => {
     >
       <h2 class="section-title">快速开始</h2>
       <div class="actions-grid">
-        <el-button 
-          type="primary" 
-          size="large" 
+        <el-button
+          type="primary"
+          size="large"
           class="action-button"
           @click="navigateTo('/computer/workflow/designer')"
         >
           <el-icon><Plus /></el-icon>
           创建新工作流
         </el-button>
-        
-        <el-button 
-          type="default" 
-          size="large" 
+
+        <el-button
+          type="default"
+          size="large"
           class="action-button"
           @click="navigateTo('/computer/operator')"
         >
           <el-icon><View /></el-icon>
           浏览算子库
         </el-button>
-        
-        <el-button 
-          type="default" 
-          size="large" 
+
+        <el-button
+          type="default"
+          size="large"
           class="action-button"
           @click="navigateTo('/computer/workflow')"
         >
@@ -615,7 +615,7 @@ onMounted(() => {
 }
 
 .title-gradient {
-  background: linear-gradient(135deg, #409EFF 0%, #6366f1 50%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #409eff 0%, #6366f1 50%, #8b5cf6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -679,19 +679,19 @@ onMounted(() => {
 }
 
 .stat-icon.algorithms {
-  background: linear-gradient(135deg, #409EFF 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #409eff 0%, #6366f1 100%);
 }
 
 .stat-icon.workflows {
-  background: linear-gradient(135deg, #67C23A 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #67c23a 0%, #22c55e 100%);
 }
 
 .stat-icon.executions {
-  background: linear-gradient(135deg, #E6A23C 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, #e6a23c 0%, #f59e0b 100%);
 }
 
 .stat-icon.success-rate {
-  background: linear-gradient(135deg, #F56C6C 0%, #ec4899 100%);
+  background: linear-gradient(135deg, #f56c6c 0%, #ec4899 100%);
 }
 
 .stat-content {
@@ -755,7 +755,11 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   border-radius: 20px;
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary) 0%,
+    var(--el-color-primary-light-3) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -810,46 +814,46 @@ onMounted(() => {
   .welcome-page {
     padding: 0 16px 16px;
   }
-  
+
   .hero-section {
     padding: 40px 20px;
   }
-  
+
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.2rem;
   }
-  
+
   .section-title {
     font-size: 2rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .stat-card {
     padding: 20px 16px;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  
+
   .feature-card {
     padding: 32px 24px;
   }
-  
+
   .actions-grid {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .action-button {
     width: 100%;
     max-width: 300px;
@@ -893,7 +897,11 @@ onMounted(() => {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary) 0%,
+    var(--el-color-primary-light-3) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1038,7 +1046,11 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary) 0%,
+    var(--el-color-primary-light-3) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1097,18 +1109,18 @@ onMounted(() => {
 }
 
 .status-indicator.running {
-  background: #67C23A;
+  background: #67c23a;
   box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.2);
 }
 
 .status-indicator.warning {
-  background: #E6A23C;
+  background: #e6a23c;
   box-shadow: 0 0 0 4px rgba(230, 162, 60, 0.2);
 }
 
 .status-indicator.running::before,
 .status-indicator.warning::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1149,43 +1161,43 @@ onMounted(() => {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .nav-item {
     padding: 16px;
   }
-  
+
   .nav-icon {
     width: 42px;
     height: 42px;
     font-size: 18px;
   }
-  
+
   .charts-grid {
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  
+
   .chart-card {
     padding: 24px 20px;
   }
-  
+
   .chart-container {
     height: 250px;
   }
-  
+
   .activity-grid {
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  
+
   .activity-card {
     padding: 24px 20px;
   }
-  
+
   .activity-item {
     padding: 12px;
   }
-  
+
   .activity-icon {
     width: 36px;
     height: 36px;

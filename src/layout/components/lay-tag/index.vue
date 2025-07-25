@@ -8,7 +8,7 @@ import TagChrome from "./components/TagChrome.vue";
 import { handleAliveRoute, getTopMenu } from "@/router/utils";
 import { useSettingStoreHook } from "@/store/modules/settings";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import { ref, watch, unref, toRaw, nextTick, onBeforeUnmount } from "vue";
 import {
   delay,
@@ -62,7 +62,7 @@ const topPath = getTopMenu()?.path;
 const { VITE_HIDE_HOME } = import.meta.env;
 const fixedTags = [
   ...routerArrays,
-  ...usePermissionStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
+  ...useMenuStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
 ];
 
 const dynamicTagView = async () => {

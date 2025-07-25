@@ -57,10 +57,7 @@ const {
         <template #dropdown>
           <el-dropdown-menu class="logout">
             <el-dropdown-item @click="goToProfile">
-              <IconifyIconOffline
-                :icon="User"
-                style="margin: 5px"
-              />
+              <IconifyIconOffline :icon="User" style="margin: 5px" />
               个人详情
             </el-dropdown-item>
             <el-dropdown-item divided @click="logout">

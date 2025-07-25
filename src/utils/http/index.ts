@@ -106,7 +106,10 @@ class PureHttp {
 
             if (expired) {
               // Token过期处理
-              if (!PureHttp.isRefreshing && PureHttp.tokenHandlers?.refreshToken) {
+              if (
+                !PureHttp.isRefreshing &&
+                PureHttp.tokenHandlers?.refreshToken
+              ) {
                 PureHttp.isRefreshing = true;
                 // 使用配置的token刷新方法
                 PureHttp.tokenHandlers
@@ -164,12 +167,16 @@ class PureHttp {
 
         // 处理后端标准响应格式
         const responseData = response.data;
-        if (responseData && typeof responseData === 'object' && 'code' in responseData) {
+        if (
+          responseData &&
+          typeof responseData === "object" &&
+          "code" in responseData
+        ) {
           // 检查业务状态码
           if (responseData.code === 200) {
             return responseData.data; // 只返回data字段
           } else {
-            ElMessage.error(responseData.message || '请求失败');
+            ElMessage.error(responseData.message || "请求失败");
             return Promise.reject(responseData);
           }
         }
@@ -191,7 +198,7 @@ class PureHttp {
         // 处理403禁止访问错误（用户被禁用）
         if ($error.response?.status === 403) {
           const responseData = $error.response?.data as any;
-          const message = responseData?.message || '用户已被禁用，无法访问系统';
+          const message = responseData?.message || "用户已被禁用，无法访问系统";
           ElMessage.error(message);
           // 触发登出处理
           PureHttp.tokenHandlers?.onTokenExpired?.($error);

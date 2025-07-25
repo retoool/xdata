@@ -12,9 +12,9 @@ import {
   storageLocal,
   responsiveStorageNameSpace
 } from "../utils";
-import { usePermissionStoreHook } from "./permission";
+import { useMenuStoreHook } from "./menu";
 
-export const useMultiTagsStore = defineStore("pure-multiTags", {
+export const useMultiTagsStore = defineStore("multiTags", {
   state: () => ({
     // 存储标签页信息（路由信息）
     multiTags: storageLocal().getItem<StorageConfigs>(
@@ -25,9 +25,7 @@ export const useMultiTagsStore = defineStore("pure-multiTags", {
         )
       : ([
           ...routerArrays,
-          ...usePermissionStoreHook().flatteningRoutes.filter(
-            v => v?.meta?.fixedTag
-          )
+          ...useMenuStoreHook().flatteningRoutes.filter(v => v?.meta?.fixedTag)
         ] as any),
     multiTagsCache: storageLocal().getItem<StorageConfigs>(
       `${responsiveStorageNameSpace()}configure`

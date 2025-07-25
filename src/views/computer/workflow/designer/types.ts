@@ -1,10 +1,17 @@
-import type { Node, Edge } from '@vue-flow/core'
+import type { Node, Edge } from "@vue-flow/core";
 
 // 节点参数类型
 export interface NodeParam {
   name: string;
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'enum' | 'multiEnum' | 'file' | 'json';
+  type:
+    | "string"
+    | "number"
+    | "boolean"
+    | "enum"
+    | "multiEnum"
+    | "file"
+    | "json";
   value: any;
   required?: boolean;
   default?: any;
@@ -58,7 +65,7 @@ export interface EdgeData {
 // Vue Flow 自定义节点类型
 export interface CustomNode extends Node {
   id: string;
-  type: 'custom';
+  type: "custom";
   position: { x: number; y: number };
   data: NodeData;
   params?: NodeParam[];
@@ -72,7 +79,7 @@ export interface WorkflowData {
   description?: string;
   category?: string;
   categoryId?: number;
-  status: 'draft' | 'published' | 'running' | 'stopped' | 'error';
+  status: "draft" | "published" | "running" | "stopped" | "error";
   version?: string;
   author?: string;
   tags?: string[];
@@ -85,14 +92,14 @@ export interface WorkflowData {
 
 // 算子分类定义
 export interface OperatorCategory {
-  id: number
-  name: string
+  id: number;
+  name: string;
   operators: Array<{
-    id: number
-    name: string
-    type: string
-    description: string
-    version?: string
-    params: NodeParam[]
-  }>
-} 
+    id: number;
+    name: string;
+    type: string;
+    description: string;
+    version?: string;
+    params: NodeParam[];
+  }>;
+}

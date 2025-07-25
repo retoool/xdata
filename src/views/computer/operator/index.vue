@@ -1,15 +1,15 @@
 <template>
   <div class="operator-page">
-    <div class="category-tree" :class="{ 'collapsed': isTreeCollapsed }">
-      <CategoryTree 
+    <div class="category-tree" :class="{ collapsed: isTreeCollapsed }">
+      <CategoryTree
         ref="categoryTreeRef"
         :current-operator-type="currentOperatorType"
         @type-change="handleTypeChange"
         @node-select="handleNodeSelect"
       />
     </div>
-    <div class="content-area" :class="{ 'expanded': isTreeCollapsed }">
-      <OperatorTable 
+    <div class="content-area" :class="{ expanded: isTreeCollapsed }">
+      <OperatorTable
         ref="operatorTableRef"
         :selected-category-id="selectedCategoryIds"
         :selected-category-path="selectedCategoryPath"
@@ -19,7 +19,7 @@
       />
     </div>
     <div class="collapse-button" @click="toggleTreeCollapse">
-      <el-icon :class="{ 'rotated': isTreeCollapsed }">
+      <el-icon :class="{ rotated: isTreeCollapsed }">
         <ArrowLeft />
       </el-icon>
     </div>
@@ -27,18 +27,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ref } from "vue";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import CategoryTree from "./CategoryTree.vue";
 import OperatorTable from "./OperatorTable.vue";
-import { OperatorType } from '@/api/operator'
+import { OperatorType } from "@/api/operator";
 
-const operatorTableRef = ref()
-const categoryTreeRef = ref()
-const selectedCategoryIds = ref<number[] | null>(null)
-const selectedCategoryPath = ref<string[] | null>(null)
-const isTreeCollapsed = ref(false)
-const currentOperatorType = ref<OperatorType>(OperatorType.BASIC)
+const operatorTableRef = ref();
+const categoryTreeRef = ref();
+const selectedCategoryIds = ref<number[] | null>(null);
+const selectedCategoryPath = ref<string[] | null>(null);
+const isTreeCollapsed = ref(false);
+const currentOperatorType = ref<OperatorType>(OperatorType.BASIC);
 
 const handleTypeChange = (type: OperatorType) => {
   // 更新当前算子类型
@@ -48,33 +48,33 @@ const handleTypeChange = (type: OperatorType) => {
   selectedCategoryIds.value = null;
   selectedCategoryPath.value = null;
   operatorTableRef.value?.setOperatorType(type);
-}
+};
 
-const handleNodeSelect = (payload: { ids: number[], node: any }) => {
-  selectedCategoryIds.value = payload.ids
+const handleNodeSelect = (payload: { ids: number[]; node: any }) => {
+  selectedCategoryIds.value = payload.ids;
   // 获取分类树数据源
-  dataSource.value = categoryTreeRef.value?.getDataSource() || []
+  dataSource.value = categoryTreeRef.value?.getDataSource() || [];
   // 构建分类路径
-  selectedCategoryPath.value = buildCategoryPath(payload.node)
+  selectedCategoryPath.value = buildCategoryPath(payload.node);
   // 通过 props 更新，不需要手动调用 setCategoryId
-}
+};
 
 // 构建分类路径
 const buildCategoryPath = (node: any): string[] => {
-  if (!node) return []
-  
-  const path: string[] = []
-  let currentNode = node
-  
+  if (!node) return [];
+
+  const path: string[] = [];
+  let currentNode = node;
+
   // 从当前节点向上遍历到根节点
   while (currentNode) {
-    path.unshift(currentNode.label)
+    path.unshift(currentNode.label);
     // 查找父节点
-    currentNode = findParentNode(dataSource.value, currentNode.id)
+    currentNode = findParentNode(dataSource.value, currentNode.id);
   }
-  
-  return path
-}
+
+  return path;
+};
 
 // 查找父节点
 const findParentNode = (nodes: any[], targetId: number): any => {
@@ -82,28 +82,28 @@ const findParentNode = (nodes: any[], targetId: number): any => {
     if (node.children) {
       for (const child of node.children) {
         if (child.id === targetId) {
-          return node
+          return node;
         }
       }
-      const found = findParentNode(node.children, targetId)
-      if (found) return found
+      const found = findParentNode(node.children, targetId);
+      if (found) return found;
     }
   }
-  return null
-}
+  return null;
+};
 
 // 分类树数据源
-const dataSource = ref<any[]>([])
+const dataSource = ref<any[]>([]);
 
-const handleCategoryClick = (payload: { path: string[], index: number }) => {
+const handleCategoryClick = (payload: { path: string[]; index: number }) => {
   // 根据分类路径查找对应的分类节点并选中
   categoryTreeRef.value?.selectNodeByPath(payload.path);
-}
+};
 
 // 切换分类树收起/展开状态
 const toggleTreeCollapse = () => {
   isTreeCollapsed.value = !isTreeCollapsed.value;
-}
+};
 </script>
 
 <style scoped>
@@ -176,7 +176,11 @@ const toggleTreeCollapse = () => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  background: linear-gradient(to right, var(--el-border-color-lighter) 0%, var(--el-bg-color) 70%);
+  background: linear-gradient(
+    to right,
+    var(--el-border-color-lighter) 0%,
+    var(--el-bg-color) 70%
+  );
   box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
 }
 
@@ -210,4 +214,4 @@ const toggleTreeCollapse = () => {
   border-left: 1px solid var(--el-border-color-lighter);
   border-radius: 0 8px 8px 0;
 }
-</style> 
+</style>

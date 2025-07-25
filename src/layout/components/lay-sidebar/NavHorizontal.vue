@@ -6,7 +6,7 @@ import LayNotice from "../lay-notice/index.vue";
 import { responsiveStorageNameSpace } from "@/config";
 import { ref, nextTick, computed, onMounted } from "vue";
 import { storageLocal, isAllEmpty } from "@pureadmin/utils";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import LaySidebarItem from "../lay-sidebar/components/SidebarItem.vue";
 import LaySidebarFullScreen from "../lay-sidebar/components/SidebarFullScreen.vue";
 
@@ -51,7 +51,7 @@ onMounted(() => {
 
 <template>
   <div
-    v-loading="usePermissionStoreHook().wholeMenus.length === 0"
+    v-loading="useMenuStoreHook().wholeMenus.length === 0"
     class="horizontal-header"
   >
     <div v-if="showLogo" class="horizontal-header-left" @click="backTopMenu">
@@ -66,7 +66,7 @@ onMounted(() => {
       :default-active="defaultActive"
     >
       <LaySidebarItem
-        v-for="route in usePermissionStoreHook().wholeMenus"
+        v-for="route in useMenuStoreHook().wholeMenus"
         :key="route.path"
         :item="route"
         :base-path="route.path"
@@ -88,10 +88,7 @@ onMounted(() => {
         <template #dropdown>
           <el-dropdown-menu class="logout">
             <el-dropdown-item @click="goToProfile">
-              <IconifyIconOffline
-                :icon="User"
-                style="margin: 5px"
-              />
+              <IconifyIconOffline :icon="User" style="margin: 5px" />
               个人详情
             </el-dropdown-item>
             <el-dropdown-item divided @click="logout">

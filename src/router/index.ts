@@ -5,7 +5,7 @@ import NProgress from "@/utils/progress";
 import { buildHierarchyTree } from "@/utils/tree";
 import remainingRouter from "./modules/remaining";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import {
   isUrl,
   openLink,
@@ -17,7 +17,6 @@ import {
   ascending,
   getTopMenu,
   initRouter,
-  isOneOfArray,
   getHistoryMode,
   findRouteByPath,
   handleAliveRoute,
@@ -102,7 +101,7 @@ export function resetRouter() {
   router.options.routes = formatTwoStageRoutes(
     formatFlatteningRoutes(buildHierarchyTree(ascending(routes.flat(Infinity))))
   );
-  usePermissionStoreHook().clearAllCachePage();
+  useMenuStoreHook().clearAllCachePage();
 }
 
 /** 路由白名单 */
@@ -135,11 +134,11 @@ router.beforeEach((to: ToRouteType, _from, next) => {
     // 根路径智能重定向
     if (to.path === "/") {
       // 如果菜单还没加载，先加载菜单
-      if (usePermissionStoreHook().wholeMenus.length === 0) {
+      if (useMenuStoreHook().wholeMenus.length === 0) {
         initRouter().then(() => {
           const topMenu = getTopMenu();
           const targetPath = topMenu?.path;
-          if (targetPath) {
+          if (targetPath && targetPath !== "/") {
             next({ path: targetPath });
           } else {
             next({ path: "/error/404" });
@@ -150,31 +149,23 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       // 菜单已加载，正常跳转
       const topMenu = getTopMenu();
       const targetPath = topMenu?.path;
-      if (targetPath) {
+      if (targetPath && targetPath !== "/") {
         next({ path: targetPath });
       } else {
         next({ path: "/error/404" });
       }
       return;
     }
-    
-    // 无权限跳转403页面
-    if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
-      next({ path: "/error/403" });
-    }
     if (_from?.name) {
       if (externalLink) {
-        openLink(to?.name as string || to?.path as string);
+        openLink((to?.name as string) || (to?.path as string));
         NProgress.done();
       } else {
         toCorrectRoute();
       }
     } else {
       // 刷新
-      if (
-        usePermissionStoreHook().wholeMenus.length === 0 &&
-        to.path !== "/login"
-      ) {
+      if (useMenuStoreHook().wholeMenus.length === 0 && to.path !== "/login") {
         initRouter().then((router: Router) => {
           if (!useMultiTagsStoreHook().getMultiTagsCache) {
             const { path } = to;
@@ -215,7 +206,7 @@ router.beforeEach((to: ToRouteType, _from, next) => {
       next({ path: "/login" });
       return;
     }
-    
+
     if (to.path !== "/login") {
       if (whiteList.indexOf(to.path) !== -1) {
         next();

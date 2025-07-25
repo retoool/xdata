@@ -5,7 +5,7 @@ import { useTags } from "@/layout/hooks/useTag";
 import { useGlobal, isNumber } from "@pureadmin/utils";
 import BackTopIcon from "@/assets/svg/back_top.svg?component";
 import { h, computed, Transition, defineComponent } from "vue";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 
 const props = defineProps({
   fixedHeader: Boolean
@@ -27,8 +27,6 @@ const transitions = computed(() => {
 const hideTabs = computed(() => {
   return $storage?.configure.hideTabs;
 });
-
-
 
 const stretch = computed(() => {
   return $storage?.configure.stretch;
@@ -138,7 +136,7 @@ const transitionMain = defineComponent({
                 <transitionMain :route="route">
                   <keep-alive
                     v-if="isKeepAlive"
-                    :include="usePermissionStoreHook().cachePageList"
+                    :include="useMenuStoreHook().cachePageList"
                   >
                     <component
                       :is="Comp"
@@ -156,13 +154,12 @@ const transitionMain = defineComponent({
                   />
                 </transitionMain>
               </div>
-
             </el-scrollbar>
             <div v-else class="grow">
               <transitionMain :route="route">
                 <keep-alive
                   v-if="isKeepAlive"
-                  :include="usePermissionStoreHook().cachePageList"
+                  :include="useMenuStoreHook().cachePageList"
                 >
                   <component
                     :is="Comp"
@@ -184,8 +181,6 @@ const transitionMain = defineComponent({
         </LayFrame>
       </template>
     </router-view>
-
-
   </section>
 </template>
 

@@ -9,7 +9,7 @@ import SearchHistory from "./SearchHistory.vue";
 import type { optionsItem, dragItem } from "../types";
 import { ref, computed, shallowRef, watch } from "vue";
 import { useDebounceFn, onKeyStroke } from "@vueuse/core";
-import { usePermissionStoreHook } from "@/store/modules/permission";
+import { useMenuStoreHook } from "@/store/modules/menu";
 import { cloneDeep, isAllEmpty, storageLocal } from "@pureadmin/utils";
 import SearchIcon from "~icons/ri/search-line";
 
@@ -47,7 +47,7 @@ const inputRef = ref<HTMLInputElement | null>(null);
 
 /** 菜单树形结构 */
 const menusData = computed(() => {
-  return cloneDeep(usePermissionStoreHook().wholeMenus);
+  return cloneDeep(useMenuStoreHook().wholeMenus);
 });
 
 const show = computed({
