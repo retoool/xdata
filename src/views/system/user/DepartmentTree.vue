@@ -433,6 +433,16 @@ const renderContent = (h: any, { data, node }: { data: any; node: any }) => {
       event.preventDefault();
       event.stopPropagation();
       handleNodeContextMenu(event, node, data);
+    },
+    style: {
+      width: '100%',
+      minHeight: '32px',
+      display: 'flex',
+      alignItems: 'center',
+      cursor: 'pointer',
+      padding: '4px 8px',
+      borderRadius: '4px',
+      transition: 'background-color 0.2s'
     }
   }, [
     h(ElIcon, { class: 'node-icon' }, () => h(OfficeBuilding)),
@@ -539,7 +549,15 @@ onBeforeUnmount(() => {
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 4px 0;
+        min-height: 32px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: var(--el-fill-color-light);
+        }
         
         .node-icon {
           margin-right: 8px;

@@ -31,61 +31,20 @@
       </div>
 
       <div class="right-search">
-        <el-input
-          v-model="searchForm.keyword"
-          placeholder="搜索用户名、姓名、工号、邮箱"
-          clearable
-          style="width: 300px"
-          @input="handleSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button @click="showAdvancedSearch = !showAdvancedSearch">
-          <el-icon><Filter /></el-icon>高级搜索
-        </el-button>
+        <el-select v-model="searchForm.status" placeholder="用户状态" clearable style="width: 120px" @change="handleSearch">
+          <el-option label="启用" :value="1" />
+          <el-option label="禁用" :value="0" />
+        </el-select>
+        <el-select v-model="searchForm.roleId" placeholder="用户角色" clearable style="width: 120px" @change="handleSearch">
+          <el-option
+            v-for="role in roleOptions"
+            :key="role.id"
+            :label="role.name"
+            :value="role.id"
+          />
+        </el-select>
       </div>
     </div>
-
-    <!-- 高级搜索 -->
-    <el-collapse-transition>
-      <div v-show="showAdvancedSearch" class="advanced-search">
-        <el-form :model="searchForm" label-width="80px" inline>
-          <el-form-item label="用户状态">
-            <el-select v-model="searchForm.status" placeholder="全部" clearable>
-              <el-option label="启用" :value="1" />
-              <el-option label="禁用" :value="0" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="用户角色">
-            <el-select v-model="searchForm.roleId" placeholder="全部" clearable>
-              <el-option
-                v-for="role in roleOptions"
-                :key="role.id"
-                :label="role.name"
-                :value="role.id"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="创建时间">
-            <el-date-picker
-              v-model="searchForm.createTimeRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="handleResetSearch">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-    </el-collapse-transition>
 
     <!-- 用户表格 -->
     <div class="table-container">
@@ -218,8 +177,6 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
   Delete,
-  Search,
-  Filter,
   User as UserIcon
 } from "@element-plus/icons-vue";
 import { User } from "./types/user";
@@ -252,7 +209,6 @@ const tableRef = ref();
 const formRef = ref();
 const loading = ref(false);
 const showForm = ref(false);
-const showAdvancedSearch = ref(false);
 const formMode = ref<"create" | "edit">("create");
 const tableData = ref<User[]>([]);
 const selectedUsers = ref<User[]>([]);
@@ -262,10 +218,8 @@ const roleOptions = ref<Role[]>([]);
 const defaultAvatar = ref("");
 
 const searchForm = reactive({
-  keyword: "",
   status: undefined as number | undefined,
-  roleId: undefined as number | undefined,
-  createTimeRange: [] as string[]
+  roleId: undefined as number | undefined
 });
 
 const pagination = reactive({
@@ -311,16 +265,6 @@ const formatDateTime = (dateTime: string | undefined) => {
 const handleSearch = () => {
   pagination.current = 1;
   loadTableData();
-};
-
-const handleResetSearch = () => {
-  Object.assign(searchForm, {
-    keyword: "",
-    status: undefined,
-    roleId: undefined,
-    createTimeRange: []
-  });
-  handleSearch();
 };
 
 const handleSelectionChange = (selection: User[]) => {
@@ -549,13 +493,6 @@ onMounted(() => {
       display: flex;
       gap: 8px;
     }
-  }
-
-  .advanced-search {
-    background: var(--el-fill-color-lighter);
-    padding: 16px;
-    border-radius: 6px;
-    margin-bottom: 16px;
   }
 
   .table-container {

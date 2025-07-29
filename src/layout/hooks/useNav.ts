@@ -37,13 +37,13 @@ export function useNav() {
   });
 
   const userAvatar = computed(() => {
-    return isAllEmpty(useUserStoreHook().userAvatar)
+    return isAllEmpty(useUserStoreHook().avatar)
       ? "/src/assets/user.svg"
-      : useUserStoreHook().userAvatar;
+      : useUserStoreHook().avatar;
   });
 
   const username = computed(() => {
-    return useUserStoreHook().userName;
+    return useUserStoreHook().nickname;
   });
 
   const avatarsStyle = computed(() => {

@@ -6,6 +6,7 @@ export interface User {
   password?: string;
   realName: string;
   avatar?: string;
+  status: number;
   employeeNo?: string;
   email?: string;
   phone?: string;
@@ -36,8 +37,6 @@ export interface UserSearchParams {
   departmentId?: number | null;
   status?: number;
   roleId?: number;
-  createTimeRange?: string[];
-  keyword?: string;
   page: number;
   size: number;
 }
