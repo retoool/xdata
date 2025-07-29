@@ -160,8 +160,6 @@ onMounted(async () => {
     console.error("获取公钥异常：", error);
     message("获取公钥失败，请刷新页面重试", { type: "error" });
   }
-
-  console.log("登录页面：清理登录状态完成");
 });
 </script>
 

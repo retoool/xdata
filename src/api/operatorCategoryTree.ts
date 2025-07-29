@@ -24,13 +24,13 @@ export function editCategoryNode(
   operatorType?: OperatorType
 ) {
   const params = operatorType ? { type: operatorType } : {};
-  return http.request("post", `/operator/categories/${id}`, { data, params });
+  return http.post(`/operator/categories/${id}`, { data, params });
 }
 
 // 删除节点
 export function deleteCategoryNode(id: number, operatorType?: OperatorType) {
   const params = operatorType ? { type: operatorType } : {};
-  return http.request("post", `/operator/categories/${id}/delete`, { params });
+  return http.post(`/operator/categories/${id}/delete`, { params });
 }
 
 // 批量删除

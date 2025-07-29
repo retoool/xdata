@@ -55,7 +55,7 @@ export function setToken(data: DataInfo<number>) {
 
   expires > 0
     ? Cookies.set(TokenKey, cookieString, {
-        expires: (expires - Date.now()) / 86400000
+        expires: (expires * 1000 - Date.now()) / 86400000
       })
     : Cookies.set(TokenKey, cookieString);
 

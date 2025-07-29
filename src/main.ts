@@ -7,7 +7,6 @@ import App from "./App.vue";
 import router from "./router";
 import { setupStore } from "@/store";
 import { getPlatformConfig } from "./config";
-import { setupHttpConfig } from "@/utils/http/setup";
 import { MotionPlugin } from "@vueuse/motion";
 // import { useEcharts } from "@/plugins/echarts";
 import { createApp, type Directive } from "vue";
@@ -61,7 +60,6 @@ app.use(VueTippy);
 getPlatformConfig(app)
   .then(async config => {
     setupStore(app);
-    setupHttpConfig(); // 配置HTTP工具
     app.use(router);
     await router.isReady();
     injectResponsiveStorage(app, config);
@@ -74,7 +72,7 @@ getPlatformConfig(app)
     console.error("Failed to load platform config:", error);
     // 即使配置加载失败，也继续启动应用
     setupStore(app);
-    setupHttpConfig();
+    // setupHttpConfig();
     app.use(router);
     router.isReady().then(() => {
       app.use(MotionPlugin).use(useElementPlus).use(Table);
