@@ -2,26 +2,13 @@ import { http } from "@/utils/http";
 import type {
   Department,
   DepartmentFormData,
-  DepartmentSearchParams,
-  PageResult
-} from "@/types/system";
+} from "@/views/system/user/types/department";
 
 /**
  * 部门管理相关API
  */
 export class DepartmentApi {
-  /**
-   * 获取部门列表（分页）
-   */
-  static async getDepartmentList(
-    params: DepartmentSearchParams
-  ): Promise<PageResult<Department>> {
-    return http.request<PageResult<Department>>(
-      "GET",
-      "/system/department/list",
-      { params }
-    );
-  }
+
 
   /**
    * 获取部门树形结构
@@ -107,7 +94,6 @@ export class DepartmentApi {
 
 // 导出常用方法
 export const {
-  getDepartmentList,
   getDepartmentTree,
   getDepartmentById,
   createDepartment,

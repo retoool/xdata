@@ -79,16 +79,13 @@ const onLogin = async (formEl: FormInstance | undefined) => {
             // 获取首页路径，如果获取失败则使用默认路径
             const topMenu = getTopMenu(true);
             const targetPath = topMenu?.path || "/welcome";
-
-            console.log("登录成功，准备跳转到:", targetPath);
-
             router
               .push(targetPath)
               .then(() => {
                 message("登录成功", { type: "success" });
               })
               .catch(error => {
-                console.error("路由跳转失败:", error);
+                console.error("top路由跳转失败:", error);
                 // 如果跳转失败，尝试跳转到根路径
                 router
                   .push("/")
@@ -96,7 +93,7 @@ const onLogin = async (formEl: FormInstance | undefined) => {
                     message("登录成功", { type: "success" });
                   })
                   .catch(err => {
-                    console.error("备用路由跳转也失败:", err);
+                    console.error("备用根路由跳转也失败:", err);
                     message("登录成功，但页面跳转失败", { type: "warning" });
                   });
               })

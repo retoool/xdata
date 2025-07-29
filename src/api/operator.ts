@@ -1,5 +1,4 @@
 import { http } from "@/utils/http";
-import type { PageResult } from "@/types/system";
 
 // 算子类型枚举
 export enum OperatorType {

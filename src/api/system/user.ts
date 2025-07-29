@@ -2,9 +2,8 @@ import { http } from "@/utils/http";
 import type {
   User,
   UserFormData,
-  UserSearchParams,
-  PageResult
-} from "@/types/system";
+  UserSearchParams
+} from "@/views/system/user/types/user";
 
 /**
  * 用户管理相关API
@@ -157,33 +156,10 @@ export class UserApi {
   }
 
   /**
-   * 导出用户数据
-   */
-  static async exportUsers(params?: UserSearchParams): Promise<Blob> {
-    return http.request<Blob>("GET", "/system/user/export", { params });
-  }
-
-  /**
-   * 导入用户数据
-   */
-  static async importUsers(file: File): Promise<any> {
-    const formData = new FormData();
-    formData.append("file", file);
-    return http.request<any>("POST", "/system/user/import", { data: formData });
-  }
-
-  /**
    * 获取当前用户信息
    */
   static async getCurrentUser(): Promise<User> {
     return http.request<User>("GET", "/system/user/current");
-  }
-
-  /**
-   * 更新当前用户信息
-   */
-  static async updateCurrentUser(data: Partial<User>): Promise<User> {
-    return http.request<User>("POST", "/system/user/current", { data });
   }
 
   /**
@@ -216,10 +192,7 @@ export const {
   updateUserAvatar,
   assignUserRoles,
   getUserMenus,
-  exportUsers,
-  importUsers,
   getCurrentUser,
-  updateCurrentUser,
   changePassword
 } = UserApi;
 
@@ -231,13 +204,13 @@ export type LoginData = {
   permissions: Array<string>;
   accessToken: string;
   refreshToken: string;
-  expires: Date;
+  expires: number;
 };
 
 export type RefreshTokenData = {
   accessToken: string;
   refreshToken: string;
-  expires: Date;
+  expires: number;
 };
 
 export type UpdateUserInfoData = {
@@ -247,6 +220,8 @@ export type UpdateUserInfoData = {
   phone?: string;
   avatar?: string;
 };
+
+
 
 /** 登录 */
 export const getLogin = (data?: object): Promise<LoginData> => {

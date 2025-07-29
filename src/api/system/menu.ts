@@ -1,5 +1,4 @@
 import { http } from "@/utils/http";
-import { MenuSearchParams } from "@/views/system/menu/types/menu";
 
 /**
  * 菜单管理相关API

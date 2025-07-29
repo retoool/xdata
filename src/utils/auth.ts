@@ -45,14 +45,12 @@ export function getToken(): DataInfo<number> {
  * 将`accessToken`、`expires`、`refreshToken`这三条信息放在key值为authorized-token的cookie里（过期自动销毁）
  * 将`avatar`、`username`、`nickname`、`roles`、`permissions`、`refreshToken`、`expires`这七条信息放在key值为`user-info`的localStorage里（利用`multipleTabsKey`当浏览器完全关闭后自动销毁）
  */
-export function setToken(data: DataInfo<Date>) {
+export function setToken(data: DataInfo<number>) {
   let expires = 0;
   const { accessToken, refreshToken } = data;
-  const userStore = useUserStoreHook();
-  // 默认值，因为新store没有这些属性
-  const isRemembered = false;
-  const loginDay = 7;
-  expires = new Date(data.expires).getTime(); // 如果后端直接设置时间戳，将此处代码改为expires = data.expires，然后把上面的DataInfo<Date>改成DataInfo<number>即可
+  const { isRemembered, loginDay } = useUserStoreHook();
+  // expires = new Date(data.expires).getTime(); // 如果后端直接设置时间戳，将此处代码改为expires = data.expires，然后把上面的DataInfo<Date>改成DataInfo<number>即可
+  expires = data.expires
   const cookieString = JSON.stringify({ accessToken, expires, refreshToken });
 
   expires > 0
@@ -72,23 +70,11 @@ export function setToken(data: DataInfo<Date>) {
   );
 
   function setUserKey({ avatar, username, nickname, roles, permissions }) {
-    // 使用新的用户store方法
-    userStore.setUserInfo({
-      id: userStore.userInfo?.id || 0,
-      username,
-      realName: nickname || username,
-      avatar,
-      email: userStore.userInfo?.email || "",
-      phone: userStore.userInfo?.phone || "",
-      departmentId: userStore.userInfo?.departmentId || 0,
-      departmentName: userStore.userInfo?.departmentName || "",
-      roleIds: userStore.userInfo?.roleIds || [],
-      status: userStore.userInfo?.status || 1,
-      createTime: userStore.userInfo?.createTime || new Date().toISOString(),
-      updateTime: new Date().toISOString()
-    });
-    userStore.setRoles(roles);
-    userStore.setPermissions(permissions);
+    useUserStoreHook().SET_AVATAR(avatar);
+    useUserStoreHook().SET_USERNAME(username);
+    useUserStoreHook().SET_NICKNAME(nickname);
+    useUserStoreHook().SET_ROLES(roles);
+    useUserStoreHook().SET_PERMS(permissions);
     storageLocal().setItem(userKey, {
       refreshToken,
       expires,

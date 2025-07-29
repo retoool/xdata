@@ -13,7 +13,6 @@ export interface User {
   departmentName?: string;
   roleIds: number[];
   roles?: Role[];
-  status: number; // 1:启用 0:禁用
   lastLoginTime?: string;
   createTime: string;
   updateTime: string;

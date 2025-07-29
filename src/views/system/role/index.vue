@@ -14,7 +14,6 @@
       <MenuPermission
         ref="menuPermissionRef"
         :role-id="currentRoleId"
-        @permission-change="handlePermissionChange"
       />
       <template #footer>
         <div class="dialog-footer">
@@ -58,11 +57,6 @@ const handleRolePermission = (roleId: number) => {
       ...(menuPermissionRef.value?.getSelectedMenus() || [])
     ];
   });
-};
-
-const handlePermissionChange = (permissions: number[]) => {
-  // 权限变化处理
-  console.log("权限发生变化:", permissions);
 };
 
 const handleSavePermission = async () => {

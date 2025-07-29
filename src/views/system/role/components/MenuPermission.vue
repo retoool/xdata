@@ -48,7 +48,6 @@
     <!-- 菜单权限树 -->
     <div class="tree-container">
       <el-tree
-        :key="treeKey"
         ref="menuTreeRef"
         v-loading="loading"
         :data="menuTreeData"
@@ -66,7 +65,18 @@
         <template #default="{ node, data }">
           <div class="menu-node">
             <div class="node-content">
-              <div class="node-main">
+              <div class="node-main node-main-flex">
+                <el-tooltip v-if="!node.checked && !node.indeterminate&& data.children && data.children.length > 0" content="只选当前" placement="top">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    circle
+                    @click.stop="checkCurrentNode(data)"
+                    class="select-current-btn mini-btn"
+                  >
+                    <el-icon><Pointer /></el-icon>
+                  </el-button>
+                </el-tooltip>
                 <el-icon v-if="data.icon" class="node-icon">
                   <component :is="useRenderIcon(data.icon)" />
                 </el-icon>
@@ -116,7 +126,8 @@ import {
   Check,
   Close,
   Search,
-  Menu
+  Menu,
+  Pointer
 } from "@element-plus/icons-vue";
 import { getAllMenuTree } from "@/api/system/menu";
 import { getRoleMenus } from "@/api/system/role";
@@ -125,11 +136,6 @@ import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 // Props
 const props = defineProps<{
   roleId: number | null;
-}>();
-
-// Emits
-const emit = defineEmits<{
-  'permission-change': [menuIds: number[]];
 }>();
 
 // 响应式数据
@@ -141,7 +147,6 @@ const menuTreeData = ref<BackendRoute[]>([]);
 const checkedMenus = ref<number[]>([]);
 const defaultCheckedKeys = ref<number[]>([]);
 const defaultExpandedKeys = ref<number[]>([]);
-const treeKey = ref(0);
 
 const treeProps = {
   children: "children",
@@ -164,14 +169,19 @@ const filterNode = (value: string, data: BackendRoute) => {
 };
 
 const expandAll = () => {
-  const expandKeys = getAllNodeKeys(menuTreeData.value);
-  defaultExpandedKeys.value = expandKeys;
-  treeKey.value++;
+  if (!menuTreeRef.value) return;
+  const nodesMap = menuTreeRef.value.store.nodesMap;
+  Object.values(nodesMap).forEach((node: any) => {
+    node.expand && node.expand();
+  });
 };
 
 const collapseAll = () => {
-  defaultExpandedKeys.value = [];
-  treeKey.value++;
+  if (!menuTreeRef.value) return;
+  const nodesMap = menuTreeRef.value.store.nodesMap;
+  Object.values(nodesMap).forEach((node: any) => {
+    node.collapse && node.collapse();
+  });
 };
 
 const checkAll = () => {
@@ -188,6 +198,7 @@ const uncheckAll = () => {
 };
 
 const handleMenuCheck = () => {
+  console.log(111);
   updateCheckedMenus();
 };
 
@@ -204,11 +215,31 @@ const handleNodeCollapse = (data: BackendRoute) => {
   }
 };
 
+// 用菜单ID设置勾选
+const setCheckedByMenuIds = (menuIds: number[]) => {
+  menuTreeRef.value?.setCheckedKeys(menuIds);
+};
+
 const updateCheckedMenus = () => {
   if (!menuTreeRef.value) return;
-  const menuIds = (menuTreeRef.value.getCheckedKeys() as (string|number)[]).map(id => Number(id));
+  // 获取已勾选节点 id
+  const checkedIds = (menuTreeRef.value.getCheckedKeys() as (string|number)[]).map(id => Number(id));
+  // 获取半选节点 id
+  const halfCheckedIds = (menuTreeRef.value.getHalfCheckedKeys() as (string|number)[]).map(id => Number(id));
+  // 合并并去重
+  const menuIds = Array.from(new Set([...checkedIds, ...halfCheckedIds]));
   checkedMenus.value = menuIds;
-  emit("permission-change", menuIds);
+};
+
+// 只勾选当前节点
+const checkCurrentNode = (data: BackendRoute) => {
+  if (!menuTreeRef.value) return;
+  // 判断当前节点是否已勾选
+  const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as number[];
+  const isChecked = checkedKeys.includes(data.id);
+  // 只操作当前节点，不递归
+  menuTreeRef.value.setChecked(data.id, !isChecked, false);
+  updateCheckedMenus();
 };
 
 const getNodeMenus = (node: BackendRoute): string[] => {
@@ -306,11 +337,6 @@ const loadRoleMenus = async () => {
   } catch (error) {
     ElMessage.error("加载角色权限失败");
   }
-};
-
-// 用菜单ID设置勾选
-const setCheckedByMenuIds = (menuIds: number[]) => {
-  menuTreeRef.value?.setCheckedKeys(menuIds);
 };
 
 // 监听角色ID变化
@@ -458,5 +484,33 @@ const isAllChecked = computed(() => {
 
 :deep(.el-card__body) {
   padding: 16px;
+}
+
+// 只在节点 hover 时显示“只选当前”按钮
+.select-current-btn {
+  display: none;
+  margin-left: 6px;
+}
+.menu-node:hover .select-current-btn {
+  display: inline-flex;
+}
+// 让 node-main-flex 保证所有内容一行显示
+.node-main-flex {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+// 缩小“只选当前”按钮尺寸，使其与复选框大小接近
+.mini-btn {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

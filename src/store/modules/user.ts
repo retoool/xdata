@@ -1,222 +1,105 @@
 import { defineStore } from "pinia";
-import { store } from "../utils";
-import type { User } from "@/views/system/user/types/user";
-import type { Role } from "@/views/system/role/types/role";
-import { getLogin, refreshTokenApi } from "@/api/system/user";
-import { removeToken, userKey } from "@/utils/auth";
-import { storageLocal } from "@pureadmin/utils";
-import Cookies from "js-cookie";
+import {
+  type userType,
+  store,
+  router,
+  resetRouter,
+  routerArrays,
+  storageLocal
+} from "../utils";
+import {
+  type LoginData,
+  type RefreshTokenData,
+  getLogin,
+  refreshTokenApi
+} from "@/api/system/user";
+import { useMultiTagsStoreHook } from "./multiTags";
+import { type DataInfo, setToken, removeToken, userKey } from "@/utils/auth";
 
-export const useUserStore = defineStore("user", {
-  state: () => ({
-    token: localStorage.getItem("token"),
-    userInfo: null as User | null,
-    roles: [] as Role[],
-    permissions: [] as string[],
-    menuList: [] as BackendRoute[]
+export const useUserStore = defineStore("pure-user", {
+  state: (): userType => ({
+    // 头像
+    avatar: storageLocal().getItem<DataInfo<number>>(userKey)?.avatar ?? "",
+    // 用户名
+    username: storageLocal().getItem<DataInfo<number>>(userKey)?.username ?? "",
+    // 昵称
+    nickname: storageLocal().getItem<DataInfo<number>>(userKey)?.nickname ?? "",
+    // 页面级别权限
+    roles: storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [],
+    // 按钮级别权限
+    permissions:
+      storageLocal().getItem<DataInfo<number>>(userKey)?.permissions ?? [],
+    // 是否勾选了登录页的免登录
+    isRemembered: false,
+    // 登录页的免登录存储几天，默认7天
+    loginDay: 7
   }),
-  getters: {
-    isLoggedIn: state => !!state.token,
-    userName: state =>
-      state.userInfo?.realName || state.userInfo?.username || "",
-    userAvatar: state => state.userInfo?.avatar || "",
-    hasRole: state => (roleCode: string) =>
-      state.roles.some(role => role.code === roleCode),
-    hasPermission: state => (permission: string) =>
-      state.permissions.includes(permission)
-  },
   actions: {
-    setToken(newToken: string | null) {
-      this.token = newToken;
-      if (newToken) {
-        localStorage.setItem("token", newToken);
-      } else {
-        localStorage.removeItem("token");
-      }
+    /** 存储头像 */
+    SET_AVATAR(avatar: string) {
+      this.avatar = avatar;
     },
-    setUserInfo(info: User | null) {
-      this.userInfo = info;
+    /** 存储用户名 */
+    SET_USERNAME(username: string) {
+      this.username = username;
     },
-    setRoles(newRoles: Role[]) {
-      this.roles = newRoles;
+    /** 存储昵称 */
+    SET_NICKNAME(nickname: string) {
+      this.nickname = nickname;
     },
-    setPermissions(newPermissions: string[]) {
-      console.log("setPermissions", newPermissions);
-      this.permissions = newPermissions;
+    /** 存储角色 */
+    SET_ROLES(roles: Array<string>) {
+      this.roles = roles;
     },
-    setMenuList(menus: BackendRoute[]) {
-      this.menuList = menus;
+    /** 存储按钮级别权限 */
+    SET_PERMS(permissions: Array<string>) {
+      this.permissions = permissions;
     },
-    async login(loginData: { username: string; password: string }) {
-      try {
-        const response = await getLogin(loginData);
-        this.setToken(response.accessToken);
-        Cookies.set("multiple-tabs", "true");
-        const userData = {
-          id: 1,
-          username: response.username,
-          realName: response.nickname || response.username,
-          avatar: response.avatar || "/src/assets/user.svg",
-          email: "",
-          phone: "",
-          departmentId: 0,
-          departmentName: "",
-          roleIds: [],
-          status: 1,
-          createTime: new Date().toISOString(),
-          updateTime: new Date().toISOString()
-        };
-        this.setUserInfo(userData);
-        const roleObjects: Role[] = (response.roles || []).map(
-          (roleCode: string, index: number) => ({
-            id: index + 1,
-            name: roleCode,
-            code: roleCode,
-            description: "",
-            permissions: [],
-            status: 1,
-            createTime: new Date().toISOString(),
-            updateTime: new Date().toISOString()
-          })
-        );
-        this.setRoles(roleObjects);
-        this.setPermissions(response.permissions || []);
-        const storageData = {
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expires: new Date(response.expires).getTime(),
-          avatar: response.avatar || "/src/assets/user.svg",
-          username: response.username,
-          nickname: response.nickname || response.username,
-          roles: response.roles || [],
-          permissions: response.permissions || []
-        };
-        storageLocal().setItem(userKey, storageData);
-        this.persistState();
-        return response;
-      } catch (error) {
-        console.error("登录失败:", error);
-        throw error;
-      }
+    /** 存储是否勾选了登录页的免登录 */
+    SET_ISREMEMBERED(bool: boolean) {
+      this.isRemembered = bool;
     },
-    logout() {
-      removeToken();
-      this.setToken(null);
-      this.setUserInfo(null);
-      this.setRoles([]);
-      this.setPermissions([]);
-      this.setMenuList([]);
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("roles");
-      localStorage.removeItem("permissions");
-      localStorage.removeItem("menuList");
-      import("@/router").then(({ router }) => {
-        router
-          .push("/login")
-          .then(() => {
-            console.log("已退出登录，跳转到登录页");
+    /** 设置登录页的免登录存储几天 */
+    SET_LOGINDAY(value: number) {
+      this.loginDay = Number(value);
+    },
+    /** 登入 */
+    async login(data) {
+      return new Promise<LoginData>((resolve, reject) => {
+        getLogin(data)
+          .then(data => {
+            if (data) setToken(data);
+            resolve(data);
           })
           .catch(error => {
-            console.error("跳转到登录页失败:", error);
-            window.location.href = "/login";
+            reject(error);
           });
       });
     },
-    updateUserInfo(info: Partial<User>) {
-      if (this.userInfo) {
-        this.userInfo = { ...this.userInfo, ...info };
-      }
+    /** 前端登出（不调用接口） */
+    logout() {
+      this.username = "";
+      this.roles = [];
+      this.permissions = [];
+      removeToken();
+      useMultiTagsStoreHook().handleTags("equal", [...routerArrays]);
+      resetRouter();
+      router.push("/login");
     },
-    async refreshUserInfo() {
-      try {
-        // 这里应该调用获取用户信息的API
-        // const response = await getUserInfoApi()
-        // this.setUserInfo(response.user)
-        // this.setRoles(response.roles)
-        // this.setPermissions(response.permissions)
-        console.log("刷新用户信息");
-      } catch (error) {
-        console.error("刷新用户信息失败:", error);
-        throw error;
-      }
-    },
-    checkPermission(permission: string | string[]): boolean {
-      if (!this.permissions.length) return false;
-      if (Array.isArray(permission)) {
-        return permission.some(p => this.permissions.includes(p));
-      }
-      return this.permissions.includes(permission);
-    },
-    checkRole(roleCode: string | string[]): boolean {
-      if (!this.roles.length) return false;
-      if (Array.isArray(roleCode)) {
-        return roleCode.some(code =>
-          this.roles.some(role => role.code === code)
-        );
-      }
-      return this.roles.some(role => role.code === roleCode);
-    },
-    restoreState() {
-      try {
-        const savedUserInfo = localStorage.getItem("userInfo");
-        const savedRoles = localStorage.getItem("roles");
-        const savedPermissions = localStorage.getItem("permissions");
-        const savedMenuList = localStorage.getItem("menuList");
-        if (savedUserInfo) {
-          this.setUserInfo(JSON.parse(savedUserInfo));
-        }
-        if (savedRoles) {
-          this.setRoles(JSON.parse(savedRoles));
-        }
-        if (savedPermissions) {
-          this.setPermissions(JSON.parse(savedPermissions));
-        }
-        if (savedMenuList) {
-          this.setMenuList(JSON.parse(savedMenuList));
-        }
-      } catch (error) {
-        console.error("恢复用户状态失败:", error);
-      }
-    },
-    persistState() {
-      try {
-        if (this.userInfo) {
-          localStorage.setItem("userInfo", JSON.stringify(this.userInfo));
-        }
-        if (this.roles.length) {
-          localStorage.setItem("roles", JSON.stringify(this.roles));
-        }
-        if (this.permissions.length) {
-          localStorage.setItem("permissions", JSON.stringify(this.permissions));
-        }
-        if (this.menuList.length) {
-          localStorage.setItem("menuList", JSON.stringify(this.menuList));
-        }
-      } catch (error) {
-        console.error("保存用户状态失败:", error);
-      }
-    },
-    async handRefreshToken(data: { refreshToken: string }) {
-      try {
-        const response = await refreshTokenApi(data);
-        this.setToken(response.accessToken);
-        return response;
-      } catch (error) {
-        console.error("刷新token失败:", error);
-        throw error;
-      }
-    },
-    handleTokenExpired(error?: any) {
-      if (error?.config?.url?.includes("/login")) {
-        return;
-      }
-      if (error?.response?.status === 403) {
-        console.log("用户已被禁用，执行登出操作");
-        this.logout();
-        return;
-      }
-      console.log("Token已过期，执行登出操作");
-      this.logout();
+    /** 刷新`token` */
+    async handRefreshToken(data) {
+      return new Promise<RefreshTokenData>((resolve, reject) => {
+        refreshTokenApi(data)
+          .then(data => {
+            if (data) {
+              setToken(data);
+              resolve(data);
+            }
+          })
+          .catch(error => {
+            reject(error);
+          });
+      });
     }
   }
 });

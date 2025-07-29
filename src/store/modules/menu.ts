@@ -29,6 +29,9 @@ export const useMenuStore = defineStore("menu", {
         menus: BackendRoute[]
       ): Array<RouteConfigsTable> {
         return menus.map(menu => {
+          if(menu.type === 3){
+            return null
+          }
           const meta = {
             title: menu.title,
             icon: menu.icon,
@@ -36,7 +39,6 @@ export const useMenuStore = defineStore("menu", {
             keepAlive: menu.isKeepAlive,
             showLink: !menu.isHidden,
             rank: menu.sort,
-            ...(menu.permission ? { roles: [menu.permission] } : {})
           };
           if (/^https?:\/\//.test(menu.component)) {
             (meta as any).frameSrc = menu.component;

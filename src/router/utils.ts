@@ -69,16 +69,13 @@ function handleAsyncRoutes(routeList: BackendRoute[]) {
   // 1. 存储完整菜单树到 menu store
   useMenuStoreHook().handleWholeMenus(routeList);
 
-  // 2. 存储按钮权限到 user Store
-  useUserStoreHook().setPermissions(routeList.map(route => route.permission));
-  
-  // 3. 转换并注册所有路由
+  // 2. 转换并注册所有路由
   registerAllRoutes(routeList);
 
-  // 4. 处理标签页缓存
+  // 3. 处理标签页缓存
   handleMultiTags();
 
-  // 5. 添加 404 匹配
+  // 4. 添加 404 匹配
   addPathMatch();
 }
 
@@ -88,7 +85,7 @@ function handleAsyncRoutes(routeList: BackendRoute[]) {
 function registerAllRoutes(routeList) {
   // 转换路由结构（addAsyncRoutes 内部会处理外链注册）
   const asyncRoutes = formatFlatteningRoutes(addAsyncRoutes(routeList));
-
+  
   // 检查路由结构是否存在
   if (
     !router.options.routes ||
@@ -147,7 +144,6 @@ function addAsyncRoutes(arrRoutes: Array<BackendRoute>): RouteRecordRaw[] {
             frameSrc: v.component,
             title: v.title,
             icon: v.icon,
-            backstage: true,
             id: v.id,
             parentId: v.parentId,
             sort: v.sort,
@@ -168,7 +164,6 @@ function addAsyncRoutes(arrRoutes: Array<BackendRoute>): RouteRecordRaw[] {
         meta: {
           title: v.title,
           icon: v.icon,
-          backstage: true,
           id: v.id,
           parentId: v.parentId,
           sort: v.sort,
@@ -176,7 +171,7 @@ function addAsyncRoutes(arrRoutes: Array<BackendRoute>): RouteRecordRaw[] {
           type: v.type,
           isKeepAlive: v.isKeepAlive,
           isHidden: v.isHidden,
-          permission: v.permission
+          auth: v.permission ? [v.permission] : []
         },
         component: undefined,
         // redirect: undefined
@@ -191,8 +186,17 @@ function addAsyncRoutes(arrRoutes: Array<BackendRoute>): RouteRecordRaw[] {
       }
 
       // 递归处理子路由
-      if (v.children && v.children.length) {
-        route.children = addAsyncRoutes(v.children);
+      if (v.children && v.children.length > 0) {
+        v.children.forEach(child => {
+          if (child.type == 3 && child.permission) {
+            if (!route.meta.auth) {
+              route.meta.auth = [];
+            }
+            route.meta.auth.push(child.permission);
+          }
+        })
+
+        route.children = addAsyncRoutes(v.children.filter(child => child.type !== 3));
       }
 
       return route;
@@ -300,8 +304,10 @@ function validateMenuRoute(menu: BackendRoute): {
 // ==================== 路由排序和过滤 ====================
 /** 按照路由中meta下的rank等级升序来排序路由 */
 function ascending(arr: any[]) {
+  if(arr.length === 0) return arr;
+  const validArr = arr.filter(v => v != null);
   // 确保所有路由都有有效的meta和rank
-  arr.forEach((v, index) => {
+  validArr.forEach((v, index) => {
     if (!v.meta) {
       throw new Error(
         `菜单项缺少 meta 字段，path: ${String(v.path) || ""}, name: ${String(v.name) || ""}`
@@ -312,7 +318,7 @@ function ascending(arr: any[]) {
       v.meta.rank = index + 1;
     }
   });
-  return arr.sort(
+  return validArr.sort(
     (a: { meta: { rank: number } }, b: { meta: { rank: number } }) => {
       const rankA = a?.meta?.rank ?? 0;
       const rankB = b?.meta?.rank ?? 0;

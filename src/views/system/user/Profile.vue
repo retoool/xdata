@@ -17,13 +17,7 @@
               </el-avatar>
             </div>
             <div class="avatar-info">
-              <h3 class="user-name">{{ userInfo?.realName || userInfo?.username }}</h3>
-              <p class="user-role">{{ userRoles.join('、') || '暂无角色' }}</p>
-              <p class="user-status">
-                <el-tag :type="userInfo?.status === 1 ? 'success' : 'danger'" size="small">
-                  {{ userInfo?.status === 1 ? '启用' : '禁用' }}
-                </el-tag>
-              </p>
+              <h1 class="user-name">{{ userInfo?.realName || userInfo?.username }}</h1>
             </div>
           </div>
 
@@ -107,20 +101,12 @@
                 <span class="info-label">用户角色：</span>
                 <span class="info-value">
                   <el-tag 
-                    v-for="role in userRoles" 
+                    v-for="role in userInfo?.roles.map(role => role.name)" 
                     :key="role"
                     size="small" 
                     style="margin-right: 4px; margin-bottom: 4px;"
                   >
                     {{ role }}
-                  </el-tag>
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">账号状态：</span>
-                <span class="info-value">
-                  <el-tag :type="userInfo?.status === 1 ? 'success' : 'danger'" size="small">
-                    {{ userInfo?.status === 1 ? '正常' : '已禁用' }}
                   </el-tag>
                 </span>
               </div>
@@ -313,7 +299,6 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/store/modules/user'
 import { useUserStoreHook } from '@/store/modules/user'
 import { 
   User as UserIcon, 
@@ -339,11 +324,7 @@ const changingPassword = ref(false)
 const loggingOut = ref(false) // 新增：注销用户loading状态
 const editFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
-const EditAvatar = ref()
-
-// 计算属性
-const userInfo = computed(() => userStore.userInfo)
-const userRoles = computed(() => userStore.roles.map(role => role.name))
+const userInfo = ref<User>()
 
 // 在编辑表单中添加头像相关字段
 const editForm = reactive({
@@ -509,12 +490,8 @@ const handleSaveProfile = async () => {
     await updateUserInfo(updateData)
     
     // 更新本地状态
-    const updatedUserInfo: Partial<User> = {
-      ...updateData,
-      avatar: editForm.avatar
-    }
-    
-    userStore.updateUserInfo(updatedUserInfo)
+    userStore.SET_AVATAR(editForm.avatar)
+    userStore.SET_NICKNAME(editForm.realName || '')
     
     ElMessage.success('个人资料更新成功')
     showEditDialog.value = false
@@ -584,37 +561,11 @@ const handleLogoutUser = async () => {
 // 生命周期
 onMounted(async () => {
   try {
-    const userInfo = await getCurrentUser()
-    
-    // 转换 UserInfo 为 User 类型
-    const convertedUserInfo: Partial<User> = {
-      id: userInfo.id,
-      username: userInfo.username,
-      realName: userInfo.realName || '',
-      avatar: userInfo.avatar,
-      email: userInfo.email,
-      phone: userInfo.phone,
-      employeeNo: userInfo.employeeNo,
-      departmentName: userInfo.departmentName,
-      status: userInfo.status,
-      lastLoginTime: userInfo.lastLoginTime,
-      createTime: userInfo.createTime,
-      updateTime: userInfo.updateTime,
-      roleIds: userInfo.roles.map(role => role.id),
-      roles: userInfo.roles.map(role => ({
-        id: role.id,
-        name: role.name,
-        code: role.code,
-        description: '',
-        permissions: [],
-        status: 1,
-        createTime: userInfo.createTime,
-        updateTime: userInfo.updateTime
-      }))
-    }
-
-    userStore.updateUserInfo(convertedUserInfo)
-    userStore.setRoles(convertedUserInfo.roles || [])
+    userInfo.value = await getCurrentUser()
+    userStore.SET_AVATAR(userInfo.value?.avatar || '')
+    userStore.SET_USERNAME(userInfo.value?.username || '')
+    userStore.SET_NICKNAME(userInfo.value?.realName || '')
+    userStore.SET_ROLES(userInfo.value?.roles.map(role => role.name) || [])
   } catch (error) {
     ElMessage.error('获取用户信息失败')
   }
