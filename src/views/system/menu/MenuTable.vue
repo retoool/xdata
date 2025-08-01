@@ -233,7 +233,7 @@
       :close-on-click-modal="false"
     >
       <div class="move-dialog-content">
-        <div class="move-info">
+        <!-- <div class="move-info">
           <p>
             将 <strong>{{ moveMenu?.title }}</strong> ({{
               getMenuTypeText(moveMenu?.type)
@@ -248,7 +248,7 @@
               <li>• 不能移动到自己的子菜单下</li>
             </ul>
           </div>
-        </div>
+        </div> -->
         <div class="move-layout">
           <div class="target-selection">
             <h4>选择目标菜单</h4>
@@ -543,6 +543,11 @@ const availableTargetMenus = computed(() => {
       .filter(menu => {
         if (excludeIds.has(menu.id)) return false;
 
+        // 排除系统管理目录及其子项
+        if (isSystemMenuOrChild(menu)) {
+          return false;
+        }
+
         // 根据当前菜单类型和移动类型确定可移动的目标
         const currentType = moveMenu.value?.type;
         const targetType = menu.type;
@@ -613,8 +618,8 @@ const handleAdd = () => {
 
 // 系统菜单限制相关方法
 const isSystemMenu = (menu: MenuType): boolean => {
-  // 系统管理菜单的ID范围：1-10（可根据实际情况调整）
-  return menu.title == '系统管理';
+  // 系统管理菜单的ID是30
+  return menu.id === 30 || menu.title === '系统管理';
 };
 
 const isSystemMenuOrChild = (menu: MenuType): boolean => {
@@ -623,7 +628,7 @@ const isSystemMenuOrChild = (menu: MenuType): boolean => {
     return true;
   }
   
-  // 检查当前菜单的父级是否为系统菜单
+  // 检查当前菜单是否在系统管理目录下
   const checkParent = (menus: MenuType[], targetId: number): boolean => {
     for (const item of menus) {
       if (item.id === targetId) {
@@ -638,7 +643,12 @@ const isSystemMenuOrChild = (menu: MenuType): boolean => {
     return false;
   };
   
-  return checkParent(tableData.value, menu.parentId || 0);
+  // 检查当前菜单的父级是否为系统菜单
+  if (menu.parentId) {
+    return checkParent(tableData.value, menu.parentId);
+  }
+  
+  return false;
 };
 
 const getSystemMenuRestrictionReason = (menu: MenuType, operation: string): string => {
@@ -1127,31 +1137,56 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  overflow: hidden;
 
   .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
     .left-actions {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
-
+    
     .right-search {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
   }
 
   .table-container {
     flex: 1;
     overflow: hidden;
-
+    display: flex;
+    flex-direction: column;
+    
     .el-table {
-      height: 100%;
+      flex: 1;
+      
+      :deep(.el-table__header) {
+        background: var(--el-fill-color-light);
+        
+        .el-table__cell {
+          background: var(--el-fill-color-light);
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+        }
+      }
+      
+      :deep(.el-table__row) {
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: var(--el-fill-color-light);
+        }
+      }
     }
 
     .menu-title {
@@ -1160,6 +1195,7 @@ defineExpose({
       padding: 4px 8px;
       border-radius: 4px;
       transition: all 0.2s ease;
+      cursor: pointer;
 
       .menu-icon-wrapper {
         margin-right: 8px;
@@ -1202,7 +1238,7 @@ defineExpose({
 
       .title-text {
         font-weight: 500;
-        color: var(--el-color-primary);
+        color: var(--el-text-color-primary);
         transition: color 0.2s ease;
       }
     }
@@ -1263,9 +1299,19 @@ defineExpose({
 :deep(.el-tag) {
   border: none;
   font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 }
 
 :deep(.el-switch) {
+  .el-switch__core {
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+  
   &.is-disabled {
     .el-switch__core {
       background-color: var(--el-fill-color-darker);
@@ -1284,6 +1330,12 @@ defineExpose({
     padding: 4px 8px;
     font-size: 12px;
     min-width: auto;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-1px);
+    }
   }
 }
 
@@ -1585,4 +1637,26 @@ defineExpose({
     }
   }
 }
+
+// 树形组件统一样式
+:deep(.el-tree) {
+  .el-tree-node {
+    .el-tree-node__content {
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--el-fill-color-light);
+      }
+      
+      &.is-current {
+        background: var(--el-color-primary-light-9);
+        color: var(--el-color-primary);
+      }
+    }
+  }
+}
 </style>
+

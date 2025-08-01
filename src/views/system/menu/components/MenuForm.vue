@@ -917,14 +917,18 @@ defineExpose({
 .menu-form {
   .form-section {
     margin-bottom: 20px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
 
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
   }
 
   .form-tip {
@@ -958,6 +962,7 @@ defineExpose({
         &:hover {
           border-color: var(--el-color-primary-light-6);
           background-color: var(--el-color-primary-light-9);
+          transform: scale(1.05);
         }
 
         .preview-icon {
@@ -997,6 +1002,111 @@ defineExpose({
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+}
+
+// 表单组件统一样式
+:deep(.el-form) {
+  .el-form-item__label {
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+  }
+  
+  .el-input__wrapper {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+    }
+    
+    &.is-focused {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+    }
+  }
+  
+  .el-select {
+    .el-input__wrapper {
+      border-radius: 4px;
+    }
+  }
+  
+  .el-radio-group {
+    .el-radio {
+      margin-right: 16px;
+      
+      .el-radio__label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  }
+  
+  .el-switch {
+    .el-switch__core {
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+  }
+}
+
+// 卡片样式
+:deep(.el-card) {
+  border: none;
+  box-shadow: none;
+  
+  .el-card__header {
+    background: var(--el-fill-color-extra-light);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    padding: 16px 20px;
+  }
+  
+  .el-card__body {
+    padding: 20px;
+  }
+}
+
+// 标签样式
+:deep(.el-tag) {
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+// 树形选择器样式
+:deep(.el-tree-select) {
+  .el-input__wrapper {
+    border-radius: 4px;
+  }
+}
+
+// 树节点样式
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  
+  .tree-node-icon {
+    color: var(--el-text-color-primary);
+    font-size: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .tree-node-title {
+    color: var(--el-text-color-primary);
+    flex: 1;
   }
 }
 </style>

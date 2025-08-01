@@ -1,5 +1,6 @@
 <template>
   <div class="custom-tree-container">
+    <!-- 工具栏 -->
     <div class="tree-toolbar">
       <div class="toolbar-left">
         <el-input
@@ -38,10 +39,12 @@
       </div>
     </div>
     
-    <div class="tree-scroll-area" @contextmenu="handleTreeAreaContextMenu">
+    <!-- 树形区域 -->
+    <div class="tree-scroll-area" @contextmenu="handleTreeAreaContextMenu" v-loading="loading">
       <el-tree
         :data="dataSource"
         :show-checkbox="batchSelectMode"
+        empty-text=""
         node-key="id"
         default-expand-all
         :expand-on-click-node="false"
@@ -49,10 +52,6 @@
         ref="treeRef"
         @check="handleCheck"
         @node-click="handleNodeClick"
-
-        draggable
-        :allow-drop="allowDrop"
-        @node-drop="handleDrop"
         :filter-node-method="filterNode"
         highlight-current
         :current-node-key="currentKey"
@@ -60,7 +59,7 @@
       />
       
       <!-- 空状态 -->
-      <div v-if="dataSource.length === 0" class="empty-state">
+      <div v-if="!loading && dataSource.length === 0" class="empty-state">
         <el-icon class="empty-icon"><FolderOpened /></el-icon>
         <p class="empty-text">暂无部门数据</p>
         <el-button type="primary" @click="addRootNode" :icon="Plus">新增根部门</el-button>
@@ -87,17 +86,47 @@
         删除
       </div>
     </div>
+
+    <!-- 部门表单对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="500px"
+      :close-on-click-modal="false"
+      @close="handleDialogClose"
+    >
+      <DepartmentForm
+        ref="formRef"
+        :form-data="currentDepartment"
+        :form-mode="dialogMode"
+        :show-parent-select="false"
+        @cancel="handleDialogClose"
+      />
+      
+      <template #footer>
+        <el-button @click="handleDialogClose">取消</el-button>
+        <el-button 
+          type="primary" 
+          :loading="dialogLoading"
+          @click="handleFormSubmit"
+        >
+          {{ dialogMode === 'create' ? '创建部门' : '更新部门' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { ref, nextTick, onMounted, onBeforeUnmount, watch, h } from 'vue'
-import { ElButton, ElTree, ElMessageBox, ElMessage, ElInput, ElTooltip, ElIcon } from 'element-plus'
+import { ElButton, ElTree, ElMessage, ElInput, ElTooltip, ElIcon, ElDialog, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Close, Search, Edit, FolderOpened, Select, OfficeBuilding } from '@element-plus/icons-vue'
-import type { RenderContentContext, RenderContentFunction } from 'element-plus'
+import type { RenderContentContext } from 'element-plus'
 import type { Department } from './types/department'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, batchDeleteDepartments } from '@/api/system/department'
+import DepartmentForm from './components/DepartmentForm.vue'
 
+// 类型定义
 interface Tree {
   id: number
   name: string
@@ -107,332 +136,265 @@ interface Tree {
   sort?: number
   status?: number
 }
+
 type Node = RenderContentContext['node']
 type Data = RenderContentContext['data']
 
-const treeRef = ref<InstanceType<typeof ElTree>>();
-const batchSelectMode = ref(false);
-const checkedKeys = ref<number[]>([]);
-const searchText = ref('');
-const currentKey = ref<number | string | null>(null);
+// Props
+const props = defineProps<{
+  currentDepartmentId?: number
+}>()
+
+// Emits
+const emit = defineEmits<{
+  'node-select': [{ ids: number[], node: any }]
+  'node-create': [department: Department]
+  'node-update': [department: Department]
+  'node-delete': [departmentId: number]
+  'batch-delete': [departmentIds: number[]]
+}>()
+
+// 响应式数据
+const treeRef = ref<InstanceType<typeof ElTree>>()
+const dataSource = ref<Tree[]>([])
+const searchText = ref('')
+const currentKey = ref<number | string | null>(null)
+const batchSelectMode = ref(false)
+const checkedKeys = ref<number[]>([])
+const loading = ref(false)
+
+// 对话框相关
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const dialogMode = ref<'create' | 'edit'>('create')
+const dialogLoading = ref(false)
+const currentDepartment = ref<Department | null>(null)
+const formRef = ref()
 
 const contextMenu = ref({
   visible: false,
   x: 0,
   y: 0,
   node: null as null | Node,
-  data: null as null | Data,
-});
+  data: null as null | Data
+})
 
-const dataSource = ref<Tree[]>([]);
-
-const emit = defineEmits<{
-  'node-select': [{ ids: number[], node: any }];
-  'node-create': [department: Department];
-  'node-update': [department: Department];
-  'node-delete': [departmentId: number];
-  'batch-delete': [departmentIds: number[]];
-}>();
-
-// 辅助函数：查找第一个叶子节点
-type TreeNode = Tree & { children?: TreeNode[] }
-function findFirstLeafNode(nodes: TreeNode[]): TreeNode | null {
-  for (const node of nodes) {
-    if (!node.children || node.children.length === 0) {
-      return node;
-    } else {
-      const found = findFirstLeafNode(node.children);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// 递归获取某节点及其所有子节点id
-function getAllNodeIds(node: TreeNode): number[] {
-  let ids = [node.id];
-  if (node.children && node.children.length > 0) {
-    for (const child of node.children) {
-      ids = ids.concat(getAllNodeIds(child));
-    }
-  }
-  return ids;
-}
-
-// 递归获取某节点下所有叶子节点id
-function getAllChildNodeIds(node: TreeNode): number[] {
-  let ids: number[] = [];
-  if (!node.children || node.children.length === 0) {
-    ids.push(node.id);
-  } else {
-    for (const child of node.children) {
-      ids = ids.concat(getAllChildNodeIds(child));
-    }
-  }
-  return ids;
-}
-
-const selectSystemDepartmentAndEmit = () => {
-  nextTick(() => {
-    // 选择系统部门作为默认部门
-    const systemDept = dataSource.value.find(dept => dept.id === 1);
-    if (systemDept) {
-      treeRef.value?.setCurrentKey(systemDept.id);
-      const ids = [systemDept.id];
-      emit('node-select', { ids, node: systemDept });
-    }
-  });
-};
-
+// 数据加载
 const loadTree = async () => {
+  loading.value = true
   try {
-    const data = await getDepartmentTree() as any;
-    // 将后端返回的数据转换为前端期望的格式
+    const data = await getDepartmentTree() as any
     const transformData = (res: any[]): Tree[] => {
       return res.map(dept => ({
         id: dept.id,
-        name: dept.name, // 将 name 映射为 label
+        name: dept.name,
         userCount: dept.userCount,
         parentId: dept.parentId,
         sort: dept.sort,
         status: dept.status,
         children: dept.children ? transformData(dept.children) : undefined
-      }));
-    };
+      }))
+    }
     
-    dataSource.value = transformData(data);
-    currentKey.value = undefined;
-    treeRef.value?.setCurrentKey(null);
-    checkedKeys.value = [];
-    treeRef.value?.setCheckedKeys([]);
+    dataSource.value = transformData(data)
+    currentKey.value = undefined
+    treeRef.value?.setCurrentKey(null)
+    checkedKeys.value = []
+    treeRef.value?.setCheckedKeys([])
+    
+    // 数据加载完成后，自动选中系统部门（ID为1）
+    nextTick(() => {
+      const systemDept = dataSource.value.find(dept => dept.id === 1)
+      if (systemDept) {
+        treeRef.value?.setCurrentKey(systemDept.id)
+        const ids = [systemDept.id]
+        emit('node-select', { ids, node: systemDept })
+      }
+    })
   } catch (error) {
-    console.error('获取部门树失败:', error);
-    ElMessage.error('获取部门树失败');
+    console.error('获取部门树失败:', error)
+    ElMessage.error('获取部门树失败')
+  } finally {
+    loading.value = false
   }
-};
+}
+
+// 部门操作
+const addRootNode = async () => {
+  dialogMode.value = 'create'
+  dialogTitle.value = '新增根部门'
+  currentDepartment.value = {
+    name: '',
+    parentId: null,
+    sort: 0
+  } as Department
+  dialogVisible.value = true
+}
 
 const append = async (data: Data) => {
-  if (!data) return;
-  const id = data.id;
-  const { value } = await ElMessageBox.prompt('请输入部门名称', '新增子部门', {
-    inputValue: '',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-  });
-  if (value && value.trim()) {
-    try {
-      await createDepartment({ 
-        name: value.trim(),
-        parentId: id,
-        sort: 0,
-        status: 1
-      });
-      ElMessage.success('新增成功');
-      loadTree();
-    } catch (error) {
-      ElMessage.error('新增失败');
-    }
-  } else if (value !== undefined) {
-    ElMessage.error('部门名称不能为空');
-  }
-};
-
-const addRootNode = async () => {
-  const { value } = await ElMessageBox.prompt('请输入部门名称', '新增根部门', {
-    inputValue: '',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-  });
-  if (value && value.trim()) {
-    try {
-      await createDepartment({ 
-        name: value.trim(),
-        parentId: null,
-        sort: 0,
-        status: 1
-      });
-      ElMessage.success('新增成功');
-      loadTree();
-    } catch (error) {
-      ElMessage.error('新增失败');
-    }
-  } else if (value !== undefined) {
-    ElMessage.error('部门名称不能为空');
-  }
-};
-
-const remove = (node: Node, data: Data) => {
-  const parent = node.parent
-  const children: Tree[] = parent.data.children || parent.data
-  const index = children.findIndex((d) => d.id === data.id)
-  children.splice(index, 1)
-  dataSource.value = [...dataSource.value]
-}
-
-const batchDelete = async () => {
-  if (!treeRef.value) return;
-  const keys = checkedKeys.value;
+  if (!data) return
   
-  if (keys.length === 0) {
-    ElMessage.warning('请选择要删除的部门');
-    return;
-  }
-  
-  try {
-    const confirmResult = await ElMessageBox.confirm(
-      `确定要删除选中的 ${keys.length} 个部门吗？删除后将无法恢复。`,
-      '确认批量删除',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    );
-    
-    if (confirmResult !== 'confirm') {
-      return;
-    }
-    
-    await batchDeleteDepartments(keys);
-    ElMessage.success('批量删除成功');
-    checkedKeys.value = [];
-    treeRef.value.setCheckedKeys([]);
-    loadTree();
-  } catch (error) {
-    console.error('批量删除部门时出错:', error);
-    ElMessage.error('批量删除失败，请重试');
-  }
+  dialogMode.value = 'create'
+  dialogTitle.value = '新增子部门'
+  currentDepartment.value = {
+    name: '',
+    parentId: data.id,
+    sort: 0
+  } as Department
+  dialogVisible.value = true
 }
-
-const toggleBatchSelect = () => {
-  batchSelectMode.value = !batchSelectMode.value;
-  if (!batchSelectMode.value) {
-    checkedKeys.value = [];
-    treeRef.value?.setCheckedKeys([]);
-  }
-}
-
-const handleCheck = (_: any, checked: any) => {
-  checkedKeys.value = checked.checkedKeys;
-}
-
-const showContextMenu = (event: MouseEvent, node: Node, data: Data) => {
-  event.preventDefault();
-  contextMenu.value.visible = true;
-  contextMenu.value.x = event.clientX;
-  contextMenu.value.y = event.clientY;
-  contextMenu.value.node = node;
-  contextMenu.value.data = data;
-  document.body.style.userSelect = 'none';
-};
-
-// 处理树节点右键菜单
-const handleNodeContextMenu = (event: MouseEvent, node: Node, data: Data) => {
-  event.preventDefault();
-  contextMenu.value.visible = true;
-  contextMenu.value.x = event.clientX;
-  contextMenu.value.y = event.clientY;
-  contextMenu.value.node = node;
-  contextMenu.value.data = data;
-  document.body.style.userSelect = 'none';
-};
-
-const hideContextMenu = () => {
-  contextMenu.value.visible = false;
-  contextMenu.value.node = null;
-  contextMenu.value.data = null;
-  document.body.style.userSelect = '';
-};
-
-const handleTreeAreaContextMenu = (event: MouseEvent) => {
-  if (event.target === event.currentTarget) {
-    showContextMenu(event, null as any, null as any);
-  }
-};
-
-const handleContextAdd = () => {
-  const data = contextMenu.value.data;
-  if (data) {
-    append(data);
-  } else {
-    addRootNode();
-  }
-  hideContextMenu();
-};
 
 const handleContextRename = async () => {
-  const data = contextMenu.value.data;
-  if (!data) return;
+  const data = contextMenu.value.data
+  if (!data) return
   
-  const { value } = await ElMessageBox.prompt('请输入新的部门名称', '重命名', {
-    inputValue: data.name,
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-  });
+  dialogMode.value = 'edit'
+  dialogTitle.value = '重命名部门'
+  currentDepartment.value = {
+    id: data.id,
+    name: data.name,
+    parentId: data.parentId,
+    sort: data.sort || 0
+  } as Department
+  dialogVisible.value = true
   
-  if (value && value.trim() && value !== data.name) {
-    try {
-      await updateDepartment(
-        data.id,
-        {
-          name: value.trim(),
-          parentId: data.parentId,
-          sort: data.sort || 0,
-          status: data.status || 1
-        }
-      );
-      ElMessage.success('重命名成功');
-      loadTree();
-    } catch (error) {
-      ElMessage.error('重命名失败');
-    }
-  }
-  hideContextMenu();
-};
+  hideContextMenu()
+}
 
 const handleContextDelete = async () => {
-  const data = contextMenu.value.data;
-  if (!data) return;
+  const data = contextMenu.value.data
+  if (!data) return
   
   try {
     await ElMessageBox.confirm(
       '确认删除该部门吗？删除后该部门下的子部门和用户将一并删除！',
-      '警告',
+      '确认删除',
       { type: 'warning' }
-    );
-    
-    await deleteDepartment(data.id);
-    ElMessage.success('删除成功');
-    loadTree();
-  } catch {
-    // 用户取消
+    )
+    await deleteDepartment(data.id)
+    ElMessage.success('删除成功')
+    loadTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response.data.message)
+    }
   }
-  hideContextMenu();
-};
+  
+  hideContextMenu()
+}
 
+// 批量操作
+const batchDelete = async () => {
+  if (!treeRef.value) return
+  const keys = checkedKeys.value
+  
+  if (keys.length === 0) {
+    ElMessage.warning('请选择要删除的部门')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${keys.length} 个部门吗？删除后将无法恢复。`,
+      '确认批量删除',
+      { type: 'warning' }
+    )
+    await batchDeleteDepartments(keys)
+    ElMessage.success('批量删除成功')
+    checkedKeys.value = []
+    treeRef.value?.setCheckedKeys([])
+    loadTree()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('批量删除部门时出错:', error)
+      if (error.response?.data?.message) {
+        ElMessage.error(error.response.data.message)
+      } else {
+        ElMessage.error('批量删除失败，请重试')
+      }
+    }
+  }
+}
+
+const toggleBatchSelect = () => {
+  batchSelectMode.value = !batchSelectMode.value
+  if (!batchSelectMode.value) {
+    checkedKeys.value = []
+    treeRef.value?.setCheckedKeys([])
+  }
+}
+
+// 事件处理
 const handleNodeClick = (data: Data) => {
-  const ids = [data.id];
-  emit('node-select', { ids, node: data });
-};
+  const ids = [data.id]
+  emit('node-select', { ids, node: data })
+}
+
+const handleCheck = (_: any, checked: any) => {
+  checkedKeys.value = checked.checkedKeys
+}
 
 const handleSearch = () => {
-  treeRef.value?.filter(searchText.value);
-};
+  treeRef.value?.filter(searchText.value)
+}
 
 const filterNode = (value: string, data: Data) => {
-  if (!value) return true;
-  return data.name.includes(value);
-};
+  if (!value) return true
+  return data.name.includes(value)
+}
 
-// 修正 renderContent 参数类型
+// 右键菜单
+const showContextMenu = (event: MouseEvent, node: Node, data: Data) => {
+  event.preventDefault()
+  contextMenu.value.visible = true
+  contextMenu.value.x = event.clientX
+  contextMenu.value.y = event.clientY
+  contextMenu.value.node = node
+  contextMenu.value.data = data
+  document.body.style.userSelect = 'none'
+}
+
+const handleNodeContextMenu = (event: MouseEvent, node: Node, data: Data) => {
+  event.preventDefault()
+  contextMenu.value.visible = true
+  contextMenu.value.x = event.clientX
+  contextMenu.value.y = event.clientY
+  contextMenu.value.node = node
+  contextMenu.value.data = data
+  document.body.style.userSelect = 'none'
+}
+
+const hideContextMenu = () => {
+  contextMenu.value.visible = false
+  contextMenu.value.node = null
+  contextMenu.value.data = null
+  document.body.style.userSelect = ''
+}
+
+const handleTreeAreaContextMenu = (event: MouseEvent) => {
+  if (event.target === event.currentTarget) {
+    showContextMenu(event, null as any, null as any)
+  }
+}
+
+const handleContextAdd = () => {
+  const data = contextMenu.value.data
+  if (data) {
+    append(data)
+  } else {
+    addRootNode()
+  }
+  hideContextMenu()
+}
+
+// 渲染函数
 const renderContent = (h: any, { data, node }: { data: any; node: any }) => {
-  const isSystemDepartment = data.id === 1;
   return h('div', { 
     class: 'custom-tree-node',
     onContextmenu: (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      handleNodeContextMenu(event, node, data);
+      event.preventDefault()
+      event.stopPropagation()
+      handleNodeContextMenu(event, node, data)
     },
     style: {
       width: '100%',
@@ -448,34 +410,72 @@ const renderContent = (h: any, { data, node }: { data: any; node: any }) => {
     h(ElIcon, { class: 'node-icon' }, () => h(OfficeBuilding)),
     h('span', { class: 'node-label' }, data.name),
     h('span', { class: 'node-count' }, `(${data.userCount || 0})`)
-  ]);
-};
+  ])
+}
 
-const allowDrop = (draggingNode: Node, dropNode: Node, type: string) => {
-  return true;
-};
+// 工具方法
+const selectSystemDepartmentAndEmit = () => {
+  nextTick(() => {
+    const systemDept = dataSource.value.find(dept => dept.id === 1)
+    if (systemDept) {
+      treeRef.value?.setCurrentKey(systemDept.id)
+      const ids = [systemDept.id]
+      emit('node-select', { ids, node: systemDept })
+    }
+  })
+}
 
-const handleDrop = async (draggingNode: Node, dropNode: Node, dropType: string) => {
-  // 处理拖拽逻辑
-  console.log('拖拽:', draggingNode.data, dropNode.data, dropType);
-};
-
-// 监听搜索文本变化
+// 监听器
 watch(searchText, (val) => {
-  treeRef.value?.filter(val);
-});
+  treeRef.value?.filter(val)
+})
 
-// 监听外部传入的当前部门类型变化
-const props = defineProps<{
-  currentDepartmentId?: number;
-}>();
-
-// 监听props变化
 watch(() => props.currentDepartmentId, (newVal) => {
   if (newVal && dataSource.value.length > 0) {
-    treeRef.value?.setCurrentKey(newVal);
+    treeRef.value?.setCurrentKey(newVal)
   }
-}, { immediate: true });
+}, { immediate: true })
+
+// 对话框相关方法
+const handleDialogClose = () => {
+  dialogVisible.value = false
+  currentDepartment.value = null
+}
+
+const handleFormSubmit = async () => {
+  try {
+    dialogLoading.value = true
+    
+    // 调用 DepartmentForm 的 submitForm 方法
+    if (formRef.value) {
+      const formData = await formRef.value.submitForm()
+      
+      // 调用 API 保存数据
+      if (dialogMode.value === 'create') {
+        await createDepartment(formData)
+        ElMessage.success('新增成功')
+      } else {
+        await updateDepartment(formData.id!, formData)
+        ElMessage.success('更新成功')
+      }
+      
+      // 提交成功后关闭对话框并刷新数据
+      handleDialogClose()
+      loadTree()
+    }
+  } catch (error: any) {
+    // 确保错误消息显示
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else if (error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('操作失败')
+    }
+  } finally {
+    dialogLoading.value = false
+  }
+}
 
 // 暴露方法
 defineExpose({
@@ -483,20 +483,20 @@ defineExpose({
   selectSystemDepartmentAndEmit,
   refreshTree: loadTree,
   setCurrentKey: (key: number | string | null) => {
-    currentKey.value = key;
-    treeRef.value?.setCurrentKey(key);
+    currentKey.value = key
+    treeRef.value?.setCurrentKey(key)
   }
-});
+})
 
 // 生命周期
 onMounted(() => {
-  loadTree();
-  document.addEventListener('click', hideContextMenu);
-});
+  loadTree()
+  document.addEventListener('click', hideContextMenu)
+})
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', hideContextMenu);
-});
+  document.removeEventListener('click', hideContextMenu)
+})
 </script>
 
 <style scoped lang="scss">
@@ -512,9 +512,9 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--el-border-color-light);
-    background: var(--el-bg-color-page);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
     
     .toolbar-left {
       flex: 1;
@@ -528,7 +528,8 @@ onBeforeUnmount(() => {
     
     .toolbar-right {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
       
       .toolbar-btn {
         padding: 6px 8px;
@@ -576,18 +577,10 @@ onBeforeUnmount(() => {
           font-size: 12px;
           margin-left: 4px;
         }
-
-        .system-badge {
-          background-color: var(--el-color-info-light-9);
-          color: var(--el-color-info);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 12px;
-          margin-left: 8px;
-          font-weight: bold;
-        }
       }
     }
+    
+
     
     .empty-state {
       display: flex;
@@ -613,7 +606,7 @@ onBeforeUnmount(() => {
   
   .context-menu {
     background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid var(--el-border-color-lighter);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     padding: 4px 0;
@@ -644,6 +637,68 @@ onBeforeUnmount(() => {
         margin-right: 8px;
         font-size: 16px;
       }
+    }
+  }
+}
+
+// 树形组件统一样式
+:deep(.el-tree) {
+  .el-tree-node {
+    .el-tree-node__content {
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--el-fill-color-light);
+      }
+      
+      &.is-current {
+        background: var(--el-color-primary-light-9);
+        color: var(--el-color-primary);
+      }
+    }
+  }
+}
+
+// 按钮统一样式
+:deep(.el-button) {
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.el-button--primary {
+    background: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+    
+    &:hover {
+      background: var(--el-color-primary-light-3);
+      border-color: var(--el-color-primary-light-3);
+    }
+  }
+}
+
+
+
+// 输入框统一样式
+:deep(.el-input) {
+  .el-input__wrapper {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+    }
+    
+    &.is-focused {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
     }
   }
 }

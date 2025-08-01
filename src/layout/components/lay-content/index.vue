@@ -142,7 +142,6 @@ const transitionMain = defineComponent({
                       :is="Comp"
                       :key="fullPath"
                       :frameInfo="frameInfo"
-                      class="main-content"
                     />
                   </keep-alive>
                   <component
@@ -150,7 +149,6 @@ const transitionMain = defineComponent({
                     v-else
                     :key="fullPath"
                     :frameInfo="frameInfo"
-                    class="main-content"
                   />
                 </transitionMain>
               </div>
@@ -165,7 +163,6 @@ const transitionMain = defineComponent({
                     :is="Comp"
                     :key="fullPath"
                     :frameInfo="frameInfo"
-                    class="main-content"
                   />
                 </keep-alive>
                 <component
@@ -173,7 +170,6 @@ const transitionMain = defineComponent({
                   v-else
                   :key="fullPath"
                   :frameInfo="frameInfo"
-                  class="main-content"
                 />
               </transitionMain>
             </div>
@@ -199,7 +195,7 @@ const transitionMain = defineComponent({
   width: 100%;
 }
 
-.main-content {
+/* .main-content {
   margin: 12px;
-}
+} */
 </style>

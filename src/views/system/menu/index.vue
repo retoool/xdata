@@ -1,10 +1,10 @@
 <template>
-  <div class="menu-management">
-    <el-container>
-      <el-main class="page-content">
+  <div class="page-container">
+    <div class="content-area">
+      <div class="content-main">
         <MenuTable ref="menuTableRef" @menu-select="handleMenuSelect" />
-      </el-main>
-    </el-container>
+      </div>
+    </div>
     
     <!-- 菜单详情对话框 -->
     <el-dialog
@@ -12,6 +12,7 @@
       title="菜单详情"
       width="600px"
       :close-on-click-modal="true"
+      destroy-on-close
     >
       <MenuForm
         v-if="showMenuDetail"
@@ -28,6 +29,7 @@
       :title="getFormTitle()"
       width="800px"
       :close-on-click-modal="false"
+      destroy-on-close
       @close="handleFormClose"
     >
       <MenuForm
@@ -45,6 +47,7 @@
       v-model="showIconPicker"
       title="选择图标"
       width="600px"
+      destroy-on-close
       @close="handleIconPickerClose"
     >
       <IconPicker
@@ -341,34 +344,63 @@ provide('menuManagement', menuManagementMethods)
 </script>
 
 <style scoped lang="scss">
-.menu-management {
+.page-container {
   height: 100%;
+  padding: 16px;
   background: var(--el-bg-color-page);
-  
-  .el-container {
-    height: 100%;
-  }
-  
-  .page-content {
-    padding: 0;
-    overflow: hidden;
-  }
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-main {
+  flex: 1;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 // 对话框样式优化
 :deep(.el-dialog) {
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  
   .el-dialog__header {
+    background: var(--el-fill-color-extra-light);
     border-bottom: 1px solid var(--el-border-color-lighter);
-    padding: 16px 20px 12px;
+    padding: 16px 24px 12px;
+    border-radius: 12px 12px 0 0;
     
     .el-dialog__title {
       font-size: 16px;
       font-weight: 600;
+      color: var(--el-text-color-primary);
     }
   }
   
   .el-dialog__body {
-    padding: 20px;
+    padding: 24px;
+    background: var(--el-bg-color);
+  }
+  
+  .el-dialog__footer {
+    background: var(--el-fill-color-extra-light);
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding: 16px 24px;
+    border-radius: 0 0 12px 12px;
   }
 }
 

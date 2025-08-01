@@ -144,20 +144,20 @@ class PureHttp {
             }
             return result;
           } else {
-            // 业务失败，显示错误消息并抛出异常
+            // 业务失败，创建错误对象但不显示消息（让调用方决定是否显示）
             const errorMessage = responseData.message || '请求失败';
-            message(errorMessage, { type: 'error' });
             const error = new Error(errorMessage);
             (error as any).code = responseData.code;
+            (error as any).response = response;
             return Promise.reject(error);
           }
         }
         
         // 不符合标准化响应结构，抛出异常
         const errorMessage = '接口响应格式不符合标准化要求，缺少 code 字段';
-        message(errorMessage, { type: 'error' });
         const error = new Error(errorMessage);
         (error as any).code = 500;
+        (error as any).response = response;
         return Promise.reject(error);
       },
       (error: PureHttpError) => {
@@ -165,6 +165,50 @@ class PureHttp {
         $error.isCancelRequest = Axios.isCancel($error);
         // 关闭进度条动画
         NProgress.done();
+        
+        // 处理网络错误或HTTP状态码错误
+        if ($error.response) {
+          // 服务器返回了错误状态码
+          const status = $error.response.status;
+          const data = $error.response.data;
+          
+          if (data && typeof data === 'object' && 'message' in data) {
+            // 服务器返回了错误信息
+            $error.message = String(data.message);
+            $error.code = String((data as any).code || status);
+          } else {
+            // 服务器没有返回错误信息，使用默认错误信息
+            switch (status) {
+              case 400:
+                $error.message = '请求参数错误';
+                break;
+              case 401:
+                $error.message = '未授权，请重新登录';
+                break;
+              case 403:
+                $error.message = '拒绝访问';
+                break;
+              case 404:
+                $error.message = '请求地址不存在';
+                break;
+              case 500:
+                $error.message = '服务器内部错误';
+                break;
+              default:
+                $error.message = `请求失败，状态码：${status}`;
+            }
+            $error.code = String(status);
+          }
+        } else if ($error.request) {
+          // 请求已发出但没有收到响应
+          $error.message = '网络连接失败，请检查网络设置';
+          $error.code = '0';
+        } else {
+          // 请求配置出错
+          $error.message = '请求配置错误';
+          $error.code = '-1';
+        }
+        
         // 所有的响应异常 区分来源为取消请求/非取消请求
         return Promise.reject($error);
       }

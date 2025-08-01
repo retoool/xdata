@@ -316,6 +316,7 @@ const removeIcon = (iconName: string) => {
   .icon-search {
     margin-bottom: 16px;
   }
+  
   .icon-upload {
     margin-bottom: 12px;
     display: flex;
@@ -331,7 +332,7 @@ const removeIcon = (iconName: string) => {
       gap: 8px;
       margin-bottom: 12px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--el-text-color-primary);
 
       .el-icon {
@@ -347,9 +348,10 @@ const removeIcon = (iconName: string) => {
     max-height: 300px;
     overflow-y: auto;
     padding: 8px;
-    border: 1px solid var(--el-border-color);
-    border-radius: 4px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
     background-color: var(--el-fill-color-blank);
+    transition: all 0.2s ease;
 
     .icon-item {
       display: flex;
@@ -358,14 +360,22 @@ const removeIcon = (iconName: string) => {
       padding: 12px 8px;
       border-radius: 4px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      
       &:hover {
         background-color: var(--el-fill-color-light);
+        border-color: var(--el-color-primary-light-5);
+        transform: scale(1.05);
       }
+      
       &.active {
         background-color: var(--el-color-primary);
         color: white;
+        border-color: var(--el-color-primary);
+        transform: scale(1.1);
       }
+      
       :deep(svg) {
         width: 20px;
         height: 20px;
@@ -374,11 +384,12 @@ const removeIcon = (iconName: string) => {
 
     .custom-icon-item {
       position: relative;
+      
       .delete-icon {
         position: absolute;
         top: -2px;
         right: -2px;
-        background-color: #fca5a5;
+        background-color: var(--el-color-danger);
         border-radius: 50%;
         width: 18px;
         height: 18px;
@@ -386,12 +397,16 @@ const removeIcon = (iconName: string) => {
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         opacity: 0.8;
+        border: 1px solid var(--el-color-danger-light-3);
+        
         &:hover {
-          background-color: #dc2626;
+          background-color: var(--el-color-danger-dark-2);
           opacity: 1;
+          transform: scale(1.1);
         }
+        
         span {
           color: white;
           font-size: 14px;
@@ -399,6 +414,7 @@ const removeIcon = (iconName: string) => {
           line-height: 1;
         }
       }
+      
       &:hover .delete-icon {
         display: flex;
       }
@@ -408,7 +424,9 @@ const removeIcon = (iconName: string) => {
   .icon-picker-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--el-border-color-lighter);
   }
 }
 
@@ -416,14 +434,16 @@ const removeIcon = (iconName: string) => {
   .svg-preview {
     margin-top: 16px;
     padding: 12px;
-    border: 1px solid var(--el-border-color);
-    border-radius: 4px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
     background-color: var(--el-fill-color-light);
+    transition: all 0.2s ease;
 
     h4 {
       margin: 0 0 8px 0;
       font-size: 14px;
-      color: var(--el-text-color-regular);
+      font-weight: 600;
+      color: var(--el-text-color-primary);
     }
 
     .preview-icon {
@@ -432,13 +452,48 @@ const removeIcon = (iconName: string) => {
       justify-content: center;
       padding: 16px;
       background-color: var(--el-bg-color);
-      border-radius: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--el-border-color-lighter);
 
       :deep(svg) {
         width: 32px;
         height: 32px;
         color: var(--el-color-primary);
       }
+    }
+  }
+}
+
+// 输入框样式
+:deep(.el-input) {
+  .el-input__wrapper {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+    }
+    
+    &.is-focused {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+    }
+  }
+}
+
+// 文本域样式
+:deep(.el-textarea) {
+  .el-textarea__inner {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+    }
+    
+    &:focus {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
     }
   }
 }

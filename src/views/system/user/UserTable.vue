@@ -1,20 +1,5 @@
 <template>
   <div class="user-table">
-    <!-- 面包屑导航 -->
-    <div class="breadcrumb-nav">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item>用户管理</el-breadcrumb-item>
-        <el-breadcrumb-item
-          v-for="(item, index) in selectedDepartmentPath"
-          :key="index"
-          :class="{ 'is-link': index < selectedDepartmentPath.length - 1 }"
-          @click="handleBreadcrumbClick(index)"
-        >
-          {{ item }}
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
-
     <!-- 操作工具栏 -->
     <div class="toolbar">
       <div class="left-actions">
@@ -54,6 +39,7 @@
         :data="tableData"
         row-key="id"
         @selection-change="handleSelectionChange"
+        fit
       >
         <el-table-column type="selection" width="50" />
         <el-table-column label="头像" width="80">
@@ -67,17 +53,17 @@
             </el-avatar>
           </template>
         </el-table-column>
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
-        <el-table-column prop="employeeNo" label="工号" width="120" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="realName" label="真实姓名" min-width="120" />
+        <el-table-column prop="employeeNo" label="工号" min-width="120" />
         <el-table-column
           prop="email"
           label="邮箱"
-          width="180"
+          min-width="200"
           show-overflow-tooltip
         />
-        <el-table-column prop="phone" label="手机号" width="130" />
-        <el-table-column label="角色" width="150">
+        <el-table-column prop="phone" label="手机号" min-width="130" />
+        <el-table-column label="角色" min-width="150">
           <template #default="{ row }">
             <el-tag
               v-for="role in row.roles"
@@ -89,7 +75,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" min-width="100">
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
@@ -100,17 +86,17 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="最后登录" width="160">
+        <el-table-column label="最后登录" min-width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.lastLoginTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="160">
+        <el-table-column label="创建时间" min-width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" min-width="250" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -155,24 +141,36 @@
 
     <!-- 用户表单对话框 -->
     <el-dialog
-      v-model="showForm"
-      :title="formMode === 'create' ? '新增用户' : '编辑用户'"
+      v-model="dialogVisible"
+      :title="dialogTitle"
       width="600px"
+      :close-on-click-modal="false"
+      :show-close="true"
+      @close="handleDialogClose"
     >
       <UserForm
         ref="formRef"
-        :form-data="formData"
+        :form-data="getFormData()"
         :form-mode="formMode"
-        :department-id="selectedDepartmentId"
-        @submit="handleFormSubmit"
-        @cancel="handleFormCancel"
+        :department-id="props.selectedDepartmentId"
       />
+      
+      <template #footer>
+        <el-button @click="handleDialogClose">取消</el-button>
+        <el-button 
+          type="primary" 
+          :loading="dialogLoading"
+          @click="handleFormSubmit"
+        >
+          {{ formMode === 'create' ? '创建用户' : '更新用户' }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from "vue";
+import { ref, reactive, computed, watch, onMounted, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
@@ -183,12 +181,12 @@ import { User } from "./types/user";
 import { Role } from "@/views/system/role/types/role";
 import {
   getUserList,
-  createUser,
-  updateUser,
   deleteUser,
   batchDeleteUsers,
   updateUserStatus,
-  resetUserPassword
+  resetUserPassword,
+  createUser,
+  updateUser
 } from "@/api/system/user";
 import { getAllRoles } from "@/api/system/role";
 import UserForm from "./components/UserForm.vue";
@@ -206,13 +204,18 @@ const emit = defineEmits<{
 
 // 响应式数据
 const tableRef = ref();
-const formRef = ref();
 const loading = ref(false);
-const showForm = ref(false);
 const formMode = ref<"create" | "edit">("create");
 const tableData = ref<User[]>([]);
 const selectedUsers = ref<User[]>([]);
 const roleOptions = ref<Role[]>([]);
+
+// 对话框相关
+const dialogVisible = ref(false);
+const dialogTitle = ref("");
+const dialogLoading = ref(false);
+const formRef = ref();
+const currentEditUser = ref<User | null>(null);
 
 // 默认头像
 const defaultAvatar = ref("");
@@ -226,17 +229,6 @@ const pagination = reactive({
   current: 1,
   size: 20,
   total: 0
-});
-
-const formData = ref<Partial<User>>({
-  username: "",
-  realName: "",
-  email: "",
-  phone: "",
-  employeeNo: "",
-  departmentId: undefined,
-  roleIds: [],
-  status: 1
 });
 
 // 计算属性
@@ -272,27 +264,80 @@ const handleSelectionChange = (selection: User[]) => {
 };
 
 const handleAdd = () => {
+  // 先设置对话框状态
+  dialogVisible.value = true;
+  dialogTitle.value = "新增用户";
   formMode.value = "create";
-  formData.value = {
-    username: "",
-    realName: "",
-    email: "",
-    phone: "",
-    employeeNo: "",
-    departmentId: props.selectedDepartmentId || 1, // 使用选中的部门或系统部门作为默认值
-    roleIds: [],
-    status: 1
-  };
-  showForm.value = true;
+  
+  // 使用 nextTick 确保组件状态稳定后再设置数据
+  nextTick(() => {
+    currentEditUser.value = null;
+  });
 };
 
 const handleEdit = (row: User) => {
+  // 先设置对话框状态
+  dialogVisible.value = true;
+  dialogTitle.value = "编辑用户";
   formMode.value = "edit";
-  formData.value = {
-    ...row,
-    roleIds: row.roles?.map(r => r.id) || []
-  };
-  showForm.value = true;
+  
+  // 使用 nextTick 确保组件状态稳定后再设置数据
+  nextTick(() => {
+    currentEditUser.value = { ...row };
+  });
+};
+
+// 对话框相关方法
+const handleDialogClose = () => {
+  dialogVisible.value = false;
+  dialogLoading.value = false;
+  currentEditUser.value = null;
+};
+
+const getFormData = () => {
+  if (formMode.value === "create") {
+    return {
+      username: "",
+      realName: "",
+      email: "",
+      phone: "",
+      employeeNo: "",
+      departmentId: props.selectedDepartmentId || 1,
+      roleIds: [],
+      status: 1
+    };
+  }
+  // 编辑模式需要从选中的行获取数据
+  if (currentEditUser.value) {
+    return {
+      ...currentEditUser.value,
+      roleIds: currentEditUser.value.roles?.map(r => r.id) || []
+    };
+  }
+  return {};
+};
+
+const handleFormSubmit = async () => {
+  try {
+    dialogLoading.value = true;
+    
+    // 调用 UserForm 的 submitForm 方法
+    if (formRef.value) {
+      await formRef.value.submitForm();
+      // 提交成功后关闭对话框并刷新数据
+      handleDialogClose();
+      loadTableData();
+    }
+  } catch (error: any) {
+    // 如果是验证错误，不需要额外处理，UserForm已经处理了
+    if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+      console.log("表单验证失败，已由UserForm处理");
+    } else {
+      console.error("提交失败:", error);
+    }
+  } finally {
+    dialogLoading.value = false;
+  }
 };
 
 const handleDelete = async (row: User) => {
@@ -377,42 +422,6 @@ const handleResetPassword = async (row: User) => {
   }
 };
 
-const handleFormSubmit = async (data: User) => {
-  try {
-    if (formMode.value === "create") {
-      await createUser(data);
-      ElMessage.success("新增成功");
-    } else {
-      await updateUser(data.id, data);
-      ElMessage.success("编辑成功");
-    }
-    showForm.value = false;
-    loadTableData();
-  } catch (error: any) {
-    console.error("提交失败:", error);
-    ElMessage.error(error.message || "操作失败");
-  }
-};
-
-const handleFormCancel = () => {
-  showForm.value = false;
-};
-
-const handleSizeChange = (size: number) => {
-  pagination.size = size;
-  loadTableData();
-};
-
-const handleCurrentChange = (current: number) => {
-  pagination.current = current;
-  loadTableData();
-};
-
-const handleBreadcrumbClick = (index: number) => {
-  // 面包屑点击时选中对应部门
-  emit("departmentBreadcrumbClick", index);
-};
-
 const loadTableData = async () => {
   loading.value = true;
   try {
@@ -460,47 +469,69 @@ onMounted(() => {
 <style scoped lang="scss">
 .user-table {
   height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   padding: 16px;
-
-  .breadcrumb-nav {
-    margin-bottom: 16px;
-
-    :deep(.el-breadcrumb__item) {
-      &.is-link {
-        cursor: pointer;
-
-        .el-breadcrumb__inner:hover {
-          color: var(--el-color-primary);
-        }
-      }
-    }
-  }
 
   .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 8px 0px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
     margin-bottom: 16px;
-
+    
     .left-actions {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
 
     .right-search {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
   }
 
   .table-container {
     flex: 1;
     overflow: hidden;
-
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    
     .el-table {
-      height: 100%;
+      flex: 1;
+      width: 100%;
+      
+      :deep(.el-table__header) {
+        background: var(--el-fill-color-light);
+        
+        .el-table__cell {
+          background: var(--el-fill-color-light);
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+        }
+      }
+      
+      :deep(.el-table__row) {
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: var(--el-fill-color-light);
+        }
+      }
+      
+      :deep(.el-table__body-wrapper) {
+        width: 100%;
+      }
+      
+      :deep(.el-table__header-wrapper) {
+        width: 100%;
+      }
     }
   }
 
@@ -508,6 +539,38 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     padding: 16px 0;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+}
+
+/* 弹窗样式已统一在 @/style/dialog.scss 中定义 */
+
+// 表单组件统一样式
+:deep(.el-form) {
+  .el-form-item__label {
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+  }
+  
+  .el-input__wrapper {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+    }
+    
+    &.is-focused {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+    }
+  }
+  
+  .el-select {
+    .el-input__wrapper {
+      border-radius: 4px;
+    }
   }
 }
 </style>

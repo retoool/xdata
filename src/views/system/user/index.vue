@@ -1,35 +1,41 @@
 <template>
-  <div class="user-management-page">
-    <div class="department-tree" :class="{ collapsed: isTreeCollapsed }">
-      <DepartmentTree
-        ref="departmentTreeRef"
-        @node-select="handleDepartmentSelect"
-        @node-create="handleDepartmentCreate"
-        @node-update="handleDepartmentUpdate"
-        @node-delete="handleDepartmentDelete"
-        @batch-delete="handleDepartmentBatchDelete"
-      />
-    </div>
-    <div class="content-area" :class="{ expanded: isTreeCollapsed }">
-      <UserTable
-        ref="userTableRef"
-        :selected-department-id="selectedDepartmentId"
-        :selected-department-path="selectedDepartmentPath"
-        @department-breadcrumb-click="handleDepartmentBreadcrumbClick"
-      />
-    </div>
-    <div class="collapse-button" @click="toggleTreeCollapse">
-      <el-icon :class="{ rotated: isTreeCollapsed }">
-        <ArrowLeft />
-      </el-icon>
+  <div class="page-container">
+    <div class="content-area" :class="{ 'no-gap': isTreeCollapsed, 'sidebar-collapsed': isTreeCollapsed }">
+      <!-- 侧边栏 -->
+      <div class="sidebar" :class="{ collapsed: isTreeCollapsed }">
+        <DepartmentTree
+          ref="departmentTreeRef"
+          @node-select="handleDepartmentSelect"
+          @node-create="handleDepartmentCreate"
+          @node-update="handleDepartmentUpdate"
+          @node-delete="handleDepartmentDelete"
+          @batch-delete="handleDepartmentBatchDelete"
+        />
+        
+        <!-- 折叠按钮 -->
+        <div class="sidebar-collapse" @click="toggleTreeCollapse">
+          <el-icon :class="{ rotated: isTreeCollapsed }">
+            <ArrowLeft />
+          </el-icon>
+        </div>
+      </div>
+
+      <!-- 主内容区 -->
+      <div class="content-main" :class="{ expanded: isTreeCollapsed }">
+        <UserTable
+          ref="userTableRef"
+          :selected-department-id="selectedDepartmentId"
+          :selected-department-path="selectedDepartmentPath"
+          @department-breadcrumb-click="handleDepartmentBreadcrumbClick"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { ArrowLeft } from "@element-plus/icons-vue";
-// import { useSystemStore } from '@/store/modules/system'
 import DepartmentTree from "./DepartmentTree.vue";
 import UserTable from "./UserTable.vue";
 
@@ -99,118 +105,141 @@ const handleDepartmentBreadcrumbClick = (departmentId: number) => {
 
 // 生命周期
 onMounted(() => {
-  setTimeout(() => {
-    departmentTreeRef.value?.selectSystemDepartmentAndEmit();
-  }, 100);
+  // 部门树会在数据加载完成后自动选中系统部门
 });
 </script>
 
-<style scoped>
-.user-management-page {
-  display: flex;
-  height: calc(100% - 24px);
-  position: relative;
-}
-
-.department-tree {
-  width: 320px;
-  min-width: 0;
-  max-width: 420px;
-  margin-right: 16px;
+<style scoped lang="scss">
+.page-container {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--el-bg-color);
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  opacity: 1;
-  transition: opacity 0.5s ease;
-  height: 100%;
-}
-
-.department-tree.collapsed {
-  width: 0;
-  min-width: 0;
-  max-width: 0;
-  margin-right: 0;
-  opacity: 0;
 }
 
 .content-area {
+  position: relative;
+  background: var(--el-bg-color-lighter);
+  // padding:12px;
+  margin:12px;
   flex: 1;
-  min-width: 0;
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+  border-radius: 0px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // 当侧边栏收起时，去掉gap
+  &.no-gap {
+    gap: 0;
+  }
+  
+  // 当侧边栏收起时，主内容区域占据全宽
+  &.sidebar-collapsed {
+    .main-content {
+      margin-left: -280px;
+    }
+  }
+}
+
+.sidebar {
+  position: relative;
+  width: 280px;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
   display: flex;
   flex-direction: column;
-  background-color: var(--el-bg-color);
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
+  overflow: visible;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  
+  // 收起状态
+  &.collapsed {
+    transform: translateX(-100%);
+
+    .toolbar,
+    .tree-container {
+      pointer-events: none;
+    }
+    
+    .sidebar-collapse {
+      right: -12px;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+  }
 }
 
-.content-area.expanded {
-  margin-left: 0;
-}
-
-/* 现代化的展开收起按钮 */
-.collapse-button {
-  position: absolute;
-  left: 320px;
-  top: 40%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 48px;
+.content-main {
+  flex: 1;
   background: var(--el-bg-color);
-  backdrop-filter: blur(10px);
+  border-radius: 8px;
   border: 1px solid var(--el-border-color-lighter);
-  border-left: none;
-  border-radius: 0 8px 8px 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // 当侧边栏收起时，主内容区域占据全宽
+  &.expanded {
+    margin-left: -280px;
+  }
+}
+
+.sidebar-collapse {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  z-index: 1002;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 34px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  background: linear-gradient(
-    to right,
-    var(--el-border-color-lighter) 0%,
-    var(--el-bg-color) 70%
-  );
-  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.03);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  transform: translateY(-50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  
+  &:hover {
+    background: var(--el-fill-color-light);
+    border-color: var(--el-border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-50%) scale(1.05);
+    
+    .el-icon {
+      color: var(--el-text-color-primary);
+      transform: scale(1.1);
+    }
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+  
+  .el-icon {
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
 }
 
-.collapse-button:hover {
-  background: var(--el-fill-color-light);
-  border-color: var(--el-border-color);
-  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.08);
-}
-
-.collapse-button:hover .el-icon {
-  color: var(--el-text-color-primary);
-  transform: scale(1.1);
-}
-
-.collapse-button:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-.collapse-button .el-icon {
-  color: var(--el-text-color-regular);
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.collapse-button .el-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.department-tree.collapsed ~ .collapse-button {
-  left: 1px;
-  border-left: 1px solid var(--el-border-color-lighter);
-  border-radius: 0 8px 8px 0;
+// 鼠标悬停时显示按钮
+.sidebar:hover .sidebar-collapse {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 </style>

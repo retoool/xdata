@@ -12,26 +12,120 @@
         <div class="avatar-section">
           <div class="avatar-display">
             <el-avatar
-              :src="formData.avatar || generateAvatar(avatarSeed)"
+              :src="formData.avatar || '/src/assets/user.svg'"
               :size="80"
               class="avatar-preview"
             />
-          </div>
-          <div class="avatar-info">
-            <p class="avatar-tip">头像将根据用户名自动生成</p>
-            <p class="avatar-tip">支持多元化头像风格</p>
-            <el-button
-              size="small"
-              type="primary"
-              style="margin-top: 8px"
-              @click="randomAvatar"
+            <el-upload
+              ref="uploadRef"
+              :show-file-list="false"
+              :before-upload="beforeAvatarUpload"
+              :http-request="handleAvatarUpload"
+              accept="image/*"
+              class="avatar-upload"
             >
-              <el-icon><Refresh /></el-icon>
-              随机头像
-            </el-button>
+              <el-button
+                circle
+                size="small"
+                type="primary"
+                class="upload-btn"
+              >
+                <el-icon><Upload /></el-icon>
+              </el-button>
+            </el-upload>
           </div>
+                      <div class="avatar-actions">
+              <div class="action-group">
+                <div class="group-header">
+                  <h4 class="group-title">头像生成</h4>
+                  <el-tooltip
+                    content="随机生成：使用时间戳和随机数生成独特的头像图案，每次生成都会产生不同的视觉效果。
+恢复默认：将头像重置为系统默认的占位图像。"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <el-icon class="help-icon"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </div>
+                <div class="button-group">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="randomAvatar"
+                    class="action-btn"
+                  >
+                    <el-icon><Refresh /></el-icon>
+                    随机生成
+                  </el-button>
+                  <el-button
+                    type="info"
+                    size="small"
+                    @click="resetToDefault"
+                    class="action-btn"
+                  >
+                    <el-icon><RefreshLeft /></el-icon>
+                    恢复默认
+                  </el-button>
+                </div>
+              </div>
+              
+              <div class="action-group">
+                <div class="group-header">
+                  <h4 class="group-title">种子管理</h4>
+                  <el-tooltip
+                    content="导出种子：将当前头像的种子值复制到剪贴板，可以保存并分享给其他人使用相同的种子生成相同的头像。
+输入种子：通过输入特定的种子值来生成对应的头像图案，确保每次使用相同种子都会产生相同的头像。"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <el-icon class="help-icon"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </div>
+                <div class="button-group">
+                  <el-button
+                    type="warning"
+                    size="small"
+                    @click="exportSeed"
+                    class="action-btn"
+                  >
+                    <el-icon><Download /></el-icon>
+                    导出种子
+                  </el-button>
+                  <el-button
+                    type="success"
+                    size="small"
+                    @click="showSeedDialog = true"
+                    class="action-btn"
+                  >
+                    <el-icon><Edit /></el-icon>
+                    输入种子
+                  </el-button>
+                </div>
+              </div>
+            </div>
         </div>
       </el-form-item>
+      
+      <!-- 种子输入对话框 -->
+      <el-dialog
+        v-model="showSeedDialog"
+        title="输入种子生成头像"
+        width="400px"
+      >
+        <el-form>
+          <el-form-item label="种子值">
+            <el-input
+              v-model="seedInput"
+              placeholder="请输入种子值"
+              clearable
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showSeedDialog = false">取消</el-button>
+          <el-button type="primary" @click="generateFromSeed">生成</el-button>
+        </template>
+      </el-dialog>
 
       <!-- 基本信息 -->
       <el-row :gutter="20">
@@ -128,6 +222,7 @@
               check-strictly
               :render-after-expand="false"
               style="width: 100%"
+              :loading="!departmentOptionsLoaded"
             />
           </el-form-item>
         </el-col>
@@ -181,13 +276,13 @@
           placeholder="请选择用户角色"
           style="width: 100%"
           :max-collapse-tags="3"
+          :loading="!roleOptionsLoaded"
         >
           <el-option
             v-for="role in roleOptions"
             :key="role.id"
             :label="role.name"
             :value="role.id"
-            :disabled="role.status === 0"
           >
             <div class="role-option">
               <span class="role-name">{{ role.name }}</span>
@@ -196,25 +291,17 @@
         </el-select>
       </el-form-item>
     </el-form>
-
-    <!-- 表单底部操作 -->
-    <div class="form-footer">
-      <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
-        {{ formMode === "create" ? "创建用户" : "更新用户" }}
-      </el-button>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, computed } from "vue";
+import { ref, reactive, watch, onMounted, computed, nextTick } from "vue";
 import { ElMessage } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import type { User as UserType, UserFormData } from "../types/user";
 import { Department } from "../types/department";
 import { Role } from "@/views/system/role/types/role";
-import { checkUsername, checkEmail, checkEmployeeNo } from "@/api/system/user";
+import { checkUsername, checkEmail, checkEmployeeNo, createUser, updateUser } from "@/api/system/user";
 import { getDepartmentTree } from "@/api/system/department";
 import { getAllRoles } from "@/api/system/role";
 import multiavatar from "@multiavatar/multiavatar";
@@ -225,7 +312,12 @@ import {
   Phone,
   Postcard,
   Lock,
-  Refresh
+  Refresh,
+  Upload,
+  RefreshLeft,
+  Download,
+  Edit,
+  QuestionFilled
 } from "@element-plus/icons-vue";
 
 // Props
@@ -235,18 +327,17 @@ const props = defineProps<{
   departmentId?: number | null;
 }>();
 
-// Emits
-const emit = defineEmits<{
-  submit: [data: UserFormData];
-  cancel: [];
-}>();
-
 // 响应式数据
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const departmentOptions = ref<Department[]>([]);
+const departmentOptionsLoaded = ref(false);
 const roleOptions = ref<Role[]>([]);
-const avatarSeed = ref(""); // 头像种子，默认与用户名同步
+const roleOptionsLoaded = ref(false);
+const showSeedDialog = ref(false);
+const seedInput = ref("");
+const currentSeed = ref("");
+
 
 const formData = reactive<UserFormData & { confirmPassword: string }>({
   id: undefined,
@@ -268,9 +359,6 @@ const treeSelectProps = {
   label: "name",
   children: "children"
 };
-
-// 计算属性
-const isUsernameDisabled = computed(() => props.formMode === "edit");
 
 // 表单验证规则
 const formRules: FormRules<UserFormData & { confirmPassword: string }> = {
@@ -325,19 +413,7 @@ const formRules: FormRules<UserFormData & { confirmPassword: string }> = {
           return;
         }
 
-        // 邮箱唯一性验证
-        const excludeId = formData.id || undefined;
-        checkEmail(value, excludeId)
-          .then(isAvailable => {
-            if (!isAvailable) {
-              callback(new Error("该邮箱地址已被使用"));
-            } else {
-              callback();
-            }
-          })
-          .catch(() => {
-            callback(new Error("邮箱验证失败"));
-          });
+        callback();
       },
       trigger: "blur"
     }
@@ -370,19 +446,7 @@ const formRules: FormRules<UserFormData & { confirmPassword: string }> = {
           return;
         }
 
-        // 工号唯一性验证
-        const excludeId = formData.id || undefined;
-        checkEmployeeNo(value, excludeId)
-          .then(isAvailable => {
-            if (!isAvailable) {
-              callback(new Error("该工号已存在"));
-            } else {
-              callback();
-            }
-          })
-          .catch(() => {
-            callback(new Error("工号验证失败"));
-          });
+        callback();
       },
       trigger: "blur"
     }
@@ -450,61 +514,169 @@ const formRules: FormRules<UserFormData & { confirmPassword: string }> = {
   ]
 };
 
-// 方法
-const generateAvatar = seed => {
-  if (!seed) return "";
-  const svg = multiavatar(seed);
-  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-};
+
 
 const randomAvatar = () => {
   // 用当前时间戳+随机数做种子
-  avatarSeed.value =
-    Date.now().toString() + Math.random().toString(36).slice(2);
-  // 清空上传的头像
-  formData.avatar = "";
+  var seed = Date.now().toString() + Math.random().toString(36).slice(2);
+  const svg = multiavatar(seed);
+  formData.avatar = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  currentSeed.value = seed;
 };
 
-const handleSubmit = async () => {
-  if (!formRef.value) return;
-  try {
-    await formRef.value.validate();
-    submitting.value = true;
-    // 自动生成头像
-    if (!formData.avatar && avatarSeed.value) {
-      formData.avatar = generateAvatar(avatarSeed.value);
+// 头像上传相关方法
+const uploadRef = ref();
+
+const beforeAvatarUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/');
+  const isLt2M = file.size / 1024 / 1024 < 2;
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!');
+    return false;
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!');
+    return false;
+  }
+  return true;
+};
+
+const handleAvatarUpload = (options: any) => {
+  const file = options.file;
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    const result = e.target?.result as string;
+    if (result) {
+      formData.avatar = result;
+      ElMessage.success('头像上传成功');
     }
-    // 准备提交数据，移除确认密码字段
-    const submitData = { ...formData };
-    if (props.formMode === "edit") {
-      delete submitData.password;
-    }
-    emit("submit", submitData);
-  } catch (error) {
-    ElMessage.error("请检查表单数据");
-  } finally {
-    submitting.value = false;
+  };
+  
+  reader.onerror = () => {
+    ElMessage.error('头像上传失败');
+  };
+  
+  reader.readAsDataURL(file);
+  
+  // 返回一个 Promise 以满足 UploadRequestHandler 类型要求
+  return Promise.resolve();
+};
+
+// 恢复默认头像
+const resetToDefault = () => {
+  formData.avatar = '/src/assets/user.svg';
+  currentSeed.value = "";
+  ElMessage.success('已恢复默认头像');
+};
+
+// 导出当前头像种子
+const exportSeed = () => {
+  if (currentSeed.value) {
+    // 复制种子到剪贴板
+    navigator.clipboard.writeText(currentSeed.value).then(() => {
+      ElMessage.success('种子已复制到剪贴板');
+    }).catch(() => {
+      ElMessage.error('复制失败，请手动复制');
+    });
+  } else {
+    ElMessage.warning('当前头像没有种子值');
   }
 };
 
-const handleCancel = () => {
-  emit("cancel");
+// 从种子生成头像
+const generateFromSeed = () => {
+  if (!seedInput.value.trim()) {
+    ElMessage.warning('请输入种子值');
+    return;
+  }
+  
+  const svg = multiavatar(seedInput.value.trim());
+  formData.avatar = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  currentSeed.value = seedInput.value.trim();
+  showSeedDialog.value = false;
+  seedInput.value = "";
+  ElMessage.success('头像生成成功');
+};
+
+// 提交表单方法
+const submitForm = async () => {
+  if (!formRef.value) {
+    return Promise.reject(new Error("表单未初始化"));
+  }
+  try {
+    // 进行表单验证
+    await formRef.value.validate();
+    // 验证通过后，设置提交状态
+    submitting.value = true;
+
+    // 准备提交数据
+    const submitData = { ...formData };
+    
+    // 编辑模式下移除密码相关字段
+    if (props.formMode === "edit") {
+      delete submitData.password;
+      delete submitData.confirmPassword;
+    }
+    
+    // 确保必填字段存在
+    if (!submitData.realName || !submitData.departmentId || !submitData.roleIds || submitData.roleIds.length === 0) {
+      ElMessage.error("请完善必填信息");
+      return Promise.reject(new Error("数据不完整"));
+    }
+    
+    // 调用 API 保存数据
+    if (props.formMode === "create") {
+      await createUser(submitData);
+      ElMessage.success("新增成功");
+    } else {
+      await updateUser(submitData.id!, submitData);
+      ElMessage.success("编辑成功");
+    }
+    
+    return Promise.resolve();
+  } catch (error: any) {
+    // 处理验证错误
+    if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+      // 表单验证失败，Element Plus会自动显示错误信息
+      console.log("表单验证失败:", error);
+      console.log("表单数据详情:", {
+        realName: formData.realName,
+        roleIds: formData.roleIds,
+        departmentId: formData.departmentId
+      });
+      return Promise.reject(error);
+    }
+    
+    // 处理API错误
+    console.error("提交失败:", error);
+    const errorMessage = error.response?.data?.message || error.message || "操作失败";
+    ElMessage.error(errorMessage);
+    return Promise.reject(error);
+  } finally {
+    submitting.value = false;
+  }
 };
 
 // 加载数据
 const loadDepartmentOptions = async () => {
   try {
     departmentOptions.value = await getDepartmentTree();
+    departmentOptionsLoaded.value = true;
   } catch (error) {
     ElMessage.error("加载部门列表失败");
+    departmentOptionsLoaded.value = false;
   }
 };
 
 const loadRoleOptions = async () => {
   try {
     roleOptions.value = await getAllRoles();
+    roleOptionsLoaded.value = true;
   } catch (error) {
     ElMessage.error("加载角色列表失败");
+    roleOptionsLoaded.value = false;
   }
 };
 
@@ -520,41 +692,29 @@ watch(
   () => props.formData,
   newData => {
     if (newData) {
-      Object.assign(formData, {
-        id: newData.id,
-        username: newData.username || "",
-        password: "", // 编辑时不显示原密码
-        confirmPassword: "", // 重置确认密码
-        realName: newData.realName || "",
-        avatar: newData.avatar || "/src/assets/user.svg",
-        employeeNo: newData.employeeNo || "",
-        email: newData.email || "",
-        phone: newData.phone || "",
-        departmentId: newData.departmentId || props.departmentId,
-        roleIds: newData.roleIds || []
-        // 状态由后端管理，不在表单中显示
-      });
-      // 如果有头像，设置种子
-      if (newData.avatar) {
-        avatarSeed.value = newData.username || "";
+      // 只在表单为空或初始加载时更新数据
+      const isInitialLoad = !formData.id && newData.id;
+      if (isInitialLoad) {
+        Object.assign(formData, {
+          id: newData.id,
+          username: newData.username || "",
+          password: "", // 编辑时不显示原密码
+          confirmPassword: "", // 重置确认密码
+          realName: newData.realName || "",
+          avatar: newData.avatar || "/src/assets/user.svg",
+          employeeNo: newData.employeeNo || "",
+          email: newData.email || "",
+          phone: newData.phone || "",
+          departmentId: newData.departmentId || props.departmentId,
+          roleIds: newData.roleIds || []
+        });
       }
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true}
 );
 
-// 监听用户名变化，自动预览头像
-watch(
-  () => formData.username,
-  val => {
-    if (val) {
-      avatarSeed.value = val;
-      formData.avatar = "";
-    } else {
-      formData.avatar = "/src/assets/user.svg";
-    }
-  }
-);
+
 
 // 监听部门ID变化
 watch(
@@ -575,182 +735,115 @@ onMounted(() => {
   loadRoleOptions();
 });
 
-// 暴露方法
+// 暴露方法给父组件
 defineExpose({
+  submitForm,
+  formRef,
   resetForm,
   validate: () => formRef.value?.validate(),
   clearValidate: () => formRef.value?.clearValidate()
 });
+
 </script>
 
 <style scoped lang="scss">
-.user-form {
-  .avatar-section {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-
-    .avatar-display {
-      .avatar-preview {
-        border: 2px solid var(--el-border-color);
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-        &:hover {
-          border-color: var(--el-color-primary);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-      }
-    }
-
-    .avatar-info {
-      flex: 1;
-
-      .avatar-tip {
-        color: var(--el-text-color-secondary);
-        font-size: 13px;
-        line-height: 1.6;
-        margin: 0 0 4px 0;
-      }
-    }
-  }
-
-  .role-option {
-    display: flex;
-    align-items: center;
-    padding: 2px 0;
-
-    .role-name {
-      font-weight: 600;
-      color: var(--el-text-color-primary);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-  }
-
-  .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 32px;
-    padding-top: 20px;
-    border-top: 1px solid var(--el-border-color-lighter);
-  }
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-}
-
-:deep(.el-radio) {
+// 头像样式
+.avatar-section {
   display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-
-  .el-radio__label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-}
-
-:deep(.el-select .el-tag) {
-  max-width: 120px;
-}
-
-:deep(.el-select-dropdown) {
-  .role-option {
-    display: flex;
-    align-items: center;
-    padding: 6px 0;
-
-    .role-name {
-      font-weight: 600;
-      color: var(--el-text-color-primary);
-      font-size: 14px;
-      line-height: 1.4;
-    }
-  }
-
-  .el-select-dropdown__item {
-    padding: 8px 12px;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: var(--el-color-primary-light-9);
-    }
-
-    &.selected {
-      background-color: var(--el-color-primary-light-8);
-      color: var(--el-color-primary);
-    }
-
-    &.is-disabled {
-      background-color: var(--el-fill-color-lighter);
-      color: var(--el-text-color-placeholder);
-      cursor: not-allowed;
-
-      .role-option {
-        .role-name {
-          color: var(--el-text-color-placeholder);
-        }
+  align-items: flex-start;
+  gap: 20px;
+  
+  .avatar-display {
+    position: relative;
+    flex-shrink: 0;
+    
+    .avatar-preview {
+      border: 2px solid var(--el-border-color);
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        border-color: var(--el-color-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
     }
-  }
-}
-
-:deep(.el-select) {
-  .el-select__tags {
-    .el-tag {
-      margin: 2px 4px 2px 0;
-      border-radius: 6px;
-      border: 1px solid var(--el-color-primary-light-7);
-      background-color: var(--el-color-primary-light-9);
-      color: var(--el-color-primary);
-
-      .el-tag__content {
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-weight: 500;
-        font-size: 12px;
-      }
-
-      .el-tag__close {
-        color: var(--el-color-primary);
-
+    
+    .avatar-upload {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      
+      .upload-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--el-color-primary);
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        
         &:hover {
-          background-color: var(--el-color-primary);
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          background: var(--el-color-primary-dark-2);
+        }
+        
+        .el-icon {
+          font-size: 14px;
           color: white;
         }
       }
     }
-  }
-
-  .el-select__wrapper {
-    border-radius: 6px;
-
-    &:hover {
-      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
-    }
-
-    &.is-focused {
-      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+    
+    &:hover .avatar-upload {
+      opacity: 1;
     }
   }
-}
-
-:deep(.el-tree-select) {
-  .el-select__wrapper {
-    box-shadow: 0 0 0 1px var(--el-border-color) inset;
-
-    &:hover {
-      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
-    }
-
-    &.is-focused {
-      box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+  
+  .avatar-actions {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    
+    .action-group {
+      .group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        
+        .group-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+          margin: 0;
+        }
+        
+        .help-icon {
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          cursor: pointer;
+          transition: color 0.3s ease;
+          
+          &:hover {
+            color: var(--el-color-primary);
+          }
+        }
+      }
+      
+      .button-group {
+        display: flex;
+        gap: 8px;
+        
+        .action-btn {
+          .el-icon {
+            margin-right: 4px;
+          }
+        }
+      }
     }
   }
 }

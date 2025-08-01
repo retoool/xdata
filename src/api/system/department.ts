@@ -59,17 +59,7 @@ export class DepartmentApi {
     });
   }
 
-  /**
-   * 更新部门状态
-   */
-  static async updateDepartmentStatus(
-    id: number,
-    status: number
-  ): Promise<void> {
-    return http.request<void>("POST", `/system/department/${id}/status`, {
-      data: { status }
-    });
-  }
+
 
   /**
    * 检查部门名称是否可用
@@ -80,7 +70,11 @@ export class DepartmentApi {
     excludeId?: number
   ): Promise<boolean> {
     return http.request<boolean>("POST", "/system/department/check-name", {
-      data: { name, parentId, excludeId }
+      data: { name, parentId, excludeId },
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
     });
   }
 
@@ -100,7 +94,6 @@ export const {
   updateDepartment,
   deleteDepartment,
   batchDeleteDepartments,
-  updateDepartmentStatus,
   checkDepartmentName,
   getDepartmentStats
 } = DepartmentApi;

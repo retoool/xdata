@@ -2,13 +2,13 @@
   <div class="role-table">
     <!-- 操作工具栏 -->
     <div class="toolbar">
-      <div class="left-actions">
+      <div class="toolbar-left">
         <el-button type="primary" @click="handleAdd">
           <el-icon><Plus /></el-icon>新增角色
         </el-button>
       </div>
 
-      <div class="right-search">
+      <div class="toolbar-right">
         <el-input
           v-model="searchForm.keyword"
           placeholder="搜索角色名、编码、描述"
@@ -37,12 +37,12 @@
         v-loading="loading"
         :data="tableData"
         row-key="id"
+        style="width: 100%; flex: 1;"
       >
         <!-- 多选列已移除 -->
         <el-table-column
           prop="name"
           label="角色名"
-          width="180"
           show-overflow-tooltip
         >
           <template #default="{ row }">
@@ -57,27 +57,25 @@
         <el-table-column
           prop="code"
           label="编码"
-          width="120"
           show-overflow-tooltip
         />
         <el-table-column
           prop="description"
           label="描述"
-          width="200"
           show-overflow-tooltip
         >
           <template #default="{ row }">
             <span class="description">{{ row.description || "暂无描述" }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="权限数量" width="100" align="center">
+        <el-table-column label="权限数量" align="center">
           <template #default="{ row }">
             <el-tag type="info" size="small">
               {{ row && (typeof row.permissionCount === 'number' ? row.permissionCount : (Array.isArray(row.permissions) ? row.permissions.length : 0)) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="用户数量" width="100" align="center">
+        <el-table-column label="用户数量" align="center">
           <template #default="{ row }">
             <el-link
               v-if="row.userCount > 0"
@@ -89,7 +87,7 @@
             <span v-else class="text-muted">0</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="160">
+        <el-table-column prop="createTime" label="创建时间">
           <template #default="{ row }">
             <span>{{ row.createTime ? dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}</span>
           </template>
@@ -148,6 +146,7 @@
             : '复制角色'
       "
       width="600px"
+      destroy-on-close
     >
       <RoleForm
         ref="formRef"
@@ -163,6 +162,7 @@
       v-model="showUserDialog"
       :title="`角色【${currentRole?.name}】下的用户`"
       width="800px"
+      destroy-on-close
       @close="resetUserDialog"
     >
       <div v-loading="loadingUsers">
@@ -495,31 +495,89 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  overflow: hidden;
 
   .toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-
-    .left-actions {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    .toolbar-left {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
-
-    .right-search {
+    
+    .toolbar-right {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
     }
   }
 
   .table-container {
     flex: 1;
     overflow: hidden;
-
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    
     .el-table {
-      height: 100%;
+      flex: 1;
+      
+      :deep(.el-table__header) {
+        background: var(--el-fill-color-light);
+        
+        .el-table__cell {
+          background: var(--el-fill-color-light);
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+        }
+      }
+      
+      :deep(.el-table__row) {
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: var(--el-fill-color-light);
+        }
+      }
+      
+      // 头像列样式
+      .el-avatar {
+        border: 2px solid var(--el-border-color-lighter);
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: var(--el-color-primary);
+          transform: scale(1.05);
+        }
+      }
+      
+      // 标签样式
+      .el-tag {
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
+      
+      // 开关样式
+      .el-switch {
+        .el-switch__core {
+          border-radius: 12px;
+          transition: all 0.2s ease;
+        }
+      }
     }
 
     .role-name {
@@ -530,6 +588,11 @@ defineExpose({
       .role-icon {
         color: var(--el-color-primary);
         font-size: 16px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          transform: scale(1.1);
+        }
       }
     }
 
@@ -546,6 +609,8 @@ defineExpose({
     display: flex;
     justify-content: center;
     padding: 16px 0;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
   }
 }
 

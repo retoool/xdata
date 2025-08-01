@@ -1,7 +1,9 @@
 <template>
-  <div class="role-management-page">
-    <div class="role-content">
-      <RoleTable ref="roleTableRef" @role-permission="handleRolePermission" />
+  <div class="page-container">
+    <div class="content-area">
+      <div class="content-main">
+        <RoleTable ref="roleTableRef" @role-permission="handleRolePermission" />
+      </div>
     </div>
 
     <!-- 权限配置对话框 -->
@@ -10,6 +12,7 @@
       title="配置权限"
       width="800px"
       :before-close="handlePermissionDialogClose"
+      destroy-on-close
     >
       <MenuPermission
         ref="menuPermissionRef"
@@ -92,25 +95,47 @@ const handlePermissionDialogClose = (done: () => void) => {
 </script>
 
 <style scoped lang="scss">
-.role-management-page {
+.page-container {
   height: 100%;
+  padding: 16px;
+  background: var(--el-bg-color-page);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
 
-  .role-content {
-    flex: 1;
-    overflow: hidden;
-  }
+.content-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  .dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+.content-main {
+  flex: 1;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    border-color: var(--el-border-color);
   }
 }
 
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 :deep(.el-dialog__body) {
-  padding: 20px;
+  padding: 24px;
   max-height: 60vh;
   overflow: auto;
 }

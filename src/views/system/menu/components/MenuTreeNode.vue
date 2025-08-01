@@ -88,14 +88,15 @@ const getMenuTypeTagType = () => {
     align-items: center;
     padding: 12px;
     margin-bottom: 8px;
-    background: var(--el-color-white);
-    border: 1px solid var(--el-border-color-light);
-    border-radius: 6px;
-    transition: all 0.2s;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
 
     &:hover {
-      border-color: var(--el-color-primary);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
     }
 
     &.is-hidden {
@@ -106,10 +107,28 @@ const getMenuTypeTagType = () => {
 
   .menu-icon {
     margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 4px;
+    transition: all 0.2s ease;
 
     .el-icon {
-      font-size: 18px;
-      color: var(--el-color-primary);
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+    }
+    
+    &:hover {
+      background-color: var(--el-color-primary-light-9);
+      border-color: var(--el-color-primary-light-6);
+      
+      .el-icon {
+        color: var(--el-color-primary);
+      }
     }
   }
 
@@ -122,7 +141,7 @@ const getMenuTypeTagType = () => {
       align-items: center;
       gap: 8px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--el-text-color-primary);
       margin-bottom: 4px;
     }
@@ -150,6 +169,16 @@ const getMenuTypeTagType = () => {
     display: flex;
     gap: 4px;
     margin-left: 12px;
+    
+    .el-tag {
+      border: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
   }
 
   .menu-children {
@@ -163,7 +192,7 @@ const getMenuTypeTagType = () => {
       top: 0;
       bottom: 0;
       width: 1px;
-      background: var(--el-border-color-light);
+      background: var(--el-border-color-lighter);
     }
 
     .menu-tree-node {
@@ -176,7 +205,7 @@ const getMenuTypeTagType = () => {
         top: 20px;
         width: 15px;
         height: 1px;
-        background: var(--el-border-color-light);
+        background: var(--el-border-color-lighter);
       }
     }
   }

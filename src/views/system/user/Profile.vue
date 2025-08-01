@@ -7,17 +7,29 @@
         <div class="profile-left">
           <!-- 头像区域 -->
           <div class="avatar-section">
-            <div class="avatar-wrapper">
+            <div class="avatar-container">
               <el-avatar 
-                :size="120" 
+                :size="100" 
                 :src="userInfo?.avatar || '/src/assets/user.svg'"
                 class="profile-avatar"
               >
                 {{ userInfo?.realName?.charAt(0) || userInfo?.username?.charAt(0) }}
               </el-avatar>
-            </div>
-            <div class="avatar-info">
-              <h1 class="user-name">{{ userInfo?.realName || userInfo?.username }}</h1>
+              <div class="user-info">
+                <h2 class="user-name">{{ userInfo?.realName || userInfo?.username }}</h2>
+                <div class="user-role">
+                  <el-tag 
+                    v-for="role in userInfo?.roles" 
+                    :key="role.id"
+                    size="small"
+                    type="info"
+                    class="role-tag"
+                  >
+                    {{ role.name }}
+                  </el-tag>
+                  <span v-if="!userInfo?.roles?.length" class="no-role">暂无角色</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -54,7 +66,7 @@
                 <span class="info-value">{{ userInfo?.username || '-' }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">真实姓名：</span>
+                <span class="info-label">昵称：</span>
                 <span class="info-value">{{ userInfo?.realName || '-' }}</span>
               </div>
               <div class="info-item">
@@ -149,17 +161,116 @@
                 :size="80"
                 class="avatar-preview"
               />
+              <el-upload
+                ref="uploadRef"
+                :show-file-list="false"
+                :before-upload="beforeAvatarUpload"
+                :http-request="handleAvatarUpload"
+                accept="image/*"
+                class="avatar-upload"
+              >
+                <el-button
+                  circle
+                  size="small"
+                  type="primary"
+                  class="upload-btn"
+                >
+                  <el-icon><Upload /></el-icon>
+                </el-button>
+              </el-upload>
             </div>
-            <div class="avatar-info">
-              <p class="avatar-tip">头像将根据用户名自动生成</p>
-              <p class="avatar-tip">支持多元化头像风格</p>
-              <el-button size="small" type="primary" @click="randomAvatar" style="margin-top: 8px;">
-                <el-icon><Refresh /></el-icon>
-                随机头像
-              </el-button>
+            <div class="avatar-actions">
+              <div class="action-group">
+                <div class="group-header">
+                  <h4 class="group-title">头像生成</h4>
+                  <el-tooltip
+                    content="随机生成：使用时间戳和随机数生成独特的头像图案，每次生成都会产生不同的视觉效果。
+恢复默认：将头像重置为系统默认的占位图像。"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <el-icon class="help-icon"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </div>
+                <div class="button-group">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="randomAvatar"
+                    class="action-btn"
+                  >
+                    <el-icon><Refresh /></el-icon>
+                    随机生成
+                  </el-button>
+                  <el-button
+                    type="info"
+                    size="small"
+                    @click="resetToDefault"
+                    class="action-btn"
+                  >
+                    <el-icon><RefreshLeft /></el-icon>
+                    恢复默认
+                  </el-button>
+                </div>
+              </div>
+              
+              <div class="action-group">
+                <div class="group-header">
+                  <h4 class="group-title">种子管理</h4>
+                  <el-tooltip
+                    content="导出种子：将当前头像的种子值复制到剪贴板，可以保存并分享给其他人使用相同的种子生成相同的头像。
+输入种子：通过输入特定的种子值来生成对应的头像图案，确保每次使用相同种子都会产生相同的头像。"
+                    placement="top"
+                    effect="dark"
+                  >
+                    <el-icon class="help-icon"><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </div>
+                <div class="button-group">
+                  <el-button
+                    type="warning"
+                    size="small"
+                    @click="exportSeed"
+                    class="action-btn"
+                  >
+                    <el-icon><Download /></el-icon>
+                    导出种子
+                  </el-button>
+                  <el-button
+                    type="success"
+                    size="small"
+                    @click="showSeedDialog = true"
+                    class="action-btn"
+                  >
+                    <el-icon><Edit /></el-icon>
+                    输入种子
+                  </el-button>
+                </div>
+              </div>
             </div>
           </div>
         </el-form-item>
+        
+        <!-- 种子输入对话框 -->
+        <el-dialog
+          v-model="showSeedDialog"
+          title="输入种子生成头像"
+          width="400px"
+        >
+          <el-form>
+            <el-form-item label="种子值">
+              <el-input
+                v-model="seedInput"
+                placeholder="请输入种子值"
+                clearable
+              />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="showSeedDialog = false">取消</el-button>
+            <el-button type="primary" @click="generateFromSeed">生成</el-button>
+          </template>
+        </el-dialog>
         
         <!-- 原有的表单项 -->
         <el-row :gutter="20">
@@ -307,7 +418,11 @@ import {
   Edit, 
   Lock,
   Warning,
-  Refresh
+  Refresh,
+  Upload,
+  RefreshLeft,
+  Download,
+  QuestionFilled
 } from '@element-plus/icons-vue'
 import { changePassword, updateUserInfo, logoutUser, getCurrentUser, UpdateUserInfoData } from '@/api/system/user'
 import multiavatar from '@multiavatar/multiavatar'
@@ -325,6 +440,9 @@ const loggingOut = ref(false) // 新增：注销用户loading状态
 const editFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
 const userInfo = ref<User>()
+const showSeedDialog = ref(false)
+const seedInput = ref("")
+const currentSeed = ref("")
 
 // 在编辑表单中添加头像相关字段
 const editForm = reactive({
@@ -340,7 +458,84 @@ const randomAvatar = () => {
   var seed = Date.now().toString() + Math.random().toString(36).slice(2)
   const svg = multiavatar(seed)
   editForm.avatar = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg)
+  currentSeed.value = seed
 }
+
+// 头像上传相关方法
+const uploadRef = ref();
+
+const beforeAvatarUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/');
+  const isLt2M = file.size / 1024 / 1024 < 2;
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!');
+    return false;
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!');
+    return false;
+  }
+  return true;
+};
+
+const handleAvatarUpload = (options: any) => {
+  const file = options.file;
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    const result = e.target?.result as string;
+    if (result) {
+      editForm.avatar = result;
+      ElMessage.success('头像上传成功');
+    }
+  };
+  
+  reader.onerror = () => {
+    ElMessage.error('头像上传失败');
+  };
+  
+  reader.readAsDataURL(file);
+  
+  // 返回一个 Promise 以满足 UploadRequestHandler 类型要求
+  return Promise.resolve();
+};
+
+// 恢复默认头像
+const resetToDefault = () => {
+  editForm.avatar = '/src/assets/user.svg';
+  currentSeed.value = "";
+  ElMessage.success('已恢复默认头像');
+};
+
+// 导出当前头像种子
+const exportSeed = () => {
+  if (currentSeed.value) {
+    // 复制种子到剪贴板
+    navigator.clipboard.writeText(currentSeed.value).then(() => {
+      ElMessage.success('种子已复制到剪贴板');
+    }).catch(() => {
+      ElMessage.error('复制失败，请手动复制');
+    });
+  } else {
+    ElMessage.warning('当前头像没有种子值');
+  }
+};
+
+// 从种子生成头像
+const generateFromSeed = () => {
+  if (!seedInput.value.trim()) {
+    ElMessage.warning('请输入种子值');
+    return;
+  }
+  
+  const svg = multiavatar(seedInput.value.trim());
+  editForm.avatar = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  currentSeed.value = seedInput.value.trim();
+  showSeedDialog.value = false;
+  seedInput.value = "";
+  ElMessage.success('头像生成成功');
+};
 
 // 编辑表单验证规则
 const editRules: FormRules = {
@@ -493,6 +688,12 @@ const handleSaveProfile = async () => {
     userStore.SET_AVATAR(editForm.avatar)
     userStore.SET_NICKNAME(editForm.realName || '')
     
+    userInfo.value.realName = editForm.realName
+    userInfo.value.employeeNo = editForm.employeeNo
+    userInfo.value.email = editForm.email
+    userInfo.value.phone = editForm.phone
+    userInfo.value.avatar = editForm.avatar
+
     ElMessage.success('个人资料更新成功')
     showEditDialog.value = false
   } catch (error: any) {
@@ -575,9 +776,7 @@ onMounted(async () => {
 <style scoped lang="scss">
 .profile-page {
   padding: 20px;
-  background-color: var(--el-bg-color-page);
-  min-height: calc(100vh - 48px);
-  transition: background-color 0.3s ease;
+  min-height: calc(100vh - 24px);
 }
 
 .profile-container {
@@ -615,48 +814,60 @@ onMounted(async () => {
 .profile-left {
       .avatar-section {
       background: var(--el-bg-color);
-      border-radius: 12px;
-      padding: 32px 24px;
-      text-align: center;
+      border-radius: 16px;
+      padding: 24px;
       box-shadow: var(--el-box-shadow-light);
       border: 1px solid var(--el-border-color-lighter);
       transition: all 0.3s ease;
     
-    .avatar-wrapper {
-      position: relative;
-      display: inline-block;
-      margin-bottom: 20px;
+    .avatar-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
       
       .profile-avatar {
-        border: 4px solid var(--el-color-primary-light-8);
+        border: 3px solid var(--el-color-primary-light-8);
         transition: all 0.3s ease;
         box-shadow: var(--el-box-shadow);
+        flex-shrink: 0;
         
         &:hover {
           border-color: var(--el-color-primary);
           transform: scale(1.05);
         }
       }
-    }
-    
-    .avatar-info {
-      .user-name {
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--el-text-color-primary);
-        margin: 0 0 8px 0;
-        line-height: 1.4;
-      }
       
-      .user-role {
-        font-size: 14px;
-        color: var(--el-text-color-regular);
-        margin: 0 0 12px 0;
-        line-height: 1.4;
-      }
-      
-      .user-status {
-        margin: 0;
+      .user-info {
+        flex: 1;
+        text-align: left;
+        
+        .user-name {
+          font-size: 22px;
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+          margin: 0 0 12px 0;
+          line-height: 1.3;
+        }
+        
+        .user-role {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          align-items: center;
+          
+          .role-tag {
+            margin-right: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            border-radius: 6px;
+          }
+          
+          .no-role {
+            font-size: 13px;
+            color: var(--el-text-color-secondary);
+            font-style: italic;
+          }
+        }
       }
     }
   }
@@ -795,54 +1006,7 @@ onMounted(async () => {
   }
 }
 
-// 对话框样式优化
-:deep(.el-dialog) {
-  padding: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--el-bg-color);
-  
-  .el-dialog__header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    background: var(--el-fill-color-extra-light);
-    
-    .el-dialog__title {
-      font-weight: 600;
-      font-size: 16px;
-      color: var(--el-text-color-primary);
-    }
-  }
-  
-  .el-dialog__body {
-    padding: 24px;
-    background: var(--el-bg-color);
-  }
-  
-  .el-dialog__footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--el-border-color-lighter);
-    background: var(--el-fill-color-extra-light);
-  }
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-  color: var(--el-text-color-regular);
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 8px;
-  box-shadow: 0 0 0 1px var(--el-border-color) inset;
-  
-  &:hover {
-    box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
-  }
-  
-  &.is-focused {
-    box-shadow: 0 0 0 1px var(--el-color-primary) inset;
-  }
-}
+// 弹窗样式已标准化，使用 element-plus.scss 中的统一样式
 
 // 响应式设计
 @media (max-width: 768px) {
@@ -896,10 +1060,13 @@ onMounted(async () => {
 
 .avatar-section {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   
   .avatar-display {
+    position: relative;
+    flex-shrink: 0;
+    
     .avatar-preview {
       border: 2px solid var(--el-border-color);
       transition: all 0.3s ease;
@@ -910,16 +1077,83 @@ onMounted(async () => {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
     }
+    
+    .avatar-upload {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      
+      .upload-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--el-color-primary);
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          background: var(--el-color-primary-dark-2);
+        }
+        
+        .el-icon {
+          font-size: 14px;
+          color: white;
+        }
+      }
+    }
+    
+    &:hover .avatar-upload {
+      opacity: 1;
+    }
   }
   
-  .avatar-info {
+  .avatar-actions {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     
-    .avatar-tip {
-      color: var(--el-text-color-secondary);
-      font-size: 13px;
-      line-height: 1.6;
-      margin: 0 0 4px 0;
+    .action-group {
+      .group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        
+        .group-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+          margin: 0;
+        }
+        
+        .help-icon {
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          cursor: pointer;
+          transition: color 0.3s ease;
+          
+          &:hover {
+            color: var(--el-color-primary);
+          }
+        }
+      }
+      
+      .button-group {
+        display: flex;
+        gap: 8px;
+        
+        .action-btn {
+          .el-icon {
+            margin-right: 4px;
+          }
+        }
+      }
     }
   }
 }

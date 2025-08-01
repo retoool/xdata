@@ -378,36 +378,45 @@ const isAllChecked = computed(() => {
 
 <style scoped lang="scss">
 .menu-permission {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
   .permission-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    margin-top: 0px;
-    padding: 12px;
-    background: var(--el-fill-color-lighter);
-    border-radius: 6px;
-
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
     .toolbar-left {
       display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .toolbar-right {
+      display: flex;
+      align-items: center;
       gap: 8px;
     }
   }
 
   .search-box {
-    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
   }
 
   .tree-container {
-    max-height: 400px;
+    flex: 1;
     overflow: auto;
-    border: 1px solid var(--el-border-color-light);
-    border-radius: 6px;
-    padding: 8px;
+    padding: 8px 16px;
+    background: var(--el-bg-color);
 
     .menu-node {
-      width: 100%;
-
       .node-content {
         display: flex;
         flex-direction: column;
@@ -421,6 +430,11 @@ const isAllChecked = computed(() => {
           .node-icon {
             color: var(--el-color-primary);
             font-size: 16px;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              transform: scale(1.1);
+            }
 
             &.default-icon {
               color: var(--el-text-color-secondary);
@@ -443,7 +457,12 @@ const isAllChecked = computed(() => {
             color: var(--el-color-primary);
             background: var(--el-color-primary-light-9);
             padding: 2px 6px;
-            border-radius: 3px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              background: var(--el-color-primary-light-8);
+            }
           }
 
           .node-permission {
@@ -451,7 +470,12 @@ const isAllChecked = computed(() => {
             color: var(--el-color-success);
             background: var(--el-color-success-light-9);
             padding: 2px 6px;
-            border-radius: 3px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              background: var(--el-color-success-light-8);
+            }
           }
         }
       }
@@ -463,7 +487,32 @@ const isAllChecked = computed(() => {
         .permission-tag {
           margin-right: 4px;
           margin-bottom: 4px;
+          transition: all 0.2s ease;
+          
+          &:hover {
+            transform: scale(1.05);
+          }
         }
+      }
+    }
+  }
+}
+
+:deep(.el-tree) {
+  .el-tree-node {
+    .el-tree-node__content {
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--el-fill-color-light);
+      }
+      
+      &.is-current {
+        background: var(--el-color-primary-light-9);
+        color: var(--el-color-primary);
       }
     }
   }
@@ -486,14 +535,21 @@ const isAllChecked = computed(() => {
   padding: 16px;
 }
 
-// 只在节点 hover 时显示“只选当前”按钮
+// 只在节点 hover 时显示"只选当前"按钮
 .select-current-btn {
   display: none;
   margin-left: 6px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
 }
+
 .menu-node:hover .select-current-btn {
   display: inline-flex;
 }
+
 // 让 node-main-flex 保证所有内容一行显示
 .node-main-flex {
   display: flex;
@@ -501,7 +557,7 @@ const isAllChecked = computed(() => {
   flex-wrap: nowrap;
 }
 
-// 缩小“只选当前”按钮尺寸，使其与复选框大小接近
+// 缩小"只选当前"按钮尺寸，使其与复选框大小接近
 .mini-btn {
   width: 18px;
   height: 18px;
@@ -512,5 +568,53 @@ const isAllChecked = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+:deep(.el-button) {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &.el-button--primary {
+    background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--el-color-primary-light-3) 0%, var(--el-color-primary) 100%);
+    }
+  }
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+  }
+  
+  &.is-focused {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+  }
+}
+
+:deep(.el-tag) {
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
 }
 </style>

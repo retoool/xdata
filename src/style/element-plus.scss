@@ -43,27 +43,6 @@
   }
 }
 
-.pure-dialog {
-  .el-dialog__header.show-close {
-    padding-right: 16px;
-  }
-
-  .el-dialog__headerbtn {
-    top: 16px;
-    right: 12px;
-    width: 24px;
-    height: 24px;
-  }
-
-  .pure-dialog-svg {
-    color: var(--el-color-info);
-  }
-
-  .el-dialog__footer {
-    padding-top: 0;
-  }
-}
-
 /* 全局覆盖element-plus的el-tour、el-dialog、el-drawer、el-message-box、el-notification组件右上角关闭图标和el-upload上传文件列表右侧关闭图标的样式，表现更鲜明 */
 .el-dialog__headerbtn,
 .el-message-box__headerbtn {
@@ -185,5 +164,236 @@
   /* 滚动条滑块：hover状态 */
   ::-webkit-scrollbar-thumb:hover {
     background: rgb(199 201 203); /* 滑块hover颜色 */
+  }
+}
+
+/* ==================== 标准弹窗样式 ==================== */
+/* 标准弹窗容器样式 - 使用更强的选择器确保覆盖默认样式 */
+body .el-dialog,
+.el-dialog {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: var(--el-bg-color) !important;
+  box-shadow: var(--el-box-shadow-light) !important;
+  border: 1px solid var(--el-border-color-lighter) !important;
+  
+  /* 弹窗头部 */
+  .el-dialog__header {
+    padding: 20px 24px !important;
+    border-bottom: 1px solid var(--el-border-color-lighter) !important;
+    background: var(--el-fill-color-extra-light) !important;
+    
+    .el-dialog__title {
+      font-weight: 600 !important;
+      font-size: 16px !important;
+      color: var(--el-text-color-primary) !important;
+    }
+  }
+  
+  /* 弹窗内容区域 */
+  .el-dialog__body {
+    padding: 24px !important;
+    background: var(--el-bg-color) !important;
+  }
+  
+  /* 弹窗底部 */
+  .el-dialog__footer {
+    padding: 16px 24px !important;
+    border-top: 1px solid var(--el-border-color-lighter) !important;
+    background: var(--el-fill-color-extra-light) !important;
+  }
+}
+
+/* 弹窗内表单样式 */
+body .el-dialog,
+.el-dialog {
+  .el-form-item__label {
+    font-weight: 500 !important;
+    color: var(--el-text-color-regular) !important;
+  }
+  
+  .el-input__wrapper {
+    border-radius: 8px !important;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+    transition: all 0.2s ease !important;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset !important;
+    }
+    
+    &.is-focused {
+      box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+    }
+  }
+  
+  .el-select {
+    .el-input__wrapper {
+      border-radius: 8px !important;
+    }
+  }
+  
+  .el-input-number {
+    .el-input__wrapper {
+      border-radius: 8px !important;
+    }
+  }
+  
+  .el-tree-select {
+    .el-select__wrapper {
+      box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+      
+      &:hover {
+        box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+      }
+      
+      &.is-focused {
+        box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+      }
+    }
+  }
+}
+
+/* 弹窗内按钮样式 */
+body .el-dialog,
+.el-dialog {
+  .el-button {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    
+    &:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    // &.el-button--primary {
+    //   background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%) !important;
+    //   border: none !important;
+      
+    //   &:hover {
+    //     background: linear-gradient(135deg, var(--el-color-primary-dark-2) 0%, var(--el-color-primary) 100%) !important;
+    //   }
+    // }
+    
+    // &.el-button--danger {
+    //   background: linear-gradient(135deg, var(--el-color-danger) 0%, var(--el-color-danger-light-3) 100%) !important;
+    //   border: none !important;
+      
+    //   &:hover {
+    //     background: linear-gradient(135deg, var(--el-color-danger-dark-2) 0%, var(--el-color-danger) 100%) !important;
+    //   }
+    // }
+  }
+}
+
+/* 弹窗内卡片样式 */
+body .el-dialog,
+.el-dialog {
+  .el-card {
+    border-radius: 12px;
+    border: 1px solid var(--el-border-color-lighter);
+    // box-shadow: var(--el-box-shadow-light);
+    transition: all 0.3s ease;
+    background: var(--el-bg-color);
+    
+    // &:hover {
+    //   box-shadow: var(--el-box-shadow);
+    //   transform: translateY(-2px);
+    // }
+    
+    .el-card__header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      background: var(--el-fill-color-extra-light);
+      
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+        font-size: 16px;
+        
+        .el-icon {
+          font-size: 18px;
+          color: var(--el-color-primary);
+        }
+      }
+    }
+    
+    .el-card__body {
+      padding: 24px;
+    }
+  }
+}
+
+/* 弹窗内信息列表样式 */
+body .el-dialog,
+.el-dialog {
+  .info-list {
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--el-border-color-extra-light);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .info-label {
+        width: 120px;
+        font-weight: 500;
+        color: var(--el-text-color-regular);
+        flex-shrink: 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      
+      .info-value {
+        flex: 1;
+        color: var(--el-text-color-primary);
+        word-break: break-all;
+        font-size: 14px;
+        line-height: 1.6;
+        
+        .el-tag {
+          margin-right: 6px;
+          margin-bottom: 4px;
+          border-radius: 6px;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+/* 弹窗响应式设计 */
+@media (max-width: 768px) {
+  body .el-dialog,
+  .el-dialog {
+    .el-dialog__header {
+      padding: 16px 20px;
+    }
+    
+    .el-dialog__body {
+      padding: 20px;
+    }
+    
+    .el-dialog__footer {
+      padding: 12px 20px;
+    }
+    
+    .info-list .info-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      
+      .info-label {
+        width: auto;
+        font-weight: 600;
+      }
+    }
   }
 }

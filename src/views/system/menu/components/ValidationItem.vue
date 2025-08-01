@@ -29,24 +29,46 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
 
   .status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    
     .el-icon {
-      font-size: 16px;
+      font-size: 14px;
+      transition: all 0.2s ease;
 
       &.success {
         color: var(--el-color-success);
       }
 
       &.error {
-        color: var(--el-color-error);
+        color: var(--el-color-danger);
       }
+    }
+    
+    &:hover {
+      transform: scale(1.1);
     }
   }
 
   .message {
     font-size: 14px;
+    font-weight: 500;
     color: var(--el-text-color-primary);
+    flex: 1;
   }
 }
 </style>

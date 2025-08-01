@@ -265,7 +265,13 @@ defineExpose({
   .role-info {
     .el-descriptions {
       background: var(--el-fill-color-lighter);
-      border-radius: 6px;
+      border-radius: 8px;
+      border: 1px solid var(--el-border-color-lighter);
+      transition: all 0.2s ease;
+      
+      &:hover {
+        border-color: var(--el-border-color);
+      }
     }
   }
 
@@ -281,6 +287,40 @@ defineExpose({
 
 :deep(.el-form-item__label) {
   font-weight: 500;
+  color: var(--el-text-color-regular);
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+  }
+  
+  &.is-focused {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+  }
+}
+
+:deep(.el-select) {
+  .el-input__wrapper {
+    border-radius: 8px;
+  }
+}
+
+:deep(.el-textarea__inner) {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: var(--el-color-primary-light-5);
+  }
+  
+  &:focus {
+    border-color: var(--el-color-primary);
+  }
 }
 
 :deep(.el-radio) {
@@ -302,5 +342,32 @@ defineExpose({
 
 :deep(.el-input.is-disabled .el-input__wrapper) {
   background-color: var(--el-fill-color-lighter);
+}
+
+:deep(.el-button) {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &.el-button--primary {
+    background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--el-color-primary-light-3) 0%, var(--el-color-primary) 100%);
+    }
+  }
+  
+  &.el-button--danger {
+    background: linear-gradient(135deg, var(--el-color-danger) 0%, var(--el-color-danger-light-3) 100%);
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--el-color-danger-light-3) 0%, var(--el-color-danger) 100%);
+    }
+  }
 }
 </style>
